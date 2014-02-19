@@ -113,11 +113,11 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
     private boolean IsMovable = false;
     private double initialMovePointY = 0;
     private int clValue = -1;
-    private int thtlChange = 2;
+//    private int thtlChange = 2;
     private double afrMin = 13.7;
     private double afrMax = 15;
     private double minLoad = 0.05;
-    private int logThtlAngleColIdx = -1;
+//    private int logThtlAngleColIdx = -1;
     private int logClOlStatusColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
@@ -1494,6 +1494,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     
                     if (logClOlStatusColIdx >= 0)
                         table.changeSelection(logClOlStatusColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (clValue >= 0)
                         spinner.setValue(clValue);
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select CL/OL Status Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
@@ -1508,10 +1510,13 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                         JOptionPane.showMessageDialog(null, "Invalid CL/OL Status value for closed loop", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+/*
                     spinnerLabel.setText("Throttle Angle % Change Filter - 0 to ...");
                     spinner.setValue(thtlChange);
                     if (logThtlAngleColIdx >= 0)
                         table.changeSelection(logThtlAngleColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Throttle Angle % Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     thtlChange = Integer.valueOf(spinner.getValue().toString());
@@ -1519,6 +1524,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                         JOptionPane.showMessageDialog(null, "Invalid Throttle Angle % Change Filter value", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
+*/
                     spinnerLabel.setVisible(false);
                     spinner.setVisible(false);
                     lblMax.setVisible(true);
@@ -1527,6 +1533,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     minTextField.setVisible(true);
                     if (logAfrColIdx >= 0)
                         table.changeSelection(logAfrColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR (Stock) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfrColIdx = table.getSelectedRow();
@@ -1550,6 +1558,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     minTextField.setVisible(false);
                     if (logAfLearningColIdx >= 0)
                         table.changeSelection(logAfLearningColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Learning (LTFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfLearningColIdx = table.getSelectedRow();
@@ -1559,6 +1569,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     }
                     if (logAfCorrectionColIdx >= 0)
                         table.changeSelection(logAfCorrectionColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Correction (STFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfCorrectionColIdx = table.getSelectedRow();
@@ -1568,6 +1580,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     }
                     if (logRpmColIdx >= 0)
                         table.changeSelection(logRpmColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine RPM Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
@@ -1581,6 +1595,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     minTextField.setVisible(true);
                     if (logLoadColIdx >= 0)
                         table.changeSelection(logLoadColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Load Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logLoadColIdx = table.getSelectedRow();
@@ -1600,8 +1616,10 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                     int clol;
                     int i = 2;
                     int row = getLogTableEmptyRow();
+/*
                     double prevThrottleAngle = 0;
                     double throttleAngle = 0;
+*/
                     double afr = 0;
                     double load;
                     while (line != null) {
@@ -1609,16 +1627,18 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                         try {
                             clol = Integer.valueOf(flds[logClOlStatusColIdx]);
                             if (clol == clValue) {
+/*
                             	throttleAngle = Double.valueOf(flds[logThtlAngleColIdx]);
                             	if (row > 0 && thtlChange < Math.abs(throttleAngle - prevThrottleAngle))
                             		row -= 1;
+                            	prevThrottleAngle = throttleAngle;
+*/
                             	afr = Double.valueOf(flds[logAfrColIdx]);
                             	if (afrMin > afr || afr > afrMax)
                             		continue;
                             	load = Double.valueOf(flds[logLoadColIdx]);
                             	if (minLoad > load)
                             		continue;
-                            	prevThrottleAngle = throttleAngle;
                                 Utils.ensureRowCount(row + 1, logDataTable);
                                 logDataTable.setValueAt(load, row, 0);
                                 logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 1);

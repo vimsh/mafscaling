@@ -1335,6 +1335,8 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                     
                     if (logThtlAngleColIdx >= 0)
                         table.changeSelection(logThtlAngleColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Throttle Angle % Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logThtlAngleColIdx = table.getSelectedRow();
@@ -1344,6 +1346,8 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                     }
                     if (logMafvColIdx >= 0)
                         table.changeSelection(logMafvColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Maf Voltage Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logMafvColIdx = table.getSelectedRow();
@@ -1353,6 +1357,8 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                     }
                     if (logAfrColIdx >= 0)
                         table.changeSelection(logAfrColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Wideband AFR Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfrColIdx = table.getSelectedRow();
@@ -1362,6 +1368,8 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                     }
                     if (logRpmColIdx >= 0)
                         table.changeSelection(logRpmColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine RPM Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
@@ -1371,6 +1379,8 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                     }
                     if (logLoadColIdx >= 0)
                         table.changeSelection(logLoadColIdx, 0, false, false);
+                    else
+                    	table.clearSelection();
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Load Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logLoadColIdx = table.getSelectedRow();

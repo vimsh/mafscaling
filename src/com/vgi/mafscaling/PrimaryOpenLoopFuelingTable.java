@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.Format;
 import java.util.regex.Pattern;
 
 import javax.swing.Box;
@@ -28,12 +29,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private JTable fuelingTable = null;
     private JTable tempFuelingTable = null;
     private ExcelAdapter excelAdapter = null;
-    private DoubleFormatRenderer intRenderer = null;
-    
-    public PrimaryOpenLoopFuelingTable() {
-        intRenderer = new DoubleFormatRenderer();
-        intRenderer.setFormatter(new DecimalFormat("#"));
-    }
 
     public void setExcelAdapter(ExcelAdapter excelAdapter) {
         this.excelAdapter = excelAdapter;
@@ -201,14 +196,15 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                         table.setValueAt(fuelingTable.getValueAt(i, j).toString(), i, j);
                 }
             }
-            table.getColumnModel().getColumn(0).setCellRenderer(intRenderer);
             Utils.colorTable(table);
         }
         else {
             table.setModel(new DefaultTableModel(20, 15));
-            table.getColumnModel().getColumn(0).setCellRenderer(intRenderer);
             Utils.initializeTable(table, ColumnWidth);
         }
+        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
+        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
+        renderer.setFormats(formatMatrix);
         excelAdapter.addTable(table, true, true);
         return table;
     }
@@ -258,7 +254,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                 }
             }
         }
-        fuelingTable.getColumnModel().getColumn(0).setCellRenderer(intRenderer);
         Utils.colorTable(fuelingTable);
         return true;
     }

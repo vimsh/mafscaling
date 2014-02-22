@@ -46,6 +46,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.Format;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
@@ -98,6 +99,8 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
 
     private final static String SaveDataFileHeader = "[mickeyd2005 run data]";
     private final static String MafTableName = "Current MAF Scaling";
+    private final static String Afr1TableName = "AFR Average";
+    private final static String Afr2TableName = "AFR Cell Hit Count";
     
     private final static String XAxisName = "MAF Sensor (Voltage)";
     private final static String Y1AxisName = "Mass Airflow (g/s)";
@@ -431,14 +434,11 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
     }
     
     private void createAfrDataTables(JPanel panel) {
-        afr1Table = createAfrDataTable(panel, "AFR Average", 0);
-        afr2Table = createAfrDataTable(panel, "AFR Cell Hit Count", 2);
+        afr1Table = createAfrDataTable(panel, Afr1TableName, 0);
+        afr2Table = createAfrDataTable(panel, Afr2TableName, 2);
     }
     
     private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
-        DoubleFormatRenderer intRenderer = new DoubleFormatRenderer();
-        intRenderer.setFormatter(new DecimalFormat("#"));
-        
         TableColumnModel afrModel = new DefaultTableColumnModel();
         final TableColumn afrColumn = new TableColumn(0, 250);
         afrColumn.setHeaderValue(tableName);
@@ -472,8 +472,18 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
         afrTable.setBorder(new LineBorder(new Color(0, 0, 0)));
         afrTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         afrTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        afrTable.getColumnModel().getColumn(0).setCellRenderer(intRenderer);
         Utils.initializeTable(afrTable, ColumnWidth);
+        
+        if (tableName.equals(Afr1TableName)) {
+	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
+	        NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
+	        renderer.setFormats(formatMatrix);
+        }
+        else if (tableName.equals(Afr2TableName)) {
+	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
+	        NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
+	        renderer.setFormats(formatMatrix);
+        }
         
         GridBagConstraints gbc_afrTable = new GridBagConstraints();
         gbc_afrTable.insets = new Insets(0, 0, 0, 0);
@@ -1582,11 +1592,11 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                         table.changeSelection(logRpmColIdx, 0, false, false);
                     else
                     	table.clearSelection();
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine RPM Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Speed Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
                     if (logRpmColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Engine RPM Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Invalid Engine Speed Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                     lblMin.setText("Engine Load Filter - minimum value");
@@ -1627,25 +1637,23 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                         try {
                             clol = Integer.valueOf(flds[logClOlStatusColIdx]);
                             if (clol == clValue) {
-/*
-                            	throttleAngle = Double.valueOf(flds[logThtlAngleColIdx]);
-                            	if (row > 0 && thtlChange < Math.abs(throttleAngle - prevThrottleAngle))
-                            		row -= 1;
-                            	prevThrottleAngle = throttleAngle;
-*/
                             	afr = Double.valueOf(flds[logAfrColIdx]);
-                            	if (afrMin > afr || afr > afrMax)
-                            		continue;
                             	load = Double.valueOf(flds[logLoadColIdx]);
-                            	if (minLoad > load)
-                            		continue;
-                                Utils.ensureRowCount(row + 1, logDataTable);
-                                logDataTable.setValueAt(load, row, 0);
-                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 1);
-                                logDataTable.setValueAt(afr, row, 2);
-                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 3);
-                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 4);
-                                row += 1;
+                            	if (afrMin <= afr && afr <= afrMax && minLoad <= load) {
+/*
+	                            	throttleAngle = Double.valueOf(flds[logThtlAngleColIdx]);
+	                            	if (row > 0 && thtlChange < Math.abs(throttleAngle - prevThrottleAngle))
+	                            		row -= 1;
+	                            	prevThrottleAngle = throttleAngle;
+*/
+	                                Utils.ensureRowCount(row + 1, logDataTable);
+	                                logDataTable.setValueAt(load, row, 0);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 1);
+	                                logDataTable.setValueAt(afr, row, 2);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 3);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 4);
+	                                row += 1;
+                            	}
                             }
                         }
                         catch (NumberFormatException e) {

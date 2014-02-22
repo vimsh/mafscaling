@@ -1370,11 +1370,11 @@ public class BadNoodle extends JTabbedPane implements ActionListener, MouseListe
                         table.changeSelection(logRpmColIdx, 0, false, false);
                     else
                     	table.clearSelection();
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine RPM Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Speed Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
                     if (logRpmColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Engine RPM Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Invalid Engine Speed Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
                     if (logLoadColIdx >= 0)

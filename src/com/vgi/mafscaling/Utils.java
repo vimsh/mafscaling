@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 public final class Utils {
     /**
@@ -136,9 +137,6 @@ public final class Utils {
             BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
             if (renderer != null)
                 renderer.setColors(colorMatrix);
-            renderer = (BgColorFormatRenderer)table.getColumnModel().getColumn(0).getCellRenderer();
-            if (renderer != null)
-                renderer.setColors(colorMatrix);
         }
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
@@ -154,12 +152,9 @@ public final class Utils {
             for (int j = 0; j < table.getRowCount(); ++j)
                 table.setValueAt("", j, i);
         }
-        DoubleFormatRenderer renderer = (DoubleFormatRenderer)table.getDefaultRenderer(Object.class);
-        if (renderer != null)
-            renderer.setColors(null);
-        renderer = (DoubleFormatRenderer)table.getColumnModel().getColumn(0).getCellRenderer();
-        if (renderer != null)
-            renderer.setColors(null);
+        TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
+        if (renderer != null && renderer instanceof BgColorFormatRenderer)
+        	((BgColorFormatRenderer)renderer).setColors(null);
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
 
@@ -168,7 +163,7 @@ public final class Utils {
      * @param table
      */
     public static void initializeTable(JTable table, int columnWidth) {
-        table.setDefaultRenderer(Object.class, new DoubleFormatRenderer());
+        table.setDefaultRenderer(Object.class, new NumberFormatRenderer());
         for (int i = 0; i < table.getColumnCount(); ++i) {
             table.getColumnModel().getColumn(i).setMinWidth(columnWidth);
             table.getColumnModel().getColumn(i).setMaxWidth(columnWidth);

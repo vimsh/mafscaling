@@ -20,20 +20,49 @@ package com.vgi.mafscaling;
 
 import java.awt.Component;
 import java.text.DecimalFormat;
+import java.text.Format;
 import java.util.regex.Pattern;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 
 
-class DoubleFormatRenderer extends BgColorFormatRenderer {
+class NumberFormatRenderer extends BgColorFormatRenderer {
     private static final long serialVersionUID = 4722830336189723801L;
+    private Format[][] formats = null;
     private DecimalFormat formatter = new DecimalFormat("0.00");
-
+    
     /**
      * Default constructor, sets cells alignement to right
      */
-    public DoubleFormatRenderer() {
+    public NumberFormatRenderer() {
         setHorizontalAlignment(SwingConstants.RIGHT);
+    }
+
+    /**
+     * Method sets cells format matrix
+     * @param formatMatrix
+     */
+    public void setFormats(Format[][] formatMatrix) {
+    	formats = formatMatrix;
+    }
+
+    /**
+     * Method returns cells format matrix
+     * @return format matrix
+     */
+    public Format[][] getFormats() {
+        return formats;
+    }
+    
+    /**
+     * Method sets background color for a specific cell
+     * @param color, background color
+     * @param row, cell row index
+     * @param column, cell column index
+     */
+    public void setFormatAt(Format format, int row, int column) {
+        if (formats != null && row < formats.length && column < formats[0].length)
+        	formats[row][column] = format;
     }
     
     /**
@@ -48,6 +77,17 @@ class DoubleFormatRenderer extends BgColorFormatRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         if (value == null)
             value = "";
+        else if (formats != null) {
+        	if (Pattern.matches(Utils.fpRegex, value.toString())) {
+            	int frow = row;
+	        	if (frow >= formats.length)
+	        		frow = formats.length - 1;
+            	int fcol = column;
+	        	if (fcol >= formats[frow].length)
+	        		fcol = formats[frow].length - 1;
+	        	value = formats[frow][fcol].format(Double.valueOf(value.toString()));
+        	}
+        }
         else if (Pattern.matches(Utils.fpRegex, value.toString()))
             value = formatter.format(Double.valueOf(value.toString()));
         return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column );

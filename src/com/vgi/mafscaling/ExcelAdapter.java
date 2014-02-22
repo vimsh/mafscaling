@@ -35,6 +35,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 
 public class ExcelAdapter implements ActionListener {
     class JTableHolder {
@@ -223,11 +224,15 @@ public class ExcelAdapter implements ActionListener {
             JOptionPane.showMessageDialog(null, "Invalid Delete Selection", "Invalid Delete Selection", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        DoubleFormatRenderer renderer = (DoubleFormatRenderer)table.getDefaultRenderer(Object.class);
+        TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
+        BgColorFormatRenderer bgRenderer = null;
+        if (renderer != null && renderer instanceof BgColorFormatRenderer)
+        	bgRenderer = (BgColorFormatRenderer)renderer;
         for (int i = 0; i < numrows; ++i) {
             for (int j = 0; j < numcols; ++j) {
                 table.setValueAt("", rowsselected[i], colsselected[j]);
-                renderer.setColorAt(Color.WHITE, rowsselected[i], colsselected[j]);
+                if (bgRenderer != null)
+                	bgRenderer.setColorAt(Color.WHITE, rowsselected[i], colsselected[j]);
             }
         }
     }

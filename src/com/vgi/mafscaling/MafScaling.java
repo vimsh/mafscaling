@@ -44,7 +44,7 @@ public class MafScaling {
      */
     private void initialize() {
         frame = new JFrame();
-        frame.setTitle("MAF Scaling - Beta 6");
+        frame.setTitle("MAF Scaling - Beta 7");
         frame.setBounds(100, 100, 621, 372);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         

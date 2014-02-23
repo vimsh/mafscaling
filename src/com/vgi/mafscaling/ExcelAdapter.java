@@ -34,7 +34,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
 public class ExcelAdapter implements ActionListener {
@@ -282,28 +281,14 @@ public class ExcelAdapter implements ActionListener {
             int rowCount = lines.length;
             if (rowCount > 0) {
                 // add extra rows to the table to accommodate for paste data
-                if (extendRows && startRow + rowCount > table.getRowCount()) {
-                    DefaultTableModel model = (DefaultTableModel)table.getModel();
-                    while (startRow + rowCount > table.getRowCount())
-                        model.addRow(new Object[table.getColumnCount()]);
-                }
+                if (extendRows && startRow + rowCount > table.getRowCount())
+                	Utils.ensureRowCount(startRow + rowCount, table);
                 // add extra columns to the table to accommodate for paste data
                 rowstring = lines[0];
                 String[] entries = rowstring.split("\t", -1);
                 int colCount = entries.length;
                 if (extendCols && startCol + colCount > table.getColumnCount())
-                {
-                    int minWidth = table.getColumnModel().getColumn(startCol).getMinWidth();
-                    int prefWidth = table.getColumnModel().getColumn(startCol).getPreferredWidth();
-                    while (startCol + colCount > table.getColumnCount()) {
-                        DefaultTableModel model = (DefaultTableModel)table.getModel();
-                        model.addColumn("");
-                    }
-                    for (int z = 0; z < table.getColumnCount(); ++z) {
-                        table.getColumnModel().getColumn(z).setMinWidth(minWidth);
-                        table.getColumnModel().getColumn(z).setPreferredWidth(prefWidth);
-                    }
-                }
+                	Utils.ensureColumnCount(startCol + colCount, table);
                 // populate cells with the data
                 for (int i = 0; i < rowCount; ++i) {
                     if (i > 0)

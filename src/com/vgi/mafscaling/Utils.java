@@ -178,9 +178,31 @@ public final class Utils {
      * @param table
      */
     public static void ensureColumnCount(int count, JTable table) {
+    	if (count <= table.getColumnCount())
+    		return;
+        int[] minwidth = new int[count];
+        int[] maxwidth = new int[count];
+        int[] prefwidth = new int[count];
+        int i;
+        for (i = 0; i < table.getColumnCount(); ++i) {
+	        minwidth[i] = table.getColumnModel().getColumn(i).getMinWidth();
+	        maxwidth[i] = table.getColumnModel().getColumn(i).getMaxWidth();
+	        prefwidth[i] = table.getColumnModel().getColumn(i).getPreferredWidth();
+        }
         DefaultTableModel model = (DefaultTableModel)table.getModel();
-        while (count > table.getColumnCount())
+        for (i = table.getColumnCount(); i < count; ++i) {
             model.addColumn("");
+            minwidth[i] = minwidth[i - 1];
+            maxwidth[i] = maxwidth[i - 1];
+            prefwidth[i] = prefwidth[i - 1];
+            for (int j = 0; j < table.getRowCount(); ++j)
+            	table.setValueAt("", j, i);
+        }
+        for (i = 0; i < count; ++i) {
+            table.getColumnModel().getColumn(i).setMinWidth(minwidth[i]);
+            table.getColumnModel().getColumn(i).setMaxWidth(maxwidth[i]);
+            table.getColumnModel().getColumn(i).setPreferredWidth(prefwidth[i]);
+        }
     }
     
     /**
@@ -212,7 +234,7 @@ public final class Utils {
     public static void removeColumn(int index, JTable table) {
         if (index < table.getColumnCount()) {
             int j;
-            Object[][] data = new String[table.getRowCount()][table.getColumnCount() - 1];
+            Object[][] data = new Object[table.getRowCount()][table.getColumnCount() - 1];
             int[] minwidth = new int[table.getColumnCount() - 1];
             int[] maxwidth = new int[table.getColumnCount() - 1];
             int[] prefwidth = new int[table.getColumnCount() - 1];

@@ -31,13 +31,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
-import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -81,8 +74,6 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
-import org.jfree.chart.entity.ChartEntity;
-import org.jfree.chart.entity.XYItemEntity;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
@@ -94,7 +85,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseListener, MouseMotionListener, MouseWheelListener {
+public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChartHolder {
     private static final long serialVersionUID = 2988105467764335997L;
 
     private final static String SaveDataFileHeader = "[mickeyd2005 run data]";
@@ -112,9 +103,6 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
     private int AfrTableColumnCount = 15;
     private int AfrTableRowCount = 25;
     private int LogDataRowCount = 200;
-    private boolean AllowPointMove = true;
-    private boolean IsMovable = false;
-    private double initialMovePointY = 0;
     private int clValue = -1;
 //    private int thtlChange = 2;
     private double afrMin = 13.7;
@@ -135,7 +123,6 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
     private JTable afr1Table = null;
     private JTable afr2Table = null;
     private ChartPanel chartPanel = null;
-    private XYItemEntity xyItemEntity = null;
     private JCheckBox checkBoxCorrData = null;
     private JCheckBox checkBoxCurrentMaf = null;
     private JCheckBox checkBoxCorrectedMaf = null;
@@ -466,12 +453,13 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
             }
         });
         afrTable.getTableHeader().setReorderingAllowed(false);
-        afrTable.setModel(new DefaultTableModel(AfrTableRowCount, AfrTableColumnCount));
-        afrTable.setColumnSelectionAllowed(false);
-        afrTable.setCellSelectionEnabled(false);
+        afrTable.setColumnSelectionAllowed(true);
+        afrTable.setCellSelectionEnabled(true);
         afrTable.setBorder(new LineBorder(new Color(0, 0, 0)));
         afrTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         afrTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        afrTable.setModel(new DefaultTableModel(AfrTableRowCount, AfrTableColumnCount));
+        afrTable.setTableHeader(null);
         Utils.initializeTable(afrTable, ColumnWidth);
         
         if (tableName.equals(Afr1TableName)) {
@@ -616,12 +604,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
         cntlPanel.add(btnResetSmoothButton, gbc_btnResetSmoothButton);
         
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
-        chartPanel = new ChartPanel(chart, true, true, true, true, true);
-        chartPanel.addMouseMotionListener(this);
-        chartPanel.addMouseListener(this);
-        chartPanel.addMouseWheelListener(this);
-        chartPanel.setAutoscrolls(true);
-        chartPanel.setMouseZoomable(false);
+        chartPanel = new MafChartPanel(chart, this);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
@@ -757,58 +740,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
         mafSmoothingPanel.setVisible(false);
         excelAdapter.addTable(mafSmoothingTable, false, true, true, true);
     }
-
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        if (e.getScrollType() != MouseWheelEvent.WHEEL_UNIT_SCROLL)
-            return;
-        if (e.getWheelRotation() < 0)
-            zoomChartAxis(chartPanel, true);
-        else
-            zoomChartAxis(chartPanel, false);
-    }
     
-    public void mouseDragged(MouseEvent e) {
-        if (AllowPointMove)
-            movePoint(e);
-    }
-
-    public void mouseExited(MouseEvent e) {
-        IsMovable = false;
-        initialMovePointY = 0;
-        chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    }
-    
-    public void mousePressed(MouseEvent e) {
-        Insets insets = chartPanel.getInsets();
-        int x = (int) ((e.getX() - insets.left) / chartPanel.getScaleX());
-        int y = (int) ((e.getY() - insets.top) / chartPanel.getScaleY());
-        ChartEntity entity = chartPanel.getChartRenderingInfo().getEntityCollection().getEntity(x,  y);
-        if (entity == null || !(entity instanceof XYItemEntity))
-            return;
-        IsMovable = true;
-        chartPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        xyItemEntity = (XYItemEntity)entity;
-        XYPlot plot = chartPanel.getChart().getXYPlot();
-        Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
-        Point2D p = chartPanel.translateScreenToJava2D(e.getPoint());
-        initialMovePointY = plot.getRangeAxis().java2DToValue(p.getY(), dataArea, plot.getRangeAxisEdge());
-    }
-
-    public void mouseReleased(MouseEvent arg0) {
-        IsMovable = false;
-        initialMovePointY = 0;
-        chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    }
-    
-    public void mouseClicked(MouseEvent arg0) {
-    }
-
-    public void mouseEntered(MouseEvent arg0) {
-    }
-
-    public void mouseMoved(MouseEvent arg0) {
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////
     // CREATE USAGE TAB
     //////////////////////////////////////////////////////////////////////////////////////
@@ -842,6 +774,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
         else if ("clearall".equals(e.getActionCommand())) {
             clearMafTable();
             clearLogDataTables();
+            clearAfrDataTables();
         }
         else if ("load".equals(e.getActionCommand())) {
             loadData();
@@ -1167,7 +1100,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
         setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
     }
     
-    private void updateDataArray(int itemIndex, double valueY) {
+    public void onMovePoint(int itemIndex, double valueY) {
         ArrayList<Double> xarr = voltArray;
         ArrayList<Double> yarr = smoothGsArray;
         XYSeries series = smoothMafData;
@@ -1189,43 +1122,6 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                 series.updateByIndex(itemIndex + 1, valueY);
             }
         }
-    }
-
-    public void movePoint(MouseEvent e) {
-        try {
-            if (IsMovable) {
-                int itemIndex = xyItemEntity.getItem();
-                int seriesIndex = xyItemEntity.getSeriesIndex();
-                if (seriesIndex != 0)
-                    return;
-                XYSeries series = ((XYSeriesCollection)xyItemEntity.getDataset()).getSeries(seriesIndex);
-                XYPlot plot = chartPanel.getChart().getXYPlot();
-                Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
-                Point2D p = chartPanel.translateScreenToJava2D(e.getPoint());
-                double finalMovePointY = plot.getRangeAxis().java2DToValue(p.getY(), dataArea, plot.getRangeAxisEdge());
-                double difference = finalMovePointY - initialMovePointY;
-                if (series.getY(itemIndex).doubleValue() + difference > plot.getRangeAxis().getRange().getLength() ||
-                    series.getY(itemIndex).doubleValue() + difference < 0.0)
-                    initialMovePointY = finalMovePointY;
-                series.updateByIndex(itemIndex, series.getY(itemIndex).doubleValue() + difference);
-                updateDataArray(itemIndex, series.getY(itemIndex).doubleValue());
-                chartPanel.getChart().fireChartChanged();
-                chartPanel.updateUI();
-                initialMovePointY = finalMovePointY;
-            }
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private void zoomChartAxis(ChartPanel chart, boolean increase) {
-        int width = chart.getMaximumDrawWidth() - chart.getMinimumDrawWidth();
-        int height = chart.getMaximumDrawHeight() - chart.getMinimumDrawWidth();        
-        if (increase)
-           chart.zoomInBoth(width/2, height/2);
-        else
-           chart.zoomOutBoth(width/2, height/2);
     }
     
     private void enableSmoothingView(boolean flag) {
@@ -1397,9 +1293,9 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                 }
                 line = br.readLine();
                 String[] elements;
-                JTable table = null;
                 i = 0;
-                int offset;
+                int offset = 0;
+                boolean isLogData = false;
                 while (line != null) {
                     elements = line.split(",", -1);
                     switch (i) {
@@ -1414,14 +1310,20 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, MouseLis
                             mafTable.setValueAt(elements[j], i, j);
                         break;
                     default:
-                        offset = i;
                         if (elements.length - 1 == logDataTable.getColumnCount()) {
-                            Utils.ensureRowCount(i - offset + 1, table);
+                        	if (!isLogData) {
+                        		offset = i;
+                        		isLogData = true;
+                        	}
+                            Utils.ensureRowCount(i - offset + 1, logDataTable);
                             for (j = 0; j < elements.length - 1; ++j)
                                 logDataTable.setValueAt(elements[j], i - offset, j);
                         }
                         else {
-                            offset = i;
+                        	if (isLogData) {
+                        		offset = i;
+                        		isLogData = false;
+                        	}
                             polfTable.setValueAtRow(i - offset, elements);
                         }
                     }

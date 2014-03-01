@@ -60,6 +60,8 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+
+import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -78,6 +80,7 @@ import org.jfree.util.ShapeUtilities;
 
 public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartHolder {
     private static final long serialVersionUID = 2988105467764335997L;
+    private static final Logger logger = Logger.getLogger(BadNoodle.class);
     private final static String SaveDataFileHeader = "[badnoodle run data]";
     private final static String MafTableName = "Current MAF Scaling";
     private final static String RunTableName = "Run ";
@@ -790,6 +793,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         }
         catch (Exception e) {
             e.printStackTrace();
+            logger.error(e);
             JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);    
         }
         finally {
@@ -1109,6 +1113,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             }
             catch (Exception e) {
                 e.printStackTrace();
+                logger.error(e);
             }
             finally {
                 try {
@@ -1116,11 +1121,13 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 }
                 catch (IOException e) {
                     e.printStackTrace();
+                    logger.error(e);
                 }
             }
         }
         catch (Exception e) {
             e.printStackTrace();
+            logger.error(e);
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -1184,6 +1191,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             }
             catch (Exception e) {
                 e.printStackTrace();
+                logger.error(e);
             }
             finally {
                 try {
@@ -1192,11 +1200,13 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 }
                 catch (IOException e) {
                     e.printStackTrace();
+                    logger.error(e);
                 }
             }
         }
         catch (Exception e) {
             e.printStackTrace();
+            logger.error(e);
         }
     }
     
@@ -1341,6 +1351,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 }
             }
             catch (Exception e) {
+                logger.error(e);
                 JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
             }
             finally {
@@ -1349,10 +1360,12 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 }
                 catch (IOException e) {
                     e.printStackTrace();
+                    logger.error(e);
                 }
             }
         }
         catch (FileNotFoundException e) {
+            logger.error(e);
             JOptionPane.showMessageDialog(null, "Error: file " + file.getAbsoluteFile() + " not found", "File not found", JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -36,7 +36,11 @@ import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.table.TableCellRenderer;
 
+import org.apache.log4j.Logger;
+
 public class ExcelAdapter implements ActionListener {
+    private static final Logger logger = Logger.getLogger(ExcelAdapter.class);
+    
     class JTableHolder {
         private JTable table;
         private boolean extendRows = false;
@@ -302,8 +306,9 @@ public class ExcelAdapter implements ActionListener {
                 }
             }
         }
-        catch(Exception ex) {
-            ex.printStackTrace();
+        catch(Exception e) {
+            e.printStackTrace();
+            logger.error(e);
         }
     }
 }

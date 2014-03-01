@@ -10,6 +10,7 @@ import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
+import org.apache.log4j.Logger;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.entity.ChartEntity;
@@ -20,6 +21,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class MafChartPanel extends ChartPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
 	private static final long serialVersionUID = -4957850509595437584L;
+    private static final Logger logger = Logger.getLogger(MafChartPanel.class);
 	IMafChartHolder chartHolder = null;
     private XYItemEntity xyItemEntity = null;
     private boolean AllowPointMove = true;
@@ -36,7 +38,7 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
         setMouseZoomable(false);
 	}
 
-    public void movePoint(MouseEvent e) {
+    public void movePoint(MouseEvent event) {
         try {
             if (IsMovable) {
                 int itemIndex = xyItemEntity.getItem();
@@ -46,7 +48,7 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
                 XYSeries series = ((XYSeriesCollection)xyItemEntity.getDataset()).getSeries(seriesIndex);
                 XYPlot plot = getChart().getXYPlot();
                 Rectangle2D dataArea = getChartRenderingInfo().getPlotInfo().getDataArea();
-                Point2D p = translateScreenToJava2D(e.getPoint());
+                Point2D p = translateScreenToJava2D(event.getPoint());
                 double finalMovePointY = plot.getRangeAxis().java2DToValue(p.getY(), dataArea, plot.getRangeAxisEdge());
                 double difference = finalMovePointY - initialMovePointY;
                 if (series.getY(itemIndex).doubleValue() + difference > plot.getRangeAxis().getRange().getLength() ||
@@ -59,8 +61,9 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
                 initialMovePointY = finalMovePointY;
             }
         }
-        catch (Exception ex) {
-            ex.printStackTrace();
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error(e);
         }
     }
 

@@ -2,12 +2,13 @@ package com.vgi.mafscaling;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
+import org.apache.log4j.Logger;
 
 public class MafScaling {
+    private static final Logger logger = Logger.getLogger(MafScaling.class);
     private JFrame frame;
 
     /**
@@ -19,14 +20,17 @@ public class MafScaling {
         }
         catch (Exception e) {
             e.printStackTrace();
+            logger.error(e);
         }
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
                     MafScaling window = new MafScaling();
                     window.frame.setVisible(true);
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     e.printStackTrace();
+                    logger.error(e);
                 }
             }
         });

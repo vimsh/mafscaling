@@ -1,1 +1,1 @@
-java -Xms64M -Xmx512M -jar MafScaling.jar
+start javaw -Xms64M -Xmx512M -jar MafScaling.jar

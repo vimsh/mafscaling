@@ -19,9 +19,9 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class MafChartPanel extends ChartPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
-	private static final long serialVersionUID = -4957850509595437584L;
+public class MafChartPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
     private static final Logger logger = Logger.getLogger(MafChartPanel.class);
+    ChartPanel chartPanel = null;
 	IMafChartHolder chartHolder = null;
     private XYItemEntity xyItemEntity = null;
     private boolean AllowPointMove = true;
@@ -29,13 +29,17 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
     private double initialMovePointY = 0;
 
 	public MafChartPanel(JFreeChart chart, IMafChartHolder holder) {
-		super(chart, true, true, true, true, true);
+		chartPanel = new ChartPanel(chart, true, true, true, true, true);
 		chartHolder = holder;
-        addMouseMotionListener(this);
-        addMouseListener(this);
-        addMouseWheelListener(this);
-        setAutoscrolls(true);
-        setMouseZoomable(false);
+		chartPanel.addMouseMotionListener(this);
+		chartPanel.addMouseListener(this);
+		chartPanel.addMouseWheelListener(this);
+		chartPanel.setAutoscrolls(true);
+		chartPanel.setMouseZoomable(false);
+	}
+	
+	public ChartPanel getChartPanel() {
+		return chartPanel;
 	}
 
     public void movePoint(MouseEvent event) {
@@ -46,9 +50,9 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
                 if (seriesIndex != 0)
                     return;
                 XYSeries series = ((XYSeriesCollection)xyItemEntity.getDataset()).getSeries(seriesIndex);
-                XYPlot plot = getChart().getXYPlot();
-                Rectangle2D dataArea = getChartRenderingInfo().getPlotInfo().getDataArea();
-                Point2D p = translateScreenToJava2D(event.getPoint());
+                XYPlot plot = chartPanel.getChart().getXYPlot();
+                Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+                Point2D p = chartPanel.translateScreenToJava2D(event.getPoint());
                 double finalMovePointY = plot.getRangeAxis().java2DToValue(p.getY(), dataArea, plot.getRangeAxisEdge());
                 double difference = finalMovePointY - initialMovePointY;
                 if (series.getY(itemIndex).doubleValue() + difference > plot.getRangeAxis().getRange().getLength() ||
@@ -56,8 +60,8 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
                     initialMovePointY = finalMovePointY;
                 series.updateByIndex(itemIndex, series.getY(itemIndex).doubleValue() + difference);
                 chartHolder.onMovePoint(itemIndex, series.getY(itemIndex).doubleValue());
-                getChart().fireChartChanged();
-                updateUI();
+                chartPanel.getChart().fireChartChanged();
+                chartPanel.updateUI();
                 initialMovePointY = finalMovePointY;
             }
         }
@@ -80,9 +84,9 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
         if (e.getScrollType() != MouseWheelEvent.WHEEL_UNIT_SCROLL)
             return;
         if (e.getWheelRotation() < 0)
-            zoomChartAxis(this, true);
+        	zoomChartAxis(chartPanel, true);
         else
-            zoomChartAxis(this, false);
+        	zoomChartAxis(chartPanel, false);
     }
     
     public void mouseDragged(MouseEvent e) {
@@ -93,29 +97,29 @@ public class MafChartPanel extends ChartPanel implements MouseListener, MouseMot
     public void mouseExited(MouseEvent e) {
         IsMovable = false;
         initialMovePointY = 0;
-        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     }
     
     public void mousePressed(MouseEvent e) {
-        Insets insets = getInsets();
-        int x = (int) ((e.getX() - insets.left) / getScaleX());
-        int y = (int) ((e.getY() - insets.top) / getScaleY());
-        ChartEntity entity = getChartRenderingInfo().getEntityCollection().getEntity(x,  y);
+        Insets insets = chartPanel.getInsets();
+        int x = (int) ((e.getX() - insets.left) / chartPanel.getScaleX());
+        int y = (int) ((e.getY() - insets.top) / chartPanel.getScaleY());
+        ChartEntity entity = chartPanel.getChartRenderingInfo().getEntityCollection().getEntity(x,  y);
         if (entity == null || !(entity instanceof XYItemEntity))
             return;
         IsMovable = true;
-        setCursor(new Cursor(Cursor.HAND_CURSOR));
+        chartPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
         xyItemEntity = (XYItemEntity)entity;
-        XYPlot plot = getChart().getXYPlot();
-        Rectangle2D dataArea = getChartRenderingInfo().getPlotInfo().getDataArea();
-        Point2D p = translateScreenToJava2D(e.getPoint());
+        XYPlot plot = chartPanel.getChart().getXYPlot();
+        Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+        Point2D p = chartPanel.translateScreenToJava2D(e.getPoint());
         initialMovePointY = plot.getRangeAxis().java2DToValue(p.getY(), dataArea, plot.getRangeAxisEdge());
     }
 
     public void mouseReleased(MouseEvent arg0) {
         IsMovable = false;
         initialMovePointY = 0;
-        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     }
     
     public void mouseClicked(MouseEvent arg0) {

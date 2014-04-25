@@ -18,6 +18,7 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -27,17 +28,19 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
@@ -47,15 +50,18 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
@@ -63,45 +69,59 @@ import javax.swing.table.JTableHeader;
 
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.labels.StandardXYSeriesLabelGenerator;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartHolder {
+public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHolder {
     private static final long serialVersionUID = 2988105467764335997L;
-    private static final Logger logger = Logger.getLogger(BadNoodle.class);
-    private final static String SaveDataFileHeader = "[badnoodle run data]";
+    private static final Logger logger = Logger.getLogger(OpenLoop.class);
+    private final static String SaveDataFileHeader = "[open_loop run data]";
     private final static String MafTableName = "Current MAF Scaling";
     private final static String RunTableName = "Run ";
     private final static String XAxisName = "MAF Sensor (Voltage)";
     private final static String Y1AxisName = "Mass Airflow (g/s)";
     private final static String Y2AxisName = "AFR Error (%)";
+    private final static String rpmAxisName = "RPM";
+    private static final String runDataName = "AFR Error";
+    private static final String currentDataName = "Current";
+    private static final String correctedDataName = "Corrected";
+    private static final String smoothedDataName = "Smoothed";
+    private static final String mafCurveDataName = "Maf Curve";
+    private static final String currentSlopeDataName = "Current Maf Slope";
+    private static final String smoothedSlopeDataName = "Smoothed Maf Slope";
     private final static int ColumnWidth = 50;
     private final static int RunCount = 12;
-    private final static double SmoothingIncrement = 0.10;
     private int MafTableColumnCount = 50;
     private int RunRowsCount = 200;
+    private int wotPoint = Config.getWotStationaryPointValue();
+    private double minMafV = Config.getMafVMinimumValue();
+    private Double afrErrPrct = Config.getWidebandAfrErrorPercentValue();
     private int logThtlAngleColIdx = -1;
+    private int logAfLearningColIdx = -1;
+    private int logAfCorrectionColIdx = -1;
     private int logMafvColIdx = -1;
     private int logAfrColIdx = -1;
     private int logRpmColIdx = -1;
     private int logLoadColIdx = -1;
+    private int logCommandedAfrCol = -1;
 
-    private JPanel mafSmoothingPanel = null;
     private JTable mafTable = null;
     private JTable mafSmoothingTable = null;
-    private ChartPanel chartPanel = null;
+    private MafChartPanel mafChartPanel = null;
+    private JCheckBox checkBoxMafRpmData = null;
     private JCheckBox checkBoxRunData = null;
     private JCheckBox checkBoxCurrentMaf = null;
     private JCheckBox checkBoxCorrectedMaf = null;
@@ -110,28 +130,35 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     private JComboBox<String> smoothComboBox = null;
     private JButton btnSmoothButton = null;
     private JButton btnResetSmoothButton = null;
+    private JButton btnPlusButton = null;
+    private JButton btnMinusButton = null;
+    private JLabel lblMafIncDec = null;
+    private JFormattedTextField mafIncDecTextField = null;
 
+    private ArrayList<Double> rpmArray = new ArrayList<Double>();
+    private ArrayList<Double> mafvArray = new ArrayList<Double>();
+    private ArrayList<Double> afrArray = new ArrayList<Double>();
     private ArrayList<Double> voltArray = new ArrayList<Double>();
     private ArrayList<Double> gsArray = new ArrayList<Double>();
     private ArrayList<Double> gsCorrected = new ArrayList<Double>();
     private ArrayList<Double> smoothGsArray = new ArrayList<Double>();
 
-    private PrimaryOpenLoopFuelingTable polfTable = new PrimaryOpenLoopFuelingTable();
     private final ExcelAdapter excelAdapter = new ExcelAdapter();
     private final JTable[] runTables = new JTable[RunCount];
     private final JFileChooser fileChooser = new JFileChooser();
-    private final XYSeries runData = new XYSeries("AFR Error");
-    private final XYSeries currMafData = new XYSeries("Current");
-    private final XYSeries corrMafData = new XYSeries("Corrected");
-    private final XYSeries smoothMafData = new XYSeries("Smoothed");
+    private final XYSeries runData = new XYSeries(runDataName);
+    private final XYSeries currMafData = new XYSeries(currentDataName);
+    private final XYSeries corrMafData = new XYSeries(correctedDataName);
+    private final XYSeries smoothMafData = new XYSeries(smoothedDataName);
+    private PrimaryOpenLoopFuelingTable polfTable = null;
 
-    public BadNoodle(int tabPlacement) {
+    public OpenLoop(int tabPlacement, PrimaryOpenLoopFuelingTable table) {
         super(tabPlacement);
+    	polfTable = table;
         initialize();
     }
 
     private void initialize() {
-        polfTable.setExcelAdapter(excelAdapter);
         createDataTab();
         createGraghTab();
         createUsageTab();
@@ -142,10 +169,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
-        URL location = BadNoodle.class.getProtectionDomain().getCodeSource().getLocation();
-        System.out.println(location.getPath());
-
-        fileChooser.setCurrentDirectory(new File(location.getPath()));
+        fileChooser.setCurrentDirectory(new File("."));
         
         JPanel dataPanel = new JPanel();
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
@@ -298,7 +322,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         gbc_mafTable.gridy = 0;
         gbc_mafTable.gridheight = 2;
         dataMafPanel.add(mafTable, gbc_mafTable);
-        excelAdapter.addTable(mafTable, false, true);
+        excelAdapter.addTable(mafTable, false, false, false, false, true, false, true, false, true);
 
         JPanel dataRunButtonPanel = new JPanel();
         dataRunButtonPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
@@ -335,7 +359,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         GridBagLayout gbl_dataRunPanel = new GridBagLayout();
         gbl_dataRunPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_dataRunPanel.rowHeights = new int[] {0};
-        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
@@ -347,14 +371,15 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             runTables[i] = new JTable();
             JTable table = runTables[i];
             table.getTableHeader().setReorderingAllowed(false);
-            table.setModel(new DefaultTableModel(RunRowsCount, 2));
+            table.setModel(new DefaultTableModel(RunRowsCount, 3));
             table.setColumnSelectionAllowed(true);
             table.setCellSelectionEnabled(true);
             table.setBorder(new LineBorder(new Color(0, 0, 0)));
             table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
             table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            table.getColumnModel().getColumn(0).setHeaderValue("<html><center>Mass<br>Airflow<br>Sensor<br>Voltage</b></center></html>");
-            table.getColumnModel().getColumn(1).setHeaderValue("<html><center>AFR<br>Error<br>%</b></center></html>");
+            table.getColumnModel().getColumn(0).setHeaderValue("<html><center>Engine<br>Speed<br>(RPM)<br></center></html>");
+            table.getColumnModel().getColumn(1).setHeaderValue("<html><center>MAF<br>Sensor<br>Voltage<br></center></html>");
+            table.getColumnModel().getColumn(2).setHeaderValue("<html><center>AFR<br>Error<br>%<br></center></html>");
             Utils.initializeTable(table, ColumnWidth);
             
             JTableHeader header = table.getTableHeader();
@@ -384,9 +409,9 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
         GridBagLayout gbl_plotPanel = new GridBagLayout();
         gbl_plotPanel.columnWidths = new int[] {0};
-        gbl_plotPanel.rowHeights = new int[] {0};
+        gbl_plotPanel.rowHeights = new int[] {0, 0, 0};
         gbl_plotPanel.columnWeights = new double[]{1.0};
-        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0};
+        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0, 0.0};
         plotPanel.setLayout(gbl_plotPanel);
 
         JPanel cntlPanel = new JPanel();
@@ -400,16 +425,25 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         plotPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
+        
+        checkBoxMafRpmData = new JCheckBox("MafV/RPM");
+        GridBagConstraints gbc_checkBoxMafRpmData = new GridBagConstraints();
+        gbc_checkBoxMafRpmData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxMafRpmData.gridx = 0;
+        gbc_checkBoxMafRpmData.gridy = 0;
+        checkBoxMafRpmData.setActionCommand("mafrpm");
+        checkBoxMafRpmData.addActionListener(this);
+        cntlPanel.add(checkBoxMafRpmData, gbc_checkBoxMafRpmData);
         
         checkBoxRunData = new JCheckBox("AFR Error");
         GridBagConstraints gbc_checkBoxData = new GridBagConstraints();
         gbc_checkBoxData.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxData.gridx = 0;
+        gbc_checkBoxData.gridx = 1;
         gbc_checkBoxData.gridy = 0;
         checkBoxRunData.setActionCommand("rdata");
         checkBoxRunData.addActionListener(this);
@@ -418,7 +452,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         checkBoxCurrentMaf = new JCheckBox("Current");
         GridBagConstraints gbc_checkBoxCurrentMaf = new GridBagConstraints();
         gbc_checkBoxCurrentMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxCurrentMaf.gridx = 1;
+        gbc_checkBoxCurrentMaf.gridx = 2;
         gbc_checkBoxCurrentMaf.gridy = 0;
         checkBoxCurrentMaf.setActionCommand("current");
         checkBoxCurrentMaf.addActionListener(this);
@@ -427,7 +461,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         checkBoxCorrectedMaf = new JCheckBox("Corrected");
         GridBagConstraints gbc_checkBoxCorrectedMaf = new GridBagConstraints();
         gbc_checkBoxCorrectedMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxCorrectedMaf.gridx = 2;
+        gbc_checkBoxCorrectedMaf.gridx = 3;
         gbc_checkBoxCorrectedMaf.gridy = 0;
         checkBoxCorrectedMaf.setActionCommand("corrected");
         checkBoxCorrectedMaf.addActionListener(this);
@@ -436,7 +470,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         checkBoxSmoothedMaf = new JCheckBox("Smoothed");
         GridBagConstraints gbc_checkBoxSmoothedMaf = new GridBagConstraints();
         gbc_checkBoxSmoothedMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxSmoothedMaf.gridx = 3;
+        gbc_checkBoxSmoothedMaf.gridx = 4;
         gbc_checkBoxSmoothedMaf.gridy = 0;
         checkBoxSmoothedMaf.setActionCommand("smoothed");
         checkBoxSmoothedMaf.addActionListener(this);
@@ -447,7 +481,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         gbc_horizontalGlue.weightx = 1.0;
         gbc_horizontalGlue.fill = GridBagConstraints.HORIZONTAL;
         gbc_horizontalGlue.insets = new Insets(0, 0, 3, 3);
-        gbc_horizontalGlue.gridx = 4;
+        gbc_horizontalGlue.gridx = 5;
         gbc_horizontalGlue.gridy = 0;
         cntlPanel.add(horizontalGlue, gbc_horizontalGlue);
 
@@ -455,7 +489,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         GridBagConstraints gbc_checkBoxSmoothing = new GridBagConstraints();
         gbc_checkBoxSmoothing.anchor = GridBagConstraints.CENTER;
         gbc_checkBoxSmoothing.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxSmoothing.gridx = 5;
+        gbc_checkBoxSmoothing.gridx = 6;
         gbc_checkBoxSmoothing.gridy = 0;
         checkBoxSmoothing.setActionCommand("smoothing");
         checkBoxSmoothing.addActionListener(this);
@@ -468,7 +502,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         GridBagConstraints gbc_smoothComboBox = new GridBagConstraints();
         gbc_smoothComboBox.anchor = GridBagConstraints.CENTER;
         gbc_smoothComboBox.insets = new Insets(0, 0, 3, 3);
-        gbc_smoothComboBox.gridx = 6;
+        gbc_smoothComboBox.gridx = 7;
         gbc_smoothComboBox.gridy = 0;
         cntlPanel.add(smoothComboBox, gbc_smoothComboBox);
 
@@ -477,7 +511,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         GridBagConstraints gbc_btnSmoothButton = new GridBagConstraints();
         gbc_btnSmoothButton.anchor = GridBagConstraints.CENTER;
         gbc_btnSmoothButton.insets = new Insets(0, 0, 3, 3);
-        gbc_btnSmoothButton.gridx = 7;
+        gbc_btnSmoothButton.gridx = 8;
         gbc_btnSmoothButton.gridy = 0;
         btnSmoothButton.setActionCommand("smooth");
         btnSmoothButton.addActionListener(this);
@@ -487,35 +521,40 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         GridBagConstraints gbc_btnResetSmoothButton = new GridBagConstraints();
         gbc_btnResetSmoothButton.anchor = GridBagConstraints.CENTER;
         gbc_btnResetSmoothButton.insets = new Insets(0, 0, 3, 3);
-        gbc_btnResetSmoothButton.gridx = 8;
+        gbc_btnResetSmoothButton.gridx = 9;
         gbc_btnResetSmoothButton.gridy = 0;
         btnResetSmoothButton.setActionCommand("smoothreset");
         btnResetSmoothButton.addActionListener(this);
         cntlPanel.add(btnResetSmoothButton, gbc_btnResetSmoothButton);
         
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
-        chartPanel = new MafChartPanel(chart, this);
+        mafChartPanel = new MafChartPanel(chart, this);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
-        gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
+        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
         gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
         gbl_chartPanel.weightx = 1.0;
+        gbl_chartPanel.weighty = 1.0;
         gbl_chartPanel.fill = GridBagConstraints.BOTH;
         gbl_chartPanel.gridx = 0;
         gbl_chartPanel.gridy = 1;
-        plotPanel.add(chartPanel, gbl_chartPanel);
+        plotPanel.add(mafChartPanel.getChartPanel(), gbl_chartPanel);
 
         XYDotRenderer dotRenderer = new XYDotRenderer();
         dotRenderer.setSeriesPaint(0, new Color(0, 51, 102));
         dotRenderer.setDotHeight(3);
         dotRenderer.setDotWidth(3);
 
-         XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
+        XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
         lineRenderer.setUseFillPaint(true);
         lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
                 new DecimalFormat("0.00"), new DecimalFormat("0.00"))); 
-        
+
+        Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
+        lineRenderer.setSeriesStroke(0, stroke);
+        lineRenderer.setSeriesStroke(1, stroke);
+        lineRenderer.setSeriesStroke(2, stroke);
         lineRenderer.setSeriesPaint(0, new Color(34, 139, 34));
         lineRenderer.setSeriesPaint(1, new Color(0, 0, 255));
         lineRenderer.setSeriesPaint(2, new Color(201, 0, 0));
@@ -523,12 +562,27 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         lineRenderer.setSeriesShape(1, ShapeUtilities.createUpTriangle((float) 2.5));
         lineRenderer.setSeriesShape(2, ShapeUtilities.createDownTriangle((float) 2.5));
 
+        lineRenderer.setLegendItemLabelGenerator(
+        		new StandardXYSeriesLabelGenerator() {
+					private static final long serialVersionUID = -4045338273187150888L;
+					public String generateLabel(XYDataset dataset, int series) {
+						XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
+						return xys.getDescription();
+					}
+        		}
+        );
+
         ValueAxis mafvDomain = new NumberAxis(XAxisName);
         ValueAxis mafgsRange = new NumberAxis(Y1AxisName);
-        ValueAxis afrerrRange = new NumberAxis(Y2AxisName);        
+        ValueAxis afrerrRange = new NumberAxis(Y2AxisName);
         
         XYSeriesCollection scatterDataset = new XYSeriesCollection(runData);
         XYSeriesCollection lineDataset = new XYSeriesCollection();
+
+        currMafData.setDescription(currentDataName);
+        corrMafData.setDescription(correctedDataName);
+        smoothMafData.setDescription(smoothedDataName);
+        
         lineDataset.addSeries(smoothMafData);
         lineDataset.addSeries(corrMafData);
         lineDataset.addSeries(currMafData);
@@ -557,16 +611,17 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         legend.setItemFont(new Font("Arial", 0, 10));
         legend.setPosition(RectangleEdge.TOP);
         chart.addLegend(legend);
-        
-        mafSmoothingPanel = new JPanel();
+
+        JPanel mafSmoothingPanel = new JPanel();
+        mafSmoothingPanel.setMinimumSize(new Dimension(50, 50));
         GridBagLayout gbl_mafSmoothingPanel = new GridBagLayout();
-        gbl_mafSmoothingPanel.columnWidths = new int[]{0, 0};
+        gbl_mafSmoothingPanel.columnWidths = new int[]{0, 0, 0};
         gbl_mafSmoothingPanel.rowHeights = new int[] {0, 0};
-        gbl_mafSmoothingPanel.columnWeights = new double[]{0.0, 1.0};
+        gbl_mafSmoothingPanel.columnWeights = new double[]{0.0, 0.0, 1.0};
         gbl_mafSmoothingPanel.rowWeights = new double[]{0.0, 0.0};
         GridBagConstraints gbc_mafSmoothingPanel = new GridBagConstraints();
         gbc_mafSmoothingPanel.ipady = 3;
-        gbc_mafSmoothingPanel.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafSmoothingPanel.anchor = GridBagConstraints.SOUTH;
         gbc_mafSmoothingPanel.weightx = 1.0;
         gbc_mafSmoothingPanel.insets = new Insets(0, 0, 5, 0);
         gbc_mafSmoothingPanel.fill = GridBagConstraints.HORIZONTAL;
@@ -575,29 +630,54 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         mafSmoothingPanel.setLayout(gbl_mafSmoothingPanel);
         plotPanel.add(mafSmoothingPanel, gbc_mafSmoothingPanel);
         
-        JButton btnPlusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>+</div></html>");
+        lblMafIncDec = new JLabel("Inc/Dec");
+        GridBagConstraints gbc_lblMafIncDec = new GridBagConstraints();
+        gbc_lblMafIncDec.anchor = GridBagConstraints.PAGE_START;
+        gbc_lblMafIncDec.insets = new Insets(0, 0, 0, 0);
+        gbc_lblMafIncDec.weightx = 0;
+        gbc_lblMafIncDec.weighty = 0;
+        gbc_lblMafIncDec.gridx = 0;
+        gbc_lblMafIncDec.gridy = 0;
+        mafSmoothingPanel.add(lblMafIncDec, gbc_lblMafIncDec);
+        
+        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+        doubleFmt.setMaximumFractionDigits(2);
+        mafIncDecTextField = new JFormattedTextField(doubleFmt);
+        mafIncDecTextField.setValue(new Double(0.1));
+        mafIncDecTextField.setColumns(5);
+        mafIncDecTextField.setPreferredSize(new Dimension(40, 24));
+        GridBagConstraints gbc_mafIncDecTextField = new GridBagConstraints();
+        gbc_mafIncDecTextField.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafIncDecTextField.insets = new Insets(0, 0, 0, 0);
+        gbc_mafIncDecTextField.weightx = 0;
+        gbc_mafIncDecTextField.weighty = 0;
+        gbc_mafIncDecTextField.gridx = 0;
+        gbc_mafIncDecTextField.gridy = 1;
+        mafSmoothingPanel.add(mafIncDecTextField, gbc_mafIncDecTextField);
+        
+        btnPlusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>+</div></html>");
         btnPlusButton.setActionCommand("plus");
         btnPlusButton.addActionListener(this);
-        btnPlusButton.setMinimumSize(new Dimension(40, 25));
+        btnPlusButton.setPreferredSize(new Dimension(40, 25));
         GridBagConstraints gbc_btnPlusButton = new GridBagConstraints();
         gbc_btnPlusButton.anchor = GridBagConstraints.PAGE_START;
         gbc_btnPlusButton.insets = new Insets(0, 0, 0, 0);
         gbc_btnPlusButton.weightx = 0;
         gbc_btnPlusButton.weighty = 0;
-        gbc_btnPlusButton.gridx = 0;
+        gbc_btnPlusButton.gridx = 1;
         gbc_btnPlusButton.gridy = 0;
         mafSmoothingPanel.add(btnPlusButton, gbc_btnPlusButton);
 
-        JButton btnMinusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>-</div></html>");
+        btnMinusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>-</div></html>");
         btnMinusButton.setActionCommand("minus");
         btnMinusButton.addActionListener(this);
-        btnMinusButton.setMinimumSize(new Dimension(40, 25));
+        btnMinusButton.setPreferredSize(new Dimension(40, 25));
         GridBagConstraints gbc_btnMinusButton = new GridBagConstraints();
         gbc_btnMinusButton.anchor = GridBagConstraints.PAGE_START;
         gbc_btnMinusButton.insets = new Insets(0, 0, 0, 0);
         gbc_btnMinusButton.weightx = 0;
         gbc_btnMinusButton.weighty = 0;
-        gbc_btnMinusButton.gridx = 0;
+        gbc_btnMinusButton.gridx = 1;
         gbc_btnMinusButton.gridy = 1;
         mafSmoothingPanel.add(btnMinusButton, gbc_btnMinusButton);
 
@@ -615,20 +695,24 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         mafSmoothingTable.setTableHeader(null);
         Utils.initializeTable(mafSmoothingTable, ColumnWidth);
         GridBagConstraints gbc_mafTable = new GridBagConstraints();
+        gbc_mafTable.anchor = GridBagConstraints.SOUTH;
         gbc_mafTable.insets = new Insets(0, 0, 0, 0);
-        gbc_mafTable.fill = GridBagConstraints.BOTH;
+        gbc_mafTable.fill = GridBagConstraints.HORIZONTAL;
         gbc_mafTable.weightx = 1.0;
-        gbc_mafTable.weighty = 1.0;
-        gbc_mafTable.gridx = 1;
+        gbc_mafTable.gridx = 2;
         gbc_mafTable.gridy = 0;
         gbc_mafTable.gridheight = 2;
         
         JScrollPane mafSmoothingPane = new JScrollPane(mafSmoothingTable);
+        mafSmoothingPane.setPreferredSize(new Dimension(52, 52));
         mafSmoothingPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         
         mafSmoothingPanel.add(mafSmoothingPane, gbc_mafTable);
-        mafSmoothingPanel.setVisible(false);
-        excelAdapter.addTable(mafSmoothingTable, false, true, true, true);
+        excelAdapter.addTable(mafSmoothingTable, false, true, true, false, false, true, false, false, true);
+        lblMafIncDec.setVisible(false);
+        mafIncDecTextField.setVisible(false);
+        btnPlusButton.setVisible(false);
+        btnMinusButton.setVisible(false);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -691,41 +775,72 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         if ("loadlog".equals(e.getActionCommand())) {
             loadLogFile();
         }
+        else if ("mafrpm".equals(e.getActionCommand())) {
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+            	clearNotRunDataCheckboxes();
+                if (!plotMafVRpmData())
+                    checkBox.setSelected(false);
+            }
+            else
+                runData.clear();
+            setRanges();
+        }
         else if ("rdata".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	if (checkBoxMafRpmData.isSelected()) {
+            		checkBoxMafRpmData.setSelected(false);
+            		runData.clear();
+            	}
                 if (!plotRunData())
                     checkBox.setSelected(false);
             }
             else
                 runData.clear();
+            setRanges();
         }
         else if ("current".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	if (checkBoxMafRpmData.isSelected()) {
+            		checkBoxMafRpmData.setSelected(false);
+            		runData.clear();
+            	}
                 if (!plotCurrentMafData())
                     checkBox.setSelected(false);
             }
             else
                 currMafData.clear();
+            setRanges();
         }
         else if ("corrected".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	if (checkBoxMafRpmData.isSelected()) {
+            		checkBoxMafRpmData.setSelected(false);
+            		runData.clear();
+            	}
                 if (!setCorrectedMafData())
                     checkBox.setSelected(false);
             }
             else
                 corrMafData.clear();
+            setRanges();
         }
         else if ("smoothed".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	if (checkBoxMafRpmData.isSelected()) {
+            		checkBoxMafRpmData.setSelected(false);
+            		runData.clear();
+            	}
                 if (!setSmoothedMafData())
                     checkBox.setSelected(false);
             }
             else
                 smoothMafData.clear();
+            setRanges();
         }
         else if ("smoothing".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
@@ -733,24 +848,59 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 enableSmoothingView(true);
             else
                 enableSmoothingView(false);
+            setRanges();
         }
     }
     
+    private void clearNotRunDataCheckboxes() {
+    	if (checkBoxRunData.isSelected()) {
+    		checkBoxRunData.setSelected(false);
+    		runData.clear();
+    	}
+    	if (checkBoxCurrentMaf.isSelected()) {
+    		checkBoxCurrentMaf.setSelected(false);
+    		currMafData.clear();
+    	}
+    	if (checkBoxCorrectedMaf.isSelected()) {
+    		checkBoxCorrectedMaf.setSelected(false);
+    		corrMafData.clear();
+    	}
+    	if (checkBoxSmoothedMaf.isSelected()) {
+    		checkBoxSmoothedMaf.setSelected(false);
+    		smoothMafData.clear();
+    	}
+    }
+    
     private void clearMafTable() {
-        while (MafTableColumnCount < mafTable.getColumnCount())
-            Utils.removeColumn(MafTableColumnCount, mafTable);
-        Utils.clearTable(mafTable);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        try {
+	        while (MafTableColumnCount < mafTable.getColumnCount())
+	            Utils.removeColumn(MafTableColumnCount, mafTable);
+	        Utils.clearTable(mafTable);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        }
     }
     
     private void clearRunTables() {
-        for (int i = 0; i < runTables.length; ++i) {
-            while (RunRowsCount < runTables[i].getRowCount())
-                Utils.removeRow(RunRowsCount, runTables[i]);
-            Utils.clearTable(runTables[i]);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        try {
+	        for (int i = 0; i < runTables.length; ++i) {
+	            while (RunRowsCount < runTables[i].getRowCount())
+	                Utils.removeRow(RunRowsCount, runTables[i]);
+	            Utils.clearTable(runTables[i]);
+	        }
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
     
     private void clearData() {
+    	rpmArray.clear();
+    	mafvArray.clear();
+    	afrArray.clear();
         voltArray.clear();
         gsArray.clear();
         gsCorrected.clear();
@@ -765,6 +915,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     }
     
     private void clearChartCheckBoxes() {
+    	checkBoxMafRpmData.setSelected(false);
         checkBoxRunData.setSelected(false);
         checkBoxCurrentMaf.setSelected(false);
         checkBoxCorrectedMaf.setSelected(false);
@@ -772,7 +923,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     }
     
     private void calculateMafScaling() {
-        chartPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
             clearData();
             clearChartData();
@@ -788,7 +939,10 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             
             smoothGsArray.addAll(gsCorrected);
             checkBoxCorrectedMaf.setSelected(true);
+            
+            setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
 
+            setRanges();
             setSelectedIndex(1);
         }
         catch (Exception e) {
@@ -797,29 +951,38 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);    
         }
         finally {
-            chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
     
     private boolean sortRunData(TreeMap<Integer, ArrayList<Double>> result) {
         int closestVoltIdx;
+        double rpm;
         double voltage;
         double error;
         ArrayList<Double> closestVolatageArray;
         for (int i = 0; i < runTables.length; ++i) {
             JTable table = runTables[i];
             String tableName = RunTableName + (i + 1);
+            String rpmValue;
             String mafvValue;
             String afrValue;
             for (int j = 0; j < table.getRowCount(); ++j) {
-                mafvValue = table.getValueAt(j, 0).toString();
-                afrValue = table.getValueAt(j, 1).toString();
-                if (mafvValue.isEmpty() || afrValue.isEmpty())
+                rpmValue = table.getValueAt(j, 0).toString();
+                mafvValue = table.getValueAt(j, 1).toString();
+                afrValue = table.getValueAt(j, 2).toString();
+                if (rpmValue.isEmpty() || mafvValue.isEmpty() || afrValue.isEmpty())
                     continue;
-                if (!Utils.validateDouble(mafvValue, j, 0, tableName) || !Utils.validateDouble(afrValue, j, 1, tableName))
+                if (!Utils.validateDouble(rpmValue, j, 0, tableName) ||
+                	!Utils.validateDouble(mafvValue, j, 1, tableName) ||
+                	!Utils.validateDouble(afrValue, j, 2, tableName))
                     return false;
+                rpm = Double.parseDouble(rpmValue);
                 voltage = Double.parseDouble(mafvValue);
                 error = Double.parseDouble(afrValue);
+                rpmArray.add(rpm);
+                mafvArray.add(voltage);
+                afrArray.add(error);
                 closestVoltIdx = Utils.closestValueIndex(voltage, voltArray);
                 closestVolatageArray = result.get(closestVoltIdx);
                 if (closestVolatageArray == null) {
@@ -870,26 +1033,12 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         return true;
     }
 
+    private boolean plotMafVRpmData() {
+    	return setXYSeries(runData, rpmArray, mafvArray);
+    }
+
     private boolean plotRunData() {
-        ArrayList<Double> xarr = new ArrayList<Double>();
-        ArrayList<Double> yarr = new ArrayList<Double>();
-        for (int i = 0; i < runTables.length; ++i) {
-            JTable table = runTables[i];
-            String tableName = RunTableName + (i + 1);
-            String mafvValue;
-            String afrValue;
-            for (int j = 0; j < table.getRowCount(); ++j) {
-                mafvValue = table.getValueAt(j, 0).toString();
-                afrValue = table.getValueAt(j, 1).toString();
-                if (mafvValue.isEmpty() || afrValue.isEmpty())
-                    continue;
-                if (!Utils.validateDouble(mafvValue, j, 0, tableName) || !Utils.validateDouble(afrValue, j, 1, tableName))
-                    return false;
-                xarr.add(Double.parseDouble(mafvValue));
-                yarr.add(Double.parseDouble(afrValue));
-            }
-        }
-        return setXYSeries(runData, xarr, yarr);
+    	return setXYSeries(runData, mafvArray, afrArray);
     }
     
     private boolean plotCurrentMafData() {
@@ -903,18 +1052,16 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             if (!getMafTableData(xarr, yarr))
                 return false;
         }
-        currMafData.clear();
-        for (int i = 0; i < xarr.size(); ++i)
-            currMafData.add(xarr.get(i), yarr.get(i));
-        return true;
+        return setXYSeries(currMafData, xarr, yarr);
     }
 
     private boolean setXYSeries(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
-        if (xarr.size() == 0 || yarr.size() == 0 || xarr.size() != yarr.size())
+        if (xarr.size() == 0 || xarr.size() != yarr.size())
             return false;
         series.clear();
         for (int i = 0; i < xarr.size(); ++i)
-            series.add(xarr.get(i), yarr.get(i));
+            series.add(xarr.get(i), yarr.get(i), false);
+        series.fireSeriesChanged();
         return true;
     }
 
@@ -935,6 +1082,56 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     
     private boolean setSmoothedMafData() {
         return setXYSeries(smoothMafData, voltArray, smoothGsArray);
+    }
+    
+    private void setRanges() {
+    	double paddingX;
+    	double paddingY;
+    	XYPlot plot = mafChartPanel.getChartPanel().getChart().getXYPlot();
+    	plot.getDomainAxis(0).setLabel(XAxisName);
+    	plot.getRangeAxis(1).setLabel(Y2AxisName);
+    	plot.getRangeAxis(0).setVisible(true);
+    	if (checkBoxMafRpmData.isSelected() && checkBoxMafRpmData.isEnabled()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+        	plot.getRangeAxis(0).setVisible(false);
+        	plot.getRangeAxis(1).setLabel(XAxisName);
+        	plot.getDomainAxis(0).setLabel(rpmAxisName);
+        }
+    	else if (checkBoxRunData.isSelected() && checkBoxRunData.isEnabled() &&
+       	     !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+        }
+        else if (checkBoxSmoothing.isSelected()) {
+        	double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
+        	double minY = Collections.min(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
+        	paddingX = smoothMafData.getMaxX() * 0.05;
+        	paddingY = maxY * 0.05;
+        	plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
+        	plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
+        }
+        else if ((checkBoxCurrentMaf.isSelected() && checkBoxCurrentMaf.isEnabled()) ||
+            	 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
+            	 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
+        	paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
+        	paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
+        	plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
+        	plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
+	    	if (checkBoxRunData.isSelected()) {
+	        	paddingX = runData.getMaxX() * 0.05;
+	        	paddingY = runData.getMaxY() * 0.05;
+	        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	}
+        }
+        else {
+        	plot.getRangeAxis(0).setAutoRange(true);
+        	plot.getDomainAxis(0).setAutoRange(true);
+        }
     }
     
     private void plotLineSlope(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
@@ -965,6 +1162,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             double Y2 = X2 * valueY - X1 * valueY + Y1;
             yarr.set(itemIndex + 1, Y2);
             mafSmoothingTable.setValueAt(Y2, 1, itemIndex + 1);
+            corrMafData.updateByIndex(itemIndex + 1, Y2);
             if (itemIndex + 1 < series.getItemCount()) {
                 X1 = X2;
                 X2 = xarr.get(itemIndex + 2);
@@ -983,17 +1181,30 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         }
         smoothComboBox.setEnabled(flag);
         btnSmoothButton.setEnabled(flag);
+        checkBoxMafRpmData.setEnabled(!flag);
         checkBoxRunData.setEnabled(!flag);
         checkBoxCurrentMaf.setEnabled(!flag);
         checkBoxCorrectedMaf.setEnabled(!flag);
         checkBoxSmoothedMaf.setEnabled(!flag);
         clearChartData();
         if (flag == true) {
-            mafSmoothingPanel.setVisible(true);
+            lblMafIncDec.setVisible(true);
+            mafIncDecTextField.setVisible(true);
+        	btnPlusButton.setVisible(true);
+            btnMinusButton.setVisible(true);
+            setCorrectedMafData();
             plotSmoothingLineSlopes();
+            corrMafData.setDescription(mafCurveDataName);
+            currMafData.setDescription(currentSlopeDataName);
+            smoothMafData.setDescription(smoothedSlopeDataName);
         }
         else {
-            mafSmoothingPanel.setVisible(false);
+            lblMafIncDec.setVisible(false);
+            mafIncDecTextField.setVisible(false);
+        	btnPlusButton.setVisible(false);
+            btnMinusButton.setVisible(false);
+            if (checkBoxMafRpmData.isSelected())
+            	plotMafVRpmData();
             if (checkBoxRunData.isSelected())
                 plotRunData();
             if (checkBoxCurrentMaf.isSelected())
@@ -1002,34 +1213,55 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                 setCorrectedMafData();
             if (checkBoxSmoothedMaf.isSelected())
                 setSmoothedMafData();
+            currMafData.setDescription(currentDataName);
+            corrMafData.setDescription(correctedDataName);
+            smoothMafData.setDescription(smoothedDataName);
         }
     }
     
     private void smoothReset() {
-        if (gsCorrected.size() == 0)
-            return;
-        smoothGsArray.clear();
-        smoothGsArray.addAll(gsCorrected);
-        if (checkBoxSmoothing.isSelected())
-            plotSmoothingLineSlopes();
-        else if (checkBoxSmoothedMaf.isSelected())
-            setSmoothedMafData();
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    	try {
+	        if (gsCorrected.size() == 0)
+	            return;
+	        smoothGsArray.clear();
+	        smoothGsArray.addAll(gsCorrected);
+	        setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
+	        corrMafData.clear();
+	        if (!checkBoxMafRpmData.isEnabled() || !checkBoxMafRpmData.isSelected())
+	        	setCorrectedMafData();
+	        if (checkBoxSmoothing.isSelected())
+	            plotSmoothingLineSlopes();
+	        else if (checkBoxSmoothedMaf.isSelected())
+	            setSmoothedMafData();
+    	}
+    	finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    	}
     }
     
     public void changeMafSmoothingCellValue(boolean add) {
-        if (mafSmoothingTable.getSelectedRows() == null || mafSmoothingTable.getSelectedColumns() == null)
+        if (!Pattern.matches(Utils.fpRegex, mafIncDecTextField.getText())) {
+            JOptionPane.showMessageDialog(null, "Invalid Maf Scaling increment/decrement value", "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
+        }
+        double smoothingIncrement = Double.valueOf(mafIncDecTextField.getText());
+        
         int[] rows = mafSmoothingTable.getSelectedRows();
-        if (rows.length == 1 && rows[0] == 0)
-            return;
         int[] cols = mafSmoothingTable.getSelectedColumns();
+        if (rows == null || cols == null) {
+            JOptionPane.showMessageDialog(null, "Please select MAF table cell(s) to apply increment/decrement.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         double val;
         for (int col : cols) {
             if (!Pattern.matches(Utils.fpRegex, mafSmoothingTable.getValueAt(1, col).toString()))
                 continue;
-            val = (Double)(mafSmoothingTable.getValueAt(1, col)) + (add == true ? SmoothingIncrement : SmoothingIncrement * -1.0); 
+            val = (Double)(mafSmoothingTable.getValueAt(1, col)) + (add == true ? smoothingIncrement : smoothingIncrement * -1.0); 
             mafSmoothingTable.setValueAt(val, 1, col);
             smoothGsArray.set(col, val);
+            corrMafData.updateByIndex(col, val);
             if (col == 0)
                 smoothMafData.updateByIndex(col, (smoothGsArray.get(col + 1) - smoothGsArray.get(col)) / (voltArray.get(col + 1) - voltArray.get(col)));
             else if (col == smoothGsArray.size() - 1)
@@ -1044,43 +1276,59 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
     private void smoothCurve() {
         if (!checkBoxSmoothing.isSelected() || voltArray.size() == 0 || smoothGsArray.size() == 0)
             return;
-        int movWind;
-        ArrayList<Double> tmpArray = new ArrayList<Double>();
+
         int degree = Integer.parseInt(smoothComboBox.getSelectedItem().toString().trim());
-        if (degree == 3) {
-            movWind = 1;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
-                             0.5  * smoothGsArray.get(i) + 
-                             0.25 * smoothGsArray.get(i + 1));
-            for (int i = 0; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
+        int[] rows = mafSmoothingTable.getSelectedRows();
+        int[] cols = mafSmoothingTable.getSelectedColumns();
+        if (rows == null || cols == null || cols.length < degree) {
+            JOptionPane.showMessageDialog(null, "Please select MAF Scaling table cells range to apply smoothing. Number of selected columns must be greater than the smoothing degree value.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }        
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        int start = cols[0];
+        int end = cols[cols.length - 1];
+        try {
+	        int movWind;
+	        int i;
+	        ArrayList<Double> tmpArray = new ArrayList<Double>();
+	        if (degree == 3) {
+	            movWind = 1;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
+	                             0.5  * smoothGsArray.get(i) + 
+	                             0.25 * smoothGsArray.get(i + 1));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        if (degree == 5) {
+	            movWind = 2;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
+	                             0.2 * smoothGsArray.get(i - 1) + 
+	                             0.4 * smoothGsArray.get(i) + 
+	                             0.2 * smoothGsArray.get(i + 1) +
+	                             0.1 * smoothGsArray.get(i + 2));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        if (degree == 7) {
+	            movWind = 3;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
+	                             0.1  * smoothGsArray.get(i - 2) + 
+	                             0.15 * smoothGsArray.get(i - 1) + 
+	                             0.4  * smoothGsArray.get(i) + 
+	                             0.15 * smoothGsArray.get(i + 1) +
+	                             0.1  * smoothGsArray.get(i + 2) +
+	                             0.05 * smoothGsArray.get(i + 3));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        plotSmoothingLineSlopes();
         }
-        if (degree == 5) {
-            movWind = 2;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
-                             0.2 * smoothGsArray.get(i - 1) + 
-                             0.4 * smoothGsArray.get(i) + 
-                             0.2 * smoothGsArray.get(i + 1) +
-                             0.1 * smoothGsArray.get(i + 2));
-            for (int i = movWind; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
-        if (degree == 7) {
-            movWind = 3;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
-                             0.1  * smoothGsArray.get(i - 2) + 
-                             0.15 * smoothGsArray.get(i - 1) + 
-                             0.4  * smoothGsArray.get(i) + 
-                             0.15 * smoothGsArray.get(i + 1) +
-                             0.1  * smoothGsArray.get(i + 2) +
-                             0.05 * smoothGsArray.get(i + 3));
-            for (int i = movWind; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
-        }
-        plotSmoothingLineSlopes();
     }
    
     public void saveData() {
@@ -1089,40 +1337,88 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         File file = fileChooser.getSelectedFile();
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         int i, j;
+        FileWriter out = null;
         try {
-            FileWriter out = new FileWriter(file);
-            try {
-                // write string identifier
-                out.write(SaveDataFileHeader + "\n");
-                // write maf data
-                for (i = 0; i < mafTable.getRowCount(); ++i) {
-                    for (j = 0; j < mafTable.getColumnCount(); ++j)
-                        out.write(mafTable.getValueAt(i, j).toString() + ",");
+        	out = new FileWriter(file);
+            // write string identifier
+            out.write(SaveDataFileHeader + "\n");
+            // write maf data
+            for (i = 0; i < mafTable.getRowCount(); ++i) {
+                for (j = 0; j < mafTable.getColumnCount(); ++j)
+                    out.write(mafTable.getValueAt(i, j).toString() + ",");
+                out.write("\n");
+            }
+            // write run data
+            for (int t = 0; t < runTables.length; ++t) {
+                for (i = 0; i < runTables[t].getColumnCount(); ++i) {
+                    for (j = 0; j < runTables[t].getRowCount(); ++j)
+                        out.write(runTables[t].getValueAt(j, i).toString() + ",");
                     out.write("\n");
                 }
-                // write run data
-                for (int t = 0; t < runTables.length; ++t) {
-                    for (i = 0; i < runTables[t].getColumnCount(); ++i) {
-                        for (j = 0; j < runTables[t].getRowCount(); ++j)
-                            out.write(runTables[t].getValueAt(j, i).toString() + ",");
-                        out.write("\n");
+            }
+        }
+        catch (Exception e) {
+            logger.error(e);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            if (out != null) {
+	            try {
+	                out.close();
+	            }
+	            catch (IOException e) {
+	                logger.error(e);
+	            }
+            }
+        }
+    }
+   
+    public void loadData() {
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
+            return;
+        File file = fileChooser.getSelectedFile();
+        int i, j, k, l;
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        BufferedReader br = null;
+        try {
+        	br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            String line = br.readLine();
+            if (line == null || !line.equals(SaveDataFileHeader)) {
+                JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            line = br.readLine();
+            String[] elements;
+            JTable table = null;
+            i = k = l = 0;
+            while (line != null) {
+                elements = line.split(",", -1);
+                switch (i) {
+                case 0:
+                    Utils.ensureColumnCount(elements.length - 1, mafTable);
+                    for (j = 0; j < elements.length - 1; ++j)
+                        mafTable.setValueAt(elements[j], i, j);
+                    break;
+                case 1:
+                    Utils.ensureColumnCount(elements.length - 1, mafTable);
+                    for (j = 0; j < elements.length - 1; ++j)
+                        mafTable.setValueAt(elements[j], i, j);
+                    break;
+                default:
+                    int offset = runTables.length * 3 + mafTable.getRowCount();
+                    if (i > 1 && i < offset) {
+                        if (l == 0 )
+                            table = runTables[k++];
+                        Utils.ensureRowCount(elements.length - 1, table);
+                        for (j = 0; j < elements.length - 1; ++j)
+                                table.setValueAt(elements[j], j, l);
+                        l += 1;
+                        if (l == 3)
+                        	l = 0;
                     }
                 }
-                // write fueling data
-                polfTable.write(out);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error(e);
-            }
-            finally {
-                try {
-                    out.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    logger.error(e);
-                }
+                i += 1;
+                line = br.readLine();
             }
         }
         catch (Exception e) {
@@ -1131,116 +1427,86 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        }
-    }
-   
-    public void loadData() {
-        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;
-        File file = fileChooser.getSelectedFile();
-        int i, j, k;
-        setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            try {
-                String line = br.readLine();
-                if (line == null || !line.equals(SaveDataFileHeader)) {
-                    JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                line = br.readLine();
-                String[] elements;
-                JTable table = null;
-                i = k = 0;
-                while (line != null) {
-                    elements = line.split(",", -1);
-                    switch (i) {
-                    case 0:
-                        Utils.ensureColumnCount(elements.length - 1, mafTable);
-                        for (j = 0; j < elements.length - 1; ++j)
-                            mafTable.setValueAt(elements[j], i, j);
-                        break;
-                    case 1:
-                        Utils.ensureColumnCount(elements.length - 1, mafTable);
-                        for (j = 0; j < elements.length - 1; ++j)
-                            mafTable.setValueAt(elements[j], i, j);
-                        break;
-                    default:
-                        int offset = runTables.length * 2 + mafTable.getRowCount();
-                        if (i > 1 && i < offset) {
-                            if ( (i & 1) == 0 ) {
-                                table = runTables[k++];
-                                Utils.ensureRowCount(elements.length - 1, table);
-                                for (j = 0; j < elements.length - 1; ++j)
-                                    table.setValueAt(elements[j], j, 0);
-                            }
-                            else  {
-                                Utils.ensureRowCount(elements.length - 1, table);
-                                for (j = 0; j < elements.length - 1; ++j)
-                                    table.setValueAt(elements[j], j, 1);
-                            }
-                        }
-                        else {
-                            polfTable.setValueAtRow(i - offset, elements);
-                        }
-                    }
-                    i += 1;
-                    line = br.readLine();
-                }
-                polfTable.validate();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error(e);
-            }
-            finally {
+            if (br != null) {
                 try {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     br.close();
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
                     logger.error(e);
                 }
             }
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error(e);
-        }
     }
     
     private void loadLogFile() {
-        if (!polfTable.validate())
-            return;
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();
-        BufferedReader br;
+        BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            try {
-                String line = br.readLine();
-                if (line != null) {
-                    String [] elements = line.split(",", -1);
-                    JTable table = new JTable() {
-                        private static final long serialVersionUID = 1L;
-                        public boolean isCellEditable(int row, int column) { return false; };
-                    };
-                    table.setColumnSelectionAllowed(false);
-                    table.setCellSelectionEnabled(true);
-                    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                    table.setBorder(new LineBorder(new Color(0, 0, 0)));
-                    table.setTableHeader(null);
-                    table.setModel(new DefaultTableModel(elements.length, 1));
-                    for (int i = 0; i < elements.length; ++i)
-                        table.setValueAt(elements[i], i, 0);
-                    JComponent[] inputs = new JComponent[] { new JScrollPane(table) };
-                    
-                    if (logThtlAngleColIdx >= 0)
-                        table.changeSelection(logThtlAngleColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+            String line = br.readLine();
+            if (line != null) {
+                String [] elements = line.split(",", -1);
+                ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
+                String logThtlAngleColName = Config.getThrottleAngleColumnName();
+                String logAfLearningColName = Config.getAfLearningColumnName();
+                String logAfCorrectionColName = Config.getAfCorrectionColumnName();
+                String logMafvColName = Config.getMafVoltageColumnName();
+                String logAfrColName = Config.getWidebandAfrColumnName();
+                String logRpmColName = Config.getRpmColumnName();
+                String logLoadColName = Config.getLoadColumnName();
+                String logCommandedAfrColName = Config.getCommandedAfrColumnName();
+                logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
+                logAfLearningColIdx = columns.indexOf(logAfLearningColName);
+                logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
+                logMafvColIdx = columns.indexOf(logMafvColName);
+                logAfrColIdx = columns.indexOf(logAfrColName);
+                logRpmColIdx = columns.indexOf(logRpmColName);
+                logLoadColIdx = columns.indexOf(logLoadColName);
+                logCommandedAfrCol = columns.indexOf(logCommandedAfrColName);
+                boolean resetColumns = false;
+                
+                if (logThtlAngleColIdx >= 0 ||
+                	logAfLearningColIdx >= 0 ||
+                	logAfCorrectionColIdx >= 0 ||
+                	logMafvColIdx >= 0 ||
+                	logAfrColIdx >= 0 ||
+                	logRpmColIdx >= 0 ||
+                	logLoadColIdx >=0 ||
+                	logCommandedAfrCol >=0) {
+                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    	resetColumns = true;
+                }
+                
+                JTable table = new JTable() {
+                    private static final long serialVersionUID = 1L;
+                    public boolean isCellEditable(int row, int column) { return false; };
+                };
+                table.setColumnSelectionAllowed(false);
+                table.setCellSelectionEnabled(true);
+                table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                table.setBorder(new LineBorder(new Color(0, 0, 0)));
+                table.setTableHeader(null);
+                table.setModel(new DefaultTableModel(elements.length, 1));
+                for (int i = 0; i < elements.length; ++i)
+                    table.setValueAt(elements[i], i, 0);
+                JLabel noteLabel1 = new JLabel("Note: please check your log file if Throttle Angle % reaches 100%.");
+                JLabel noteLabel2 = new JLabel("If not, you could change WOT stationary point below or use Accel Pedal Angle.");
+                JLabel spinnerLabel = new JLabel("WOT stationary point (%)");
+                JSpinner spinner = new JSpinner(new SpinnerNumberModel(wotPoint, 50, 100, 5));
+                NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+                doubleFmt.setMaximumFractionDigits(2);
+                JFormattedTextField valueField = new JFormattedTextField(doubleFmt);
+                valueField.setColumns(10);
+                valueField.setVisible(false);
+                JComponent[] inputs = new JComponent[] { new JScrollPane(table), noteLabel1, noteLabel2, spinnerLabel, spinner, valueField };
+                
+                if (logThtlAngleColIdx >= 0)
+                    table.changeSelection(logThtlAngleColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logThtlAngleColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Throttle Angle % Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logThtlAngleColIdx = table.getSelectedRow();
@@ -1248,10 +1514,54 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                         JOptionPane.showMessageDialog(null, "Invalid Throttle Angle % Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logMafvColIdx >= 0)
-                        table.changeSelection(logMafvColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    wotPoint = Integer.valueOf(spinner.getValue().toString());
+                    Config.setThrottleAngleColumnName(table.getValueAt(logThtlAngleColIdx, 0).toString());
+                    Config.setWotStationaryPointValue(wotPoint);
+                }
+                noteLabel1.setVisible(false);
+                noteLabel2.setVisible(false);
+                spinnerLabel.setVisible(false);
+                spinner.setVisible(false);
+
+                if (logAfLearningColIdx >= 0)
+                    table.changeSelection(logAfLearningColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfLearningColIdx < 0) {
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Learning (LTFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                        return;
+                    logAfLearningColIdx = table.getSelectedRow();
+                    if (logAfLearningColIdx == -1) {
+                        JOptionPane.showMessageDialog(null, "Invalid AFR Learning (LTFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    Config.setAfLearningColumnName(table.getValueAt(logAfLearningColIdx, 0).toString());
+                }
+                
+                if (logAfCorrectionColIdx >= 0)
+                    table.changeSelection(logAfCorrectionColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfCorrectionColIdx < 0) {
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Correction (STFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                        return;
+                    logAfCorrectionColIdx = table.getSelectedRow();
+                    if (logAfCorrectionColIdx == -1) {
+                        JOptionPane.showMessageDialog(null, "Invalid AFR Correction (STFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    Config.setAfCorrectionColumnName(table.getValueAt(logAfCorrectionColIdx, 0).toString());
+                }
+                
+                noteLabel1.setText("MafV Filter - minimum value");
+                valueField.setText(String.valueOf(minMafV));
+                noteLabel1.setVisible(true);
+                valueField.setVisible(true);
+                if (logMafvColIdx >= 0)
+                    table.changeSelection(logMafvColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logMafvColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Maf Voltage Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logMafvColIdx = table.getSelectedRow();
@@ -1259,10 +1569,22 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                         JOptionPane.showMessageDialog(null, "Invalid Maf Voltage Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logAfrColIdx >= 0)
-                        table.changeSelection(logAfrColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    minMafV = Double.valueOf(valueField.getText());
+                    Config.setMafVoltageColumnName(table.getValueAt(logMafvColIdx, 0).toString());
+                    Config.setMafVMinimumValue(minMafV);
+                }
+                noteLabel1.setVisible(false);
+                valueField.setVisible(false);
+                
+                noteLabel1.setText("Afr Error Filter +/- % value");
+                valueField.setText(String.valueOf(afrErrPrct));
+                noteLabel1.setVisible(true);
+                valueField.setVisible(true);
+                if (logAfrColIdx >= 0)
+                    table.changeSelection(logAfrColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfrColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Wideband AFR Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfrColIdx = table.getSelectedRow();
@@ -1270,10 +1592,18 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                         JOptionPane.showMessageDialog(null, "Invalid AFR Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logRpmColIdx >= 0)
-                        table.changeSelection(logRpmColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    afrErrPrct = Double.valueOf(valueField.getText());
+                    Config.setWidebandAfrColumnName(table.getValueAt(logAfrColIdx, 0).toString());
+                    Config.setWidebandAfrErrorPercentValue(afrErrPrct);
+                }
+                noteLabel1.setVisible(false);
+                valueField.setVisible(false);
+                
+                if (logRpmColIdx >= 0)
+                    table.changeSelection(logRpmColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logRpmColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Speed Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
@@ -1281,10 +1611,14 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                         JOptionPane.showMessageDialog(null, "Invalid Engine Speed Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logLoadColIdx >= 0)
-                        table.changeSelection(logLoadColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setRpmColumnName(table.getValueAt(logRpmColIdx, 0).toString());
+                }
+                
+                if (logLoadColIdx >= 0)
+                    table.changeSelection(logLoadColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logLoadColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Load Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logLoadColIdx = table.getSelectedRow();
@@ -1292,81 +1626,120 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
                         JOptionPane.showMessageDialog(null, "Invalid Engine Load Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    String[] flds;
-                    int row = 0;
-                    boolean wotFlag = true;
-                    line = br.readLine();
-                    double throttle;
-                    double afr;
-                    double rpm;
-                    double load;
-                    double mafv;
-                    double afrErr;
-                    int i = 0;
-                    for (; i < runTables.length; ++i) {
-                        if (runTables[i].getValueAt(0, 0).toString().isEmpty())
-                            break;
-                    }
-                    if (i == runTables.length) {
-                        JOptionPane.showMessageDialog(null, "Sorry, currently only " + runTables.length + " runs are supported", "Error", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    int j = 0;
-                    boolean foundWot = false;
-                    while (line != null) {
-                        flds = line.split(",", -1);
-                        throttle = Double.valueOf(flds[logThtlAngleColIdx]);
-                        if (row == 0 && throttle < 99)
-                            wotFlag = false;
-                        if (throttle < 85) {
-                            if (wotFlag == true)
-                                wotFlag = false;
-                        }
-                        else {
-                            if (wotFlag == false) {
-                                wotFlag = true;
-                                if (foundWot) {
-                                    i += 1;
-                                    if (i == runTables.length)
-                                        return;
-                                }
-                                if (row > 0)
-                                    j = 0;
-                            }
-                            foundWot = true;
-                            mafv = Double.valueOf(flds[logMafvColIdx]);
-                            afr = Double.valueOf(flds[logAfrColIdx]);
-                            rpm = Double.valueOf(flds[logRpmColIdx]);
-                            load = Double.valueOf(flds[logLoadColIdx]);
-                            afrErr = calculateAfrError(rpm, load, afr);
-                            runTables[i].setValueAt(mafv, j, 0);
-                            runTables[i].setValueAt(afrErr, j, 1);
-                            j += 1;
-                        }
-                        row += 1;
-                        line = br.readLine();
-                    }
-                    if (!foundWot)
-                        JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
+                    Config.setLoadColumnName(table.getValueAt(logLoadColIdx, 0).toString());
                 }
+                
+                if (!polfTable.isSet()) {
+	                if (logCommandedAfrCol >= 0)
+	                    table.changeSelection(logCommandedAfrCol, 0, false, false);
+	                else
+	                	table.clearSelection();
+	                if (resetColumns == true || logCommandedAfrCol < 0) {
+	                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Commanded Afr Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+	                        return;
+	                    logCommandedAfrCol = table.getSelectedRow();
+	                    if (logCommandedAfrCol == -1) {
+	                        JOptionPane.showMessageDialog(null, "Invalid Commanded Afr Column selection. Please select Commanded Afr or set the Primary Open Loop Fueling table.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+	                        return;
+	                    }
+	                    Config.setCommandedAfrColumnName(table.getValueAt(logCommandedAfrCol, 0).toString());
+	                }
+                }
+                
+                String[] flds;
+                int row = 0;
+                boolean wotFlag = true;
+                line = br.readLine();
+                double throttle;
+                double stft;
+                double ltft;
+                double afr;
+                double cmdafr;
+                double rpm;
+                double load;
+                double mafv;
+                double afrErr;
+                int i = 0;
+                for (; i < runTables.length; ++i) {
+                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
+                        break;
+                }
+                if (i == runTables.length)
+                    return;
+                int j = 0;
+                boolean foundWot = false;
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                try {
+	                while (line != null) {
+	                    flds = line.split(",", -1);
+	                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
+	                    if (row == 0 && throttle < 99)
+	                        wotFlag = false;
+	                    if (throttle < wotPoint) {
+	                        if (wotFlag == true)
+	                            wotFlag = false;
+	                    }
+	                    else {
+	                        if (wotFlag == false) {
+	                            wotFlag = true;
+	                            if (foundWot) {
+	                                i += 1;
+	                                if (i == runTables.length)
+	                                    return;
+	                            }
+	                            if (row > 0)
+	                                j = 0;
+	                        }
+	                        mafv = Double.valueOf(flds[logMafvColIdx]);
+	                        if (minMafV <= mafv) {
+	                            foundWot = true;
+	                            stft = Double.valueOf(flds[logAfCorrectionColIdx]);
+	                            ltft = Double.valueOf(flds[logAfLearningColIdx]);
+	                            afr = Double.valueOf(flds[logAfrColIdx]);
+	                            rpm = Double.valueOf(flds[logRpmColIdx]);
+	                            load = Double.valueOf(flds[logLoadColIdx]);
+	
+	                            afr = afr / ((100.0 - (ltft + stft)) / 100.0);
+	                            
+	                            if (!polfTable.isSet() && logCommandedAfrCol >= 0) {
+	                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
+	                            	afrErr = (afr - cmdafr) / cmdafr * 100.0;
+	                            }
+	                            else
+	                            	afrErr = calculateAfrError(rpm, load, afr);
+	                            
+	                            if (Math.abs(afrErr) <= afrErrPrct) {
+		                            runTables[i].setValueAt(rpm, j, 0);
+		                            runTables[i].setValueAt(mafv, j, 1);
+		                            runTables[i].setValueAt(afrErr, j, 2);
+		                            j += 1;
+	                            }
+	                        }
+	                    }
+	                    row += 1;
+	                    line = br.readLine();
+	                }
+                }
+                finally {
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                }
+                if (!foundWot)
+                    JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
             }
-            catch (Exception e) {
-                logger.error(e);
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
-            }
-            finally {
+        }
+        catch (Exception e) {
+            logger.error(e);
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
+        }
+        finally {
+        	if (br != null) {
                 try {
                     br.close();
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
                     logger.error(e);
                 }
-            }
-        }
-        catch (FileNotFoundException e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, "Error: file " + file.getAbsoluteFile() + " not found", "File not found", JOptionPane.ERROR_MESSAGE);
+        	}
         }
     }
     
@@ -1437,7 +1810,7 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
 
         double temp1;
         double temp2;
-        double interpolatedTiming;
+        double interpolatedAfr;
         if (rpmHigh == rpmLow) {
             temp1 = timingLowLow;
             temp2 = timingLowHigh;
@@ -1447,15 +1820,15 @@ public class BadNoodle extends JTabbedPane implements ActionListener, IMafChartH
             temp2 = (rpm - rpmLow) * (timingHighHigh - timingLowHigh) / (rpmHigh - rpmLow) + timingLowHigh;
         }
         if (loadHigh == loadLow)
-            interpolatedTiming = temp1;
+        	interpolatedAfr = temp1;
         else
-            interpolatedTiming = (load - loadLow) * (temp2 - temp1) / (loadHigh - loadLow) + temp1;
-        return ((afr - interpolatedTiming) / interpolatedTiming * 100.0);
+        	interpolatedAfr = (load - loadLow) * (temp2 - temp1) / (loadHigh - loadLow) + temp1;
+        return ((afr - interpolatedAfr) / interpolatedAfr * 100.0);
     }
     
     private String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.badnoodle");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.open_loop");
         return bundle.getString("usage"); 
     }
 }

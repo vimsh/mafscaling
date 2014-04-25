@@ -109,6 +109,21 @@ public class ExcelAdapter implements ActionListener {
      * @param extendCols, if true will automatically add columns to the table to be able to paste all data
      */
     private void addTable(JTable table, boolean disableCopy, boolean disableCut, boolean disablePaste, boolean disableClear, boolean extendRows, boolean extendCols) {
+    	addTable(table, disableCopy, disableCut, disablePaste, disableClear, true, true, true, extendRows, extendCols);
+    }
+
+    /**
+     * @param myJTable is table on which it enables Copy-Paste and acts as a Clipboard listener.
+     * @param disableCopy, if true no copying will be avalable
+     * @param disableCut, if true no cutting will be avalable
+     * @param disablePaste, if true no pasting will be avalable
+     * @param disableClear, if true no clearing will be avalable
+     * @param disableVertCopy, if true no vertical copy will be avalable
+     * @param disableVertPaste, if true no vertical pasting will be avalable
+     * @param extendRows, if true will automatically add rows to the table to be able to paste all data
+     * @param extendCols, if true will automatically add columns to the table to be able to paste all data
+     */
+    public void addTable(JTable table, boolean disableCopy, boolean disableCut, boolean disablePaste, boolean disableClear, boolean disableVertCopy, boolean disableVertPaste, boolean disableRRCopy, boolean extendRows, boolean extendCols) {
         JTableHolder tableHolder = new JTableHolder(table, extendRows, extendCols);
         tableHolders.add(tableHolder);
         JPopupMenu popup = new JPopupMenu();
@@ -118,6 +133,20 @@ public class ExcelAdapter implements ActionListener {
             menuItems.add(copyMenuItem);
             popup.add(copyMenuItem);
             table.registerKeyboardAction(this, "Copy", KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK, false), JComponent.WHEN_FOCUSED);
+        }
+        if (!disableVertCopy) {
+            ExcelAdapterMenuItem copyMenuItem = new ExcelAdapterMenuItem(tableHolder, "Copy Vertical", this);
+            copyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK, false));
+            menuItems.add(copyMenuItem);
+            popup.add(copyMenuItem);
+            table.registerKeyboardAction(this, "Copy Vertical", KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK, false), JComponent.WHEN_FOCUSED);
+        }
+        if (!disableRRCopy) {
+            ExcelAdapterMenuItem copyMenuItem = new ExcelAdapterMenuItem(tableHolder, "Copy RomRaider", this);
+            copyMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK, false));
+            menuItems.add(copyMenuItem);
+            popup.add(copyMenuItem);
+            table.registerKeyboardAction(this, "Copy RomRaider", KeyStroke.getKeyStroke(KeyEvent.VK_R, ActionEvent.CTRL_MASK, false), JComponent.WHEN_FOCUSED);
         }
         if (!disableCut) {
             ExcelAdapterMenuItem cutMenuItem = new ExcelAdapterMenuItem(tableHolder, "Cut", this);
@@ -132,6 +161,13 @@ public class ExcelAdapter implements ActionListener {
             menuItems.add(pasteMenuItem);
             popup.add(pasteMenuItem);
             table.registerKeyboardAction(this, "Paste", KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK, false), JComponent.WHEN_FOCUSED);
+        }
+        if (!disableVertPaste) {
+            ExcelAdapterMenuItem pasteMenuItem = new ExcelAdapterMenuItem(tableHolder, "Paste Vertical", this);
+            pasteMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK, false));
+            menuItems.add(pasteMenuItem);
+            popup.add(pasteMenuItem);
+            table.registerKeyboardAction(this, "Paste Vertical", KeyStroke.getKeyStroke(KeyEvent.VK_M, ActionEvent.CTRL_MASK, false), JComponent.WHEN_FOCUSED);
         }
         if (!disableClear) {
             ExcelAdapterMenuItem clearMenuItem = new ExcelAdapterMenuItem(tableHolder, "Clear Selection", this);
@@ -190,7 +226,7 @@ public class ExcelAdapter implements ActionListener {
             ExcelAdapterMenuItem menuItem = null;
             for (int i = 0; i < menuItems.size(); ++i) {
                 menuItem = menuItems.get(i);
-                if (((ExcelAdapterMenuItem)e.getSource()) == menuItem)
+                if (e.getSource() instanceof ExcelAdapterMenuItem && ((ExcelAdapterMenuItem)e.getSource()) == menuItem)
                     break;
             }
             if (menuItem == null)
@@ -202,14 +238,20 @@ public class ExcelAdapter implements ActionListener {
             onClearSelection(tableHolder.getTable());
         if (e.getActionCommand().equals("Select All"))
             onSelectAll(tableHolder.getTable());
-        else if (e.getActionCommand().startsWith("Copy"))
+        else if (e.getActionCommand().equals("Copy"))
             onCopy(tableHolder.getTable());
-        else if (e.getActionCommand().startsWith("Cut")) {
+        else if (e.getActionCommand().equals("Copy Vertical"))
+            onCopyVertical(tableHolder.getTable());
+        else if (e.getActionCommand().equals("Copy RomRaider"))
+            onCopyRR(tableHolder.getTable());
+        else if (e.getActionCommand().equals("Cut")) {
             onCopy(tableHolder.getTable());
             onClearSelection(tableHolder.getTable());
         }
-        else if (e.getActionCommand().startsWith("Paste"))
+        else if (e.getActionCommand().equals("Paste"))
             onPaste(tableHolder.getTable(), tableHolder.getExtendRows(), tableHolder.getExtendCols());
+        else if (e.getActionCommand().equals("Paste Vertical"))
+            onPasteVertical(tableHolder.getTable(), tableHolder.getExtendRows(), tableHolder.getExtendCols());
     }
     
     private void onClearSelection(JTable table) {
@@ -273,6 +315,64 @@ public class ExcelAdapter implements ActionListener {
         system.setContents(stsel, stsel);
     }
     
+    private void onCopyVertical(JTable table) {
+        StringBuffer sbf = new StringBuffer();
+        // Check to ensure we have selected only a contiguous block of cells
+        int numcols = table.getSelectedColumnCount();
+        int numrows = table.getSelectedRowCount();
+        if (numcols == 0 || numrows == 0)
+            return;
+        int[] rowsselected = table.getSelectedRows();
+        int[] colsselected = table.getSelectedColumns();
+        if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] &&
+               numrows == rowsselected.length) &&
+              (numcols - 1 == colsselected[colsselected.length - 1] - colsselected[0] &&
+               numcols == colsselected.length))) {
+            JOptionPane.showMessageDialog(null, "Invalid Copy Selection", "Invalid Copy Selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        for (int i = 0; i < numcols; ++i) {
+        	for (int j = 0; j < numrows; ++j) {
+                sbf.append(table.getValueAt(rowsselected[j], colsselected[i]));
+                if (j < numrows - 1)
+                	sbf.append("\t");
+            }
+            sbf.append(eol);
+        }
+        stsel  = new StringSelection(sbf.toString());
+        system = Toolkit.getDefaultToolkit().getSystemClipboard();
+        system.setContents(stsel, stsel);
+    }
+    
+    private void onCopyRR(JTable table) {
+        StringBuffer sbf = new StringBuffer("[Table2D]" + eol);
+        // Check to ensure we have selected only a contiguous block of cells
+        int numcols = table.getSelectedColumnCount();
+        int numrows = table.getSelectedRowCount();
+        if (numcols == 0 || numrows == 0)
+            return;
+        int[] rowsselected = table.getSelectedRows();
+        int[] colsselected = table.getSelectedColumns();
+        if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] &&
+               numrows == rowsselected.length) &&
+              (numcols - 1 == colsselected[colsselected.length - 1] - colsselected[0] &&
+               numcols == colsselected.length))) {
+            JOptionPane.showMessageDialog(null, "Invalid Copy Selection", "Invalid Copy Selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        for (int i = 0; i < numrows; ++i) {
+            for (int j = 0; j < numcols; ++j) {
+                sbf.append(table.getValueAt(rowsselected[i], colsselected[j]));
+                if (j < numcols - 1)
+                    sbf.append("\t");
+            }
+            sbf.append(eol);
+        }
+        stsel  = new StringSelection(sbf.toString());
+        system = Toolkit.getDefaultToolkit().getSystemClipboard();
+        system.setContents(stsel, stsel);
+    }
+    
     private void onPaste(JTable table, boolean extendRows, boolean extendCols) {
         if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
             table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
@@ -300,6 +400,48 @@ public class ExcelAdapter implements ActionListener {
                     entries = rowstring.split("\t", -1);
                     for (int j = 0; j < entries.length; ++j) {
                         value = entries[j];
+                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
+                            table.setValueAt(value, startRow + i, startCol + j);
+                    }
+                }
+            }
+        }
+        catch(Exception e) {
+            e.printStackTrace();
+            logger.error(e);
+        }
+    }
+    
+    private void onPasteVertical(JTable table, boolean extendRows, boolean extendCols) {
+        if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
+            table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
+            return;
+        int startRow = (table.getSelectedRows())[0];
+        int startCol = (table.getSelectedColumns())[0];
+        try {
+            String trstring = (String)(system.getContents(this).getTransferData(DataFlavor.stringFlavor));
+            String[] lines = trstring.split("\\r?\\n");
+            ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
+            for (String colsArr : lines) {
+            	String[] rowsArr = colsArr.split("\t", -1);
+            	ArrayList<String> rows = new ArrayList<String>();
+            	for (String row : rowsArr)
+            		rows.add(row);
+            	data.add(rows);
+            }
+            int rowCount = (data.size() > 0 ? data.get(0).size() : 0);
+            if (rowCount > 0) {
+                // add extra rows to the table to accommodate for paste data
+                if (extendRows && startRow + rowCount > table.getRowCount())
+                	Utils.ensureRowCount(startRow + rowCount, table);
+                // add extra columns to the table to accommodate for paste data
+                int colCount = data.size();
+                if (extendCols && startCol + colCount > table.getColumnCount())
+                	Utils.ensureColumnCount(startCol + colCount, table);
+                // populate cells with the data
+                for (int i = 0; i < rowCount; ++i) {
+                    for (int j = 0; j < colCount; ++j) {
+                        value = data.get(j).get(i);
                         if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
                             table.setValueAt(value, startRow + i, startCol + j);
                     }

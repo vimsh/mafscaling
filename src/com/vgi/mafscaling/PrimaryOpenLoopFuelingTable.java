@@ -7,6 +7,10 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -15,63 +19,148 @@ import java.util.regex.Pattern;
 
 import javax.swing.Box;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 
+import org.apache.log4j.Logger;
+
 public class PrimaryOpenLoopFuelingTable implements ActionListener {
+	class RestrictedFileSystemView extends FileSystemView {
+	    private final File rootDirectory;
+	    RestrictedFileSystemView(File rootDirectory) {
+	        this.rootDirectory = rootDirectory;
+	    }
+	    @Override
+	    public File createNewFolder(File dir) {
+			return null;
+		}
+	    public File getParentDirectory(File dir) {
+	    	return new File(".");
+	    }
+	    @Override
+	    public File[] getRoots() {
+	        return new File[] {rootDirectory};
+	    }
+	    @Override
+	    public boolean isRoot(File file) {
+	    	if (file.equals(rootDirectory))
+	    		return true;
+	        return false;
+	    }
+	}
+    private static final Logger logger = Logger.getLogger(ClosedLoop.class);
     private final static int ColumnWidth = 40;
+    private ExcelAdapter excelAdapter = new ExcelAdapter();
+    private JFileChooser fileChooser = null;
     private JTable fuelingTable = null;
     private JTable tempFuelingTable = null;
-    private ExcelAdapter excelAdapter = null;
-
-    public void setExcelAdapter(ExcelAdapter excelAdapter) {
-        this.excelAdapter = excelAdapter;
+    private JButton btnSetDefault = null;
+    private JComboBox<String> loadList = null;
+    private String fileName = Config.getDefaultPOLFueling();
+    private String tempFileName = "";
+    
+    public PrimaryOpenLoopFuelingTable() {
+    	btnSetDefault = new JButton("Set Default");
+    	File appdir = new File(".");
+    	FileSystemView fsv = new RestrictedFileSystemView(appdir);
+    	fileChooser = new JFileChooser(fsv);
+    	fileChooser.setCurrentDirectory(appdir);
+    	if (!fileName.isEmpty()) {
+    		fuelingTable = loadPolFueling(fuelingTable, fileName);
+    		if (fuelingTable == null) {
+    			Config.setDefaultPOLFueling("");
+    			String files = Config.getPOLFuelingFiles();
+    			Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", ""));
+    			fileName = "";
+    		}
+    		else {
+	        	if (Config.getDefaultPOLFueling().equals(fileName))
+	        		btnSetDefault.setText("Unset Default");
+    		}
+    	}
     }
     
     public boolean getSetUserFueling() {
         JPanel fuelingPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
-        gbl_dataPanel.columnWidths = new int[]{0, 0, 0};
+        gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
         gbl_dataPanel.rowHeights = new int[] {0, 0};
-        gbl_dataPanel.columnWeights = new double[]{1.0, 0.0, 0.0};
+        gbl_dataPanel.columnWeights = new double[]{0.0, 1.0, 0.0, 0.0, 0.0, 0.0};
         gbl_dataPanel.rowWeights = new double[]{0.0, 0.0};
+        fuelingPanel.setLayout(gbl_dataPanel);
+        
+        loadList = new JComboBox<String>(Config.getPOLFuelingFiles().split(","));
+        GridBagConstraints gbc_loadList = new GridBagConstraints();
+        gbc_loadList.anchor = GridBagConstraints.EAST;
+        gbc_loadList.insets = new Insets(1, 5, 1, 1);
+        gbc_loadList.gridx = 0;
+        gbc_loadList.gridy = 0;
+        if (!fileName.isEmpty())
+        	loadList.setSelectedItem(fileName);
+        loadList.setActionCommand("polselected");
+        loadList.addActionListener(this);
+        loadList.setPreferredSize(new Dimension(150, 25));
+        loadList.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        fuelingPanel.add(loadList, gbc_loadList);
         
         Component horizontalGlue = Box.createHorizontalGlue();
         GridBagConstraints gbc_horizontalGlue = new GridBagConstraints();
         gbc_horizontalGlue.fill = GridBagConstraints.HORIZONTAL;
         gbc_horizontalGlue.insets = new Insets(1, 5, 1, 1);
-        gbc_horizontalGlue.gridx = 0;
+        gbc_horizontalGlue.gridx = 1;
         gbc_horizontalGlue.gridy = 0;
         fuelingPanel.add(horizontalGlue, gbc_horizontalGlue);
+        
+        JButton btnSave = new JButton("Save");
+        GridBagConstraints gbc_btnSave = new GridBagConstraints();
+        gbc_btnSave.anchor = GridBagConstraints.EAST;
+        gbc_btnSave.insets = new Insets(1, 5, 1, 1);
+        gbc_btnSave.gridx = 2;
+        gbc_btnSave.gridy = 0;
+        btnSave.setActionCommand("save");
+        btnSave.addActionListener(this);
+        fuelingPanel.add(btnSave, gbc_btnSave);
+        
+        GridBagConstraints gbc_btnSetDefault = new GridBagConstraints();
+        gbc_btnSetDefault.anchor = GridBagConstraints.EAST;
+        gbc_btnSetDefault.insets = new Insets(1, 5, 1, 1);
+        gbc_btnSetDefault.gridx = 3;
+        gbc_btnSetDefault.gridy = 0;
+        btnSetDefault.setActionCommand("setdefault");
+        btnSetDefault.addActionListener(this);
+        fuelingPanel.add(btnSetDefault, gbc_btnSetDefault);
         
         JButton btnClearData = new JButton("Clear");
         GridBagConstraints gbc_btnClearData = new GridBagConstraints();
         gbc_btnClearData.anchor = GridBagConstraints.EAST;
         gbc_btnClearData.insets = new Insets(1, 5, 1, 1);
-        gbc_btnClearData.gridx = 1;
+        gbc_btnClearData.gridx = 4;
         gbc_btnClearData.gridy = 0;
         btnClearData.setActionCommand("clear");
         btnClearData.addActionListener(this);
         fuelingPanel.add(btnClearData, gbc_btnClearData);
-        fuelingPanel.setLayout(gbl_dataPanel);
         
         JButton btnValidateData = new JButton("Validate");
         GridBagConstraints gbc_btnValidateData = new GridBagConstraints();
         gbc_btnValidateData.anchor = GridBagConstraints.EAST;
         gbc_btnValidateData.insets = new Insets(1, 5, 1, 1);
-        gbc_btnValidateData.gridx = 2;
+        gbc_btnValidateData.gridx = 5;
         gbc_btnValidateData.gridy = 0;
         btnValidateData.setActionCommand("check");
         btnValidateData.addActionListener(this);
         fuelingPanel.add(btnValidateData, gbc_btnValidateData);
 
         tempFuelingTable = createFuelingTable();
+        tempFileName = fileName;
 
         GridBagConstraints gbc_fuelingTable = new GridBagConstraints();
         gbc_fuelingTable.insets = new Insets(5, 0, 0, 0);
@@ -80,7 +169,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         gbc_fuelingTable.weighty = 1.0;
         gbc_fuelingTable.gridx = 0;
         gbc_fuelingTable.gridy = 1;
-        gbc_fuelingTable.gridwidth = 3;
+        gbc_fuelingTable.gridwidth = 6;
         
         JScrollPane scrollPane = new JScrollPane(tempFuelingTable);
         scrollPane.setViewportBorder(new TitledBorder(null, "Primary Open Loop Fueling", TitledBorder.LEADING, TitledBorder.TOP, null, null));
@@ -93,6 +182,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                 excelAdapter.removeTable(tempFuelingTable);
                 Utils.clearTable(tempFuelingTable);
                 tempFuelingTable = null;
+                tempFileName = "";
                 return false;
             }
         }
@@ -100,7 +190,16 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         if (tempFuelingTable != null) {
             if (fuelingTable != null)
                 excelAdapter.removeTable(fuelingTable);
-            fuelingTable = tempFuelingTable;
+            if (Utils.isTableEmpty(tempFuelingTable)) {
+	            fuelingTable = null;
+                tempFuelingTable = null;
+                tempFileName = "";
+	            fileName = "";
+            }
+            else {
+	            fuelingTable = tempFuelingTable;
+	            fileName = tempFileName;
+            }
         }
         return true;
     }
@@ -110,6 +209,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      */
     public void clear() {
         Utils.clearTable(tempFuelingTable);
+        tempFileName = "";
+        loadList.setSelectedIndex(0);
     }
     
     /**
@@ -125,6 +226,16 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     }
     
     /**
+     * Method returns true if fueling table is set, false otherwise.
+     * @return
+     */
+    public boolean isSet() {
+        if (fuelingTable == null || !validateFuelingData(fuelingTable))
+            return false;
+        return true;
+    }
+    
+    /**
      * Method sets values for the row.
      * If current table row count is less than specified row, a new row is added.
      * If current table column count is less than number of columns in elements array, a new column is added.
@@ -132,12 +243,26 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param elements
      */
     public void setValueAtRow(int row, String[] elements) {
+    	fuelingTable = setValueAtRow(fuelingTable, row, elements);
+    }
+
+    /**
+     * Method sets values for the row.
+     * If current table row count is less than specified row, a new row is added.
+     * If current table column count is less than number of columns in elements array, a new column is added.
+     * @param fuelingTable
+     * @param row
+     * @param elements
+     * @return
+     */
+    private JTable setValueAtRow(JTable fuelingTable, int row, String[] elements) {
         if (fuelingTable == null)
             fuelingTable = createFuelingTable();
         Utils.ensureRowCount(row + 1, fuelingTable);
         Utils.ensureColumnCount(elements.length - 1, fuelingTable);
         for (int i = 0; i < elements.length - 1; ++i)
             fuelingTable.setValueAt(elements[i], row, i);
+        return fuelingTable;
     }
     
     public Object getValueAt(int row, int column) {
@@ -166,6 +291,17 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @throws IOException 
      */
     public void write(FileWriter out) throws IOException {
+    	write(fuelingTable, out);
+    }
+
+    
+    /**
+     * Method write data in current primary open loop fueling table to provide file handler
+     * @param fuelingTable
+     * @param out, file handler
+     * @throws IOException 
+     */
+    private void write(JTable fuelingTable, FileWriter out) throws IOException {
         if (fuelingTable != null) {
             int i, j;
             for (i = 0; i < fuelingTable.getRowCount(); ++i) {
@@ -217,6 +353,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private boolean validateFuelingData(JTable fuelingTable) {
         if (fuelingTable == null)
             return false;
+        // check if table is empty
+        if (Utils.isTableEmpty(fuelingTable))
+        	return true;
         // check paste format
         if (!fuelingTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
             !((fuelingTable.getValueAt(0, 0).toString().equals("")) &&
@@ -257,6 +396,128 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         Utils.colorTable(fuelingTable);
         return true;
     }
+    
+    /**
+     * Function to load POL Fueling table from file
+     */
+    private JTable loadPolFueling(JTable fuelingTable, String fileName) {
+    	if (fileName.isEmpty())
+    		return null;
+        File file = new File("./" + fileName);
+        BufferedReader br = null;
+        try {
+        	br = new BufferedReader(new FileReader(file));
+        	int i = 0;
+            String line = br.readLine();
+            while (line != null) {
+            	fuelingTable = setValueAtRow(fuelingTable, i++, line.split(",", -1));
+            	line = br.readLine();
+            }
+            if (i > 0 && validateFuelingData(fuelingTable))
+            	return fuelingTable;
+        }
+        catch (FileNotFoundException e) {
+            logger.error(e);            	
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error(e);
+        }
+        finally {
+        	if (br != null) {
+                try {
+                	br.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
+        	}
+        }
+        return null;
+    }
+    
+    /**
+     * Function sets current POL table as default. If the current POL table not saved - it saves it.
+     * @param fuelingTable
+     * @return
+     */
+    private void setDefault(JTable fuelingTable) {
+    	if (btnSetDefault.getText().equals("Unset Default")) {
+    		Config.setDefaultPOLFueling("");
+    		btnSetDefault.setText("Set Default");
+    	}
+    	else {
+	    	if (!tempFileName.isEmpty())
+	    		save(fuelingTable);
+	    	if (!tempFileName.isEmpty())
+	    		Config.setDefaultPOLFueling(tempFileName);
+    	}
+    }
+    
+    /**
+     * Function save POL table.
+     * @param fuelingTable
+     * @return
+     */
+    private void save(JTable fuelingTable) {
+    	if (!validateFuelingData(fuelingTable))
+    		return;
+    	if (tempFileName.isEmpty()) {
+            if (JFileChooser.APPROVE_OPTION != fileChooser.showSaveDialog(null))
+                return;
+            File file = fileChooser.getSelectedFile();
+            tempFileName = file.getName();
+            FileWriter out = null;
+            try {
+            	out = new FileWriter(file);
+                write(fuelingTable, out);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                logger.error(e);
+            }
+            finally {
+            	if (out != null) {
+                    try {
+                    	out.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+            	}
+            }
+            String files = Config.getPOLFuelingFiles();
+            Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", "") + "," + tempFileName);
+            loadList.addItem(tempFileName);
+            loadList.setSelectedItem(tempFileName);
+    	}
+    }
+    
+    /**
+     * Loads POL fueling table from file.
+     * @param fuelingTable
+     */
+    private void load() {
+        String fileName = (String)loadList.getSelectedItem();
+        clear();
+        btnSetDefault.setText("Set Default");
+        if (!fileName.isEmpty()) {
+        	if (loadPolFueling(tempFuelingTable, fileName) != null) {
+	        	tempFileName = fileName;
+	        	loadList.setSelectedItem(fileName);
+	        	if (Config.getDefaultPOLFueling().equals(fileName))
+	        		btnSetDefault.setText("Unset Default");
+        	}
+        	else {
+            	loadList.removeItem(fileName);
+            	loadList.setSelectedIndex(0);
+            	if (!fileName.isEmpty()) {
+	    			String files = Config.getPOLFuelingFiles();
+	    			Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", ""));
+            	}
+        	}
+        }
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -264,5 +525,11 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             clear();
         else if ("check".equals(e.getActionCommand()))
             validateFuelingData(tempFuelingTable);
+        else if ("setdefault".equals(e.getActionCommand()))
+            setDefault(tempFuelingTable);
+        else if ("save".equals(e.getActionCommand()))
+        	save(tempFuelingTable);
+        else if ("polselected".equals(e.getActionCommand()))
+        	load();
     }
 }

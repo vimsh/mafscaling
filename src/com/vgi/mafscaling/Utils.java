@@ -35,7 +35,8 @@ public final class Utils {
     /**
      * Shortened numeric validation regex
      */
-    public final static String fpRegex = ("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
+    public final static String fpRegex = "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
+    //		("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
 
     //////////////////////////////////////////////////////////////////////////////
     // COLORING METHODS
@@ -284,6 +285,22 @@ public final class Utils {
             return false;
         }
         return true;
+    }
+    
+    /**
+     * Method check is the table is empty
+     * @param table
+     * @return
+     */
+    public static boolean isTableEmpty(JTable table) {
+        boolean isEmpty = true;
+        for (int i = 0; i < table.getRowCount() && isEmpty; ++i) {
+            for (int j = 0; j < table.getColumnCount() && isEmpty; ++j) {
+                if (!table.getValueAt(i, j).toString().isEmpty())
+                	isEmpty = false;
+            }
+        }
+        return isEmpty;
     }
 
     //////////////////////////////////////////////////////////////////////////////

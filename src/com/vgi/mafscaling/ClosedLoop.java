@@ -18,6 +18,7 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -27,21 +28,24 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 import javax.swing.Box;
@@ -72,61 +76,86 @@ import javax.swing.table.TableColumnModel;
 
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.labels.StandardXYSeriesLabelGenerator;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.function.Function2D;
+import org.jfree.data.function.LineFunction2D;
+import org.jfree.data.statistics.Regression;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChartHolder {
+public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChartHolder {
     private static final long serialVersionUID = 2988105467764335997L;
-    private static final Logger logger = Logger.getLogger(Mickeyd2005.class);
+    private static final Logger logger = Logger.getLogger(ClosedLoop.class);
 
-    private final static String SaveDataFileHeader = "[mickeyd2005 run data]";
+    private final static String SaveDataFileHeader = "[closed_loop run data]";
     private final static String MafTableName = "Current MAF Scaling";
     private final static String Afr1TableName = "AFR Average";
     private final static String Afr2TableName = "AFR Cell Hit Count";
-    
     private final static String XAxisName = "MAF Sensor (Voltage)";
     private final static String Y1AxisName = "Mass Airflow (g/s)";
     private final static String Y2AxisName = "Total Correction (%)";
-    
+    private final static String dvdtAxisName = "dV / dt";
+    private final static String iatAxisName = "IAT";
+    private final static String trpmAxisName = "Trims / Rpm";
+    private final static String mnmdAxisName = "Mean / Mode";
+    private final static String mnmd2AxisName = "Trims / MafV";
+    private final static String timeAxisName = "Time";
+    private final static String rpmAxisName = "RPM";
+    private static final String totalCorrectionDataName = "Total Correction";
+    private static final String currentDataName = "Current";
+    private static final String correctedDataName = "Corrected";
+    private static final String smoothedDataName = "Smoothed";
+    private static final String mafCurveDataName = "Maf Curve";
+    private static final String currentSlopeDataName = "Current Maf Slope";
+    private static final String smoothedSlopeDataName = "Smoothed Maf Slope";
+    private final static int MinimumDataSampleCount = 30;
     private final static int ColumnWidth = 50;
-    private final static double SmoothingIncrement = 0.10;
+    private final static int ColumnCount = 9;
     private int MafTableColumnCount = 50;
     private int AfrTableColumnCount = 15;
     private int AfrTableRowCount = 25;
     private int LogDataRowCount = 200;
-    private int clValue = -1;
-//    private int thtlChange = 2;
-    private double afrMin = 13.7;
-    private double afrMax = 15;
-    private double minLoad = 0.05;
-//    private int logThtlAngleColIdx = -1;
+    private int clValue = Config.getClOlStatusValue();
+    private double afrMin = Config.getAfrMinimumValue();
+    private double afrMax = Config.getAfrMaximumValue();
+    private double minLoad = Config.getLoadMinimumValue();
+    private double maxDvDt = Config.getDvDtMaximumValue();
+    private double maxMafV = Config.getMafVMaximumValue();
+    private double maxIat = Config.getIatMaximumValue();
+    
     private int logClOlStatusColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
     private int logAfrColIdx = -1;
     private int logRpmColIdx = -1;
     private int logLoadColIdx = -1;
+    private int logTimeColIdx = -1;
+    private int logMafvColIdx = -1;
+    private int logIatColIdx = -1;
 
-    private JPanel mafSmoothingPanel = null;
     private JTable mafTable = null;
     private JTable mafSmoothingTable = null;
     private JTable logDataTable = null;
     private JTable afr1Table = null;
     private JTable afr2Table = null;
-    private ChartPanel chartPanel = null;
-    private JCheckBox checkBoxCorrData = null;
+    private MafChartPanel mafChartPanel = null;
+    private JCheckBox checkBoxDvdtData = null;
+    private JCheckBox checkBoxIatData = null;
+    private JCheckBox checkBoxTrpmData = null;
+    private JCheckBox checkBoxMnmdData = null;
+    private JCheckBox checkBoxRunData = null;
     private JCheckBox checkBoxCurrentMaf = null;
     private JCheckBox checkBoxCorrectedMaf = null;
     private JCheckBox checkBoxSmoothedMaf = null;
@@ -134,28 +163,39 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     private JComboBox<String> smoothComboBox = null;
     private JButton btnSmoothButton = null;
     private JButton btnResetSmoothButton = null;
+    private JButton btnPlusButton = null;
+    private JButton btnMinusButton = null;
+    private JLabel lblMafIncDec = null;
+    private JFormattedTextField mafIncDecTextField = null;
 
+    private ArrayList<Double> trimArray = new ArrayList<Double>();
+    private ArrayList<Double> rpmArray = new ArrayList<Double>();
+    private ArrayList<Double> timeArray = new ArrayList<Double>();
+    private ArrayList<Double> iatArray = new ArrayList<Double>();
+    private ArrayList<Double> mafvArray = new ArrayList<Double>();
+    private ArrayList<Double> dvdtArray = new ArrayList<Double>();
     private ArrayList<Double> voltArray = new ArrayList<Double>();
     private ArrayList<Double> gsArray = new ArrayList<Double>();
     private ArrayList<Double> gsCorrected = new ArrayList<Double>();
     private ArrayList<Double> smoothGsArray = new ArrayList<Double>();
-    private ArrayList<Double> correctionArray = new ArrayList<Double>();
-
-    private PrimaryOpenLoopFuelingTable polfTable = new PrimaryOpenLoopFuelingTable();
+    private ArrayList<Double> correctionMeanArray = new ArrayList<Double>();
+    private ArrayList<Double> correctionModeArray = new ArrayList<Double>();
     private final ExcelAdapter excelAdapter = new ExcelAdapter();
     private final JFileChooser fileChooser = new JFileChooser();
-    private final XYSeries corrData = new XYSeries("Total Correction");
-    private final XYSeries currMafData = new XYSeries("Current");
-    private final XYSeries corrMafData = new XYSeries("Corrected");
-    private final XYSeries smoothMafData = new XYSeries("Smoothed");
+    private final XYSeries runData = new XYSeries(totalCorrectionDataName);
+    private final XYSeries currMafData = new XYSeries(currentDataName);
+    private final XYSeries corrMafData = new XYSeries(correctedDataName);
+    private final XYSeries smoothMafData = new XYSeries(smoothedDataName);
+    
+    private PrimaryOpenLoopFuelingTable polfTable = null;
 
-    public Mickeyd2005(int tabPlacement) {
+    public ClosedLoop(int tabPlacement, PrimaryOpenLoopFuelingTable table) {
         super(tabPlacement);
+    	polfTable = table;
         initialize();
     }
 
     private void initialize() {
-        polfTable.setExcelAdapter(excelAdapter);
         createDataTab();
         createGraghTab();
         createUsageTab();
@@ -166,10 +206,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
-        URL location = Mickeyd2005.class.getProtectionDomain().getCodeSource().getLocation();
-        System.out.println(location.getPath());
-
-        fileChooser.setCurrentDirectory(new File(location.getPath()));
+        fileChooser.setCurrentDirectory(new File("."));
         
         JPanel dataPanel = new JPanel();
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
@@ -207,7 +244,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         btnMafClearButton.addActionListener(this);
         cntlPanel.add(btnMafClearButton, gbc_btnMafClearButton);
         
-        JButton btnRunClearButton = new JButton("Clear Log Data");
+        JButton btnRunClearButton = new JButton("Clear Run Data");
         GridBagConstraints gbc_btnRunClearButton = new GridBagConstraints();
         gbc_btnRunClearButton.insets = new Insets(0, 0, 5, 5);
         gbc_btnRunClearButton.gridx = 1;
@@ -324,7 +361,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         gbc_mafTable.gridy = 0;
         gbc_mafTable.gridheight = 2;
         dataMafPanel.add(mafTable, gbc_mafTable);
-        excelAdapter.addTable(mafTable, false, true);
+        excelAdapter.addTable(mafTable, false, false, false, false, true, false, true, false, true);
 
         JPanel dataRunButtonPanel = new JPanel();
         dataRunButtonPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
@@ -353,7 +390,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         gbc_dataScrollPane.weightx = 0;
         gbc_dataScrollPane.weighty = 1.0;
         gbc_dataScrollPane.fill = GridBagConstraints.BOTH;
-        gbc_dataScrollPane.ipadx = ColumnWidth * 5;
+        gbc_dataScrollPane.ipadx = ColumnWidth * ColumnCount;
         gbc_dataScrollPane.gridx = 0;
         gbc_dataScrollPane.gridy = 3;
         dataPanel.add(dataScrollPane, gbc_dataScrollPane);
@@ -393,17 +430,21 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     private void createLogDataTable(JPanel panel) {
             logDataTable = new JTable();
             logDataTable.getTableHeader().setReorderingAllowed(false);
-            logDataTable.setModel(new DefaultTableModel(LogDataRowCount, 5));
+            logDataTable.setModel(new DefaultTableModel(LogDataRowCount, ColumnCount));
             logDataTable.setColumnSelectionAllowed(true);
             logDataTable.setCellSelectionEnabled(true);
             logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
             logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
             logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            logDataTable.getColumnModel().getColumn(0).setHeaderValue("LOAD");
-            logDataTable.getColumnModel().getColumn(1).setHeaderValue("RPM");
-            logDataTable.getColumnModel().getColumn(2).setHeaderValue("AFR");
-            logDataTable.getColumnModel().getColumn(3).setHeaderValue("STFT");
-            logDataTable.getColumnModel().getColumn(4).setHeaderValue("LTFT");
+            logDataTable.getColumnModel().getColumn(0).setHeaderValue("Time");
+            logDataTable.getColumnModel().getColumn(1).setHeaderValue("Load");
+            logDataTable.getColumnModel().getColumn(2).setHeaderValue("RPM");
+            logDataTable.getColumnModel().getColumn(3).setHeaderValue("MafV");
+            logDataTable.getColumnModel().getColumn(4).setHeaderValue("AFR");
+            logDataTable.getColumnModel().getColumn(5).setHeaderValue("STFT");
+            logDataTable.getColumnModel().getColumn(6).setHeaderValue("LTFT");
+            logDataTable.getColumnModel().getColumn(7).setHeaderValue("dV/dt");
+            logDataTable.getColumnModel().getColumn(8).setHeaderValue("IAT");
             Utils.initializeTable(logDataTable, ColumnWidth);
 
             JTableHeader header = logDataTable.getTableHeader();
@@ -495,11 +536,12 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     private void createGraghTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
+
         GridBagLayout gbl_plotPanel = new GridBagLayout();
         gbl_plotPanel.columnWidths = new int[] {0};
-        gbl_plotPanel.rowHeights = new int[] {0};
+        gbl_plotPanel.rowHeights = new int[] {0, 0, 0};
         gbl_plotPanel.columnWeights = new double[]{1.0};
-        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0};
+        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0, 0.0};
         plotPanel.setLayout(gbl_plotPanel);
 
         JPanel cntlPanel = new JPanel();
@@ -513,25 +555,61 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         plotPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
         
-        checkBoxCorrData = new JCheckBox("Total Correction");
-        GridBagConstraints gbc_checkBoxData = new GridBagConstraints();
-        gbc_checkBoxData.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxData.gridx = 0;
-        gbc_checkBoxData.gridy = 0;
-        checkBoxCorrData.setActionCommand("corrdata");
-        checkBoxCorrData.addActionListener(this);
-        cntlPanel.add(checkBoxCorrData, gbc_checkBoxData);
+        checkBoxDvdtData = new JCheckBox("dV/dt");
+        GridBagConstraints gbc_checkBoxDvdtData = new GridBagConstraints();
+        gbc_checkBoxDvdtData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxDvdtData.gridx = 0;
+        gbc_checkBoxDvdtData.gridy = 0;
+        checkBoxDvdtData.setActionCommand("dvdt");
+        checkBoxDvdtData.addActionListener(this);
+        cntlPanel.add(checkBoxDvdtData, gbc_checkBoxDvdtData);
+        
+        checkBoxIatData = new JCheckBox("IAT");
+        GridBagConstraints gbc_checkBoxIatData = new GridBagConstraints();
+        gbc_checkBoxIatData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxIatData.gridx = 1;
+        gbc_checkBoxIatData.gridy = 0;
+        checkBoxIatData.setActionCommand("iat");
+        checkBoxIatData.addActionListener(this);
+        cntlPanel.add(checkBoxIatData, gbc_checkBoxIatData);
+        
+        checkBoxTrpmData = new JCheckBox("Trims/RPM");
+        GridBagConstraints gbc_checkBoxTrpmData = new GridBagConstraints();
+        gbc_checkBoxTrpmData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxTrpmData.gridx = 2;
+        gbc_checkBoxTrpmData.gridy = 0;
+        checkBoxTrpmData.setActionCommand("trpm");
+        checkBoxTrpmData.addActionListener(this);
+        cntlPanel.add(checkBoxTrpmData, gbc_checkBoxTrpmData);
+        
+        checkBoxMnmdData = new JCheckBox("Mean/Mode");
+        GridBagConstraints gbc_checkBoxMnmdData = new GridBagConstraints();
+        gbc_checkBoxMnmdData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxMnmdData.gridx = 3;
+        gbc_checkBoxMnmdData.gridy = 0;
+        checkBoxMnmdData.setActionCommand("mnmd");
+        checkBoxMnmdData.addActionListener(this);
+        cntlPanel.add(checkBoxMnmdData, gbc_checkBoxMnmdData);
+        
+        checkBoxRunData = new JCheckBox("Total Correction");
+        GridBagConstraints gbc_checkBoxRunData = new GridBagConstraints();
+        gbc_checkBoxRunData.insets = new Insets(0, 0, 3, 3);
+        gbc_checkBoxRunData.gridx = 4;
+        gbc_checkBoxRunData.gridy = 0;
+        checkBoxRunData.setActionCommand("corrdata");
+        checkBoxRunData.addActionListener(this);
+        cntlPanel.add(checkBoxRunData, gbc_checkBoxRunData);
         
         checkBoxCurrentMaf = new JCheckBox("Current");
         GridBagConstraints gbc_checkBoxCurrentMaf = new GridBagConstraints();
         gbc_checkBoxCurrentMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxCurrentMaf.gridx = 1;
+        gbc_checkBoxCurrentMaf.gridx = 5;
         gbc_checkBoxCurrentMaf.gridy = 0;
         checkBoxCurrentMaf.setActionCommand("current");
         checkBoxCurrentMaf.addActionListener(this);
@@ -540,7 +618,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         checkBoxCorrectedMaf = new JCheckBox("Corrected");
         GridBagConstraints gbc_checkBoxCorrectedMaf = new GridBagConstraints();
         gbc_checkBoxCorrectedMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxCorrectedMaf.gridx = 2;
+        gbc_checkBoxCorrectedMaf.gridx = 6;
         gbc_checkBoxCorrectedMaf.gridy = 0;
         checkBoxCorrectedMaf.setActionCommand("corrected");
         checkBoxCorrectedMaf.addActionListener(this);
@@ -549,7 +627,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         checkBoxSmoothedMaf = new JCheckBox("Smoothed");
         GridBagConstraints gbc_checkBoxSmoothedMaf = new GridBagConstraints();
         gbc_checkBoxSmoothedMaf.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxSmoothedMaf.gridx = 3;
+        gbc_checkBoxSmoothedMaf.gridx = 7;
         gbc_checkBoxSmoothedMaf.gridy = 0;
         checkBoxSmoothedMaf.setActionCommand("smoothed");
         checkBoxSmoothedMaf.addActionListener(this);
@@ -560,7 +638,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         gbc_horizontalGlue.weightx = 1.0;
         gbc_horizontalGlue.fill = GridBagConstraints.HORIZONTAL;
         gbc_horizontalGlue.insets = new Insets(0, 0, 3, 3);
-        gbc_horizontalGlue.gridx = 4;
+        gbc_horizontalGlue.gridx = 8;
         gbc_horizontalGlue.gridy = 0;
         cntlPanel.add(horizontalGlue, gbc_horizontalGlue);
 
@@ -568,7 +646,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         GridBagConstraints gbc_checkBoxSmoothing = new GridBagConstraints();
         gbc_checkBoxSmoothing.anchor = GridBagConstraints.CENTER;
         gbc_checkBoxSmoothing.insets = new Insets(0, 0, 3, 3);
-        gbc_checkBoxSmoothing.gridx = 5;
+        gbc_checkBoxSmoothing.gridx = 9;
         gbc_checkBoxSmoothing.gridy = 0;
         checkBoxSmoothing.setActionCommand("smoothing");
         checkBoxSmoothing.addActionListener(this);
@@ -581,7 +659,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         GridBagConstraints gbc_smoothComboBox = new GridBagConstraints();
         gbc_smoothComboBox.anchor = GridBagConstraints.CENTER;
         gbc_smoothComboBox.insets = new Insets(0, 0, 3, 3);
-        gbc_smoothComboBox.gridx = 6;
+        gbc_smoothComboBox.gridx = 10;
         gbc_smoothComboBox.gridy = 0;
         cntlPanel.add(smoothComboBox, gbc_smoothComboBox);
 
@@ -590,7 +668,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         GridBagConstraints gbc_btnSmoothButton = new GridBagConstraints();
         gbc_btnSmoothButton.anchor = GridBagConstraints.CENTER;
         gbc_btnSmoothButton.insets = new Insets(0, 0, 3, 3);
-        gbc_btnSmoothButton.gridx = 7;
+        gbc_btnSmoothButton.gridx = 11;
         gbc_btnSmoothButton.gridy = 0;
         btnSmoothButton.setActionCommand("smooth");
         btnSmoothButton.addActionListener(this);
@@ -600,35 +678,40 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         GridBagConstraints gbc_btnResetSmoothButton = new GridBagConstraints();
         gbc_btnResetSmoothButton.anchor = GridBagConstraints.CENTER;
         gbc_btnResetSmoothButton.insets = new Insets(0, 0, 3, 3);
-        gbc_btnResetSmoothButton.gridx = 8;
+        gbc_btnResetSmoothButton.gridx = 12;
         gbc_btnResetSmoothButton.gridy = 0;
         btnResetSmoothButton.setActionCommand("smoothreset");
         btnResetSmoothButton.addActionListener(this);
         cntlPanel.add(btnResetSmoothButton, gbc_btnResetSmoothButton);
         
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
-        chartPanel = new MafChartPanel(chart, this);
+        mafChartPanel = new MafChartPanel(chart, this);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
-        gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
+        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
         gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
         gbl_chartPanel.weightx = 1.0;
+        gbl_chartPanel.weighty = 1.0;
         gbl_chartPanel.fill = GridBagConstraints.BOTH;
         gbl_chartPanel.gridx = 0;
         gbl_chartPanel.gridy = 1;
-        plotPanel.add(chartPanel, gbl_chartPanel);
+        plotPanel.add(mafChartPanel.getChartPanel(), gbl_chartPanel);
 
         XYDotRenderer dotRenderer = new XYDotRenderer();
         dotRenderer.setSeriesPaint(0, new Color(0, 51, 102));
         dotRenderer.setDotHeight(3);
         dotRenderer.setDotWidth(3);
 
-         XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
+        XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
         lineRenderer.setUseFillPaint(true);
         lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
-                new DecimalFormat("0.00"), new DecimalFormat("0.00"))); 
+                new DecimalFormat("0.00"), new DecimalFormat("0.00")));
         
+        Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
+        lineRenderer.setSeriesStroke(0, stroke);
+        lineRenderer.setSeriesStroke(1, stroke);
+        lineRenderer.setSeriesStroke(2, stroke);
         lineRenderer.setSeriesPaint(0, new Color(34, 139, 34));
         lineRenderer.setSeriesPaint(1, new Color(0, 0, 255));
         lineRenderer.setSeriesPaint(2, new Color(201, 0, 0));
@@ -636,12 +719,27 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         lineRenderer.setSeriesShape(1, ShapeUtilities.createUpTriangle((float) 2.5));
         lineRenderer.setSeriesShape(2, ShapeUtilities.createDownTriangle((float) 2.5));
 
+        lineRenderer.setLegendItemLabelGenerator(
+        		new StandardXYSeriesLabelGenerator() {
+					private static final long serialVersionUID = 7593430826693873496L;
+					public String generateLabel(XYDataset dataset, int series) {
+						XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
+						return xys.getDescription();
+					}
+        		}
+        );
+
         ValueAxis mafvDomain = new NumberAxis(XAxisName);
         ValueAxis mafgsRange = new NumberAxis(Y1AxisName);
-        ValueAxis afrerrRange = new NumberAxis(Y2AxisName);        
+        ValueAxis afrerrRange = new NumberAxis(Y2AxisName);
         
-        XYSeriesCollection scatterDataset = new XYSeriesCollection(corrData);
+        XYSeriesCollection scatterDataset = new XYSeriesCollection(runData);
         XYSeriesCollection lineDataset = new XYSeriesCollection();
+
+        currMafData.setDescription(currentDataName);
+        corrMafData.setDescription(correctedDataName);
+        smoothMafData.setDescription(smoothedDataName);
+        
         lineDataset.addSeries(smoothMafData);
         lineDataset.addSeries(corrMafData);
         lineDataset.addSeries(currMafData);
@@ -671,15 +769,16 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         legend.setPosition(RectangleEdge.TOP);
         chart.addLegend(legend);
         
-        mafSmoothingPanel = new JPanel();
+        JPanel mafSmoothingPanel = new JPanel();
+        mafSmoothingPanel.setMinimumSize(new Dimension(50, 50));
         GridBagLayout gbl_mafSmoothingPanel = new GridBagLayout();
-        gbl_mafSmoothingPanel.columnWidths = new int[]{0, 0};
+        gbl_mafSmoothingPanel.columnWidths = new int[]{0, 0, 0};
         gbl_mafSmoothingPanel.rowHeights = new int[] {0, 0};
-        gbl_mafSmoothingPanel.columnWeights = new double[]{0.0, 1.0};
+        gbl_mafSmoothingPanel.columnWeights = new double[]{0.0, 0.0, 1.0};
         gbl_mafSmoothingPanel.rowWeights = new double[]{0.0, 0.0};
         GridBagConstraints gbc_mafSmoothingPanel = new GridBagConstraints();
         gbc_mafSmoothingPanel.ipady = 3;
-        gbc_mafSmoothingPanel.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafSmoothingPanel.anchor = GridBagConstraints.SOUTH;
         gbc_mafSmoothingPanel.weightx = 1.0;
         gbc_mafSmoothingPanel.insets = new Insets(0, 0, 5, 0);
         gbc_mafSmoothingPanel.fill = GridBagConstraints.HORIZONTAL;
@@ -688,29 +787,54 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         mafSmoothingPanel.setLayout(gbl_mafSmoothingPanel);
         plotPanel.add(mafSmoothingPanel, gbc_mafSmoothingPanel);
         
-        JButton btnPlusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>+</div></html>");
+        lblMafIncDec = new JLabel("Inc/Dec");
+        GridBagConstraints gbc_lblMafIncDec = new GridBagConstraints();
+        gbc_lblMafIncDec.anchor = GridBagConstraints.PAGE_START;
+        gbc_lblMafIncDec.insets = new Insets(0, 0, 0, 0);
+        gbc_lblMafIncDec.weightx = 0;
+        gbc_lblMafIncDec.weighty = 0;
+        gbc_lblMafIncDec.gridx = 0;
+        gbc_lblMafIncDec.gridy = 0;
+        mafSmoothingPanel.add(lblMafIncDec, gbc_lblMafIncDec);
+        
+        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+        doubleFmt.setMaximumFractionDigits(2);
+        mafIncDecTextField = new JFormattedTextField(doubleFmt);
+        mafIncDecTextField.setValue(new Double(0.1));
+        mafIncDecTextField.setColumns(5);
+        mafIncDecTextField.setPreferredSize(new Dimension(40, 24));
+        GridBagConstraints gbc_mafIncDecTextField = new GridBagConstraints();
+        gbc_mafIncDecTextField.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafIncDecTextField.insets = new Insets(0, 0, 0, 0);
+        gbc_mafIncDecTextField.weightx = 0;
+        gbc_mafIncDecTextField.weighty = 0;
+        gbc_mafIncDecTextField.gridx = 0;
+        gbc_mafIncDecTextField.gridy = 1;
+        mafSmoothingPanel.add(mafIncDecTextField, gbc_mafIncDecTextField);
+        
+        btnPlusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>+</div></html>");
         btnPlusButton.setActionCommand("plus");
         btnPlusButton.addActionListener(this);
-        btnPlusButton.setMinimumSize(new Dimension(40, 25));
+        btnPlusButton.setPreferredSize(new Dimension(40, 25));
         GridBagConstraints gbc_btnPlusButton = new GridBagConstraints();
         gbc_btnPlusButton.anchor = GridBagConstraints.PAGE_START;
         gbc_btnPlusButton.insets = new Insets(0, 0, 0, 0);
         gbc_btnPlusButton.weightx = 0;
         gbc_btnPlusButton.weighty = 0;
-        gbc_btnPlusButton.gridx = 0;
+        gbc_btnPlusButton.gridx = 1;
         gbc_btnPlusButton.gridy = 0;
         mafSmoothingPanel.add(btnPlusButton, gbc_btnPlusButton);
 
-        JButton btnMinusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>-</div></html>");
+        btnMinusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>-</div></html>");
         btnMinusButton.setActionCommand("minus");
         btnMinusButton.addActionListener(this);
-        btnMinusButton.setMinimumSize(new Dimension(40, 25));
+        btnMinusButton.setPreferredSize(new Dimension(40, 25));
         GridBagConstraints gbc_btnMinusButton = new GridBagConstraints();
         gbc_btnMinusButton.anchor = GridBagConstraints.PAGE_START;
         gbc_btnMinusButton.insets = new Insets(0, 0, 0, 0);
         gbc_btnMinusButton.weightx = 0;
         gbc_btnMinusButton.weighty = 0;
-        gbc_btnMinusButton.gridx = 0;
+        gbc_btnMinusButton.gridx = 1;
         gbc_btnMinusButton.gridy = 1;
         mafSmoothingPanel.add(btnMinusButton, gbc_btnMinusButton);
 
@@ -728,20 +852,24 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         mafSmoothingTable.setTableHeader(null);
         Utils.initializeTable(mafSmoothingTable, ColumnWidth);
         GridBagConstraints gbc_mafTable = new GridBagConstraints();
+        gbc_mafTable.anchor = GridBagConstraints.SOUTH;
         gbc_mafTable.insets = new Insets(0, 0, 0, 0);
-        gbc_mafTable.fill = GridBagConstraints.BOTH;
+        gbc_mafTable.fill = GridBagConstraints.HORIZONTAL;
         gbc_mafTable.weightx = 1.0;
-        gbc_mafTable.weighty = 1.0;
-        gbc_mafTable.gridx = 1;
+        gbc_mafTable.gridx = 2;
         gbc_mafTable.gridy = 0;
         gbc_mafTable.gridheight = 2;
         
         JScrollPane mafSmoothingPane = new JScrollPane(mafSmoothingTable);
+        mafSmoothingPane.setPreferredSize(new Dimension(52, 52));
         mafSmoothingPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         
         mafSmoothingPanel.add(mafSmoothingPane, gbc_mafTable);
-        mafSmoothingPanel.setVisible(false);
-        excelAdapter.addTable(mafSmoothingTable, false, true, true, true);
+        excelAdapter.addTable(mafSmoothingTable, false, true, true, false, false, true, false, false, true);
+        lblMafIncDec.setVisible(false);
+        mafIncDecTextField.setVisible(false);
+        btnPlusButton.setVisible(false);
+        btnMinusButton.setVisible(false);
     }
     
     //////////////////////////////////////////////////////////////////////////////////////
@@ -806,41 +934,102 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         if ("loadlog".equals(e.getActionCommand())) {
             loadLogFile();
         }
+        else if ("dvdt".equals(e.getActionCommand())) {
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+            	clearNotRunDataCheckboxes();
+            	clearRunDataCheckboxes();
+                if (plotDvdtData())
+                    checkBox.setSelected(true);
+            }
+            else
+                runData.clear();
+            setRanges();
+        }
+        else if ("iat".equals(e.getActionCommand())) {
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+            	clearNotRunDataCheckboxes();
+            	clearRunDataCheckboxes();
+                if (plotIatData())
+                    checkBox.setSelected(true);
+            }
+            else
+                runData.clear();
+            setRanges();
+        }
+        else if ("trpm".equals(e.getActionCommand())) {
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+            	clearNotRunDataCheckboxes();
+            	clearRunDataCheckboxes();
+                if (plotTrimRpmData())
+                    checkBox.setSelected(true);
+            }
+            else {
+                runData.clear();
+                currMafData.clear();
+            }
+            setRanges();
+        }
+        else if ("mnmd".equals(e.getActionCommand())) {
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+            	clearNotRunDataCheckboxes();
+            	clearRunDataCheckboxes();
+                if (plotMeanModeData())
+                    checkBox.setSelected(true);
+            }
+            else {
+                currMafData.clear();
+                corrMafData.clear();
+                runData.clear();
+            }
+            setRanges();
+        }
         else if ("corrdata".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	clearRunDataCheckboxes();
                 if (!plotCorrectionData())
                     checkBox.setSelected(false);
             }
             else
-                corrData.clear();
+                runData.clear();
+            setRanges();
         }
         else if ("current".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	clearRunDataCheckboxes();
                 if (!plotCurrentMafData())
                     checkBox.setSelected(false);
             }
             else
                 currMafData.clear();
+            setRanges();
         }
         else if ("corrected".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	clearRunDataCheckboxes();
                 if (!setCorrectedMafData())
                     checkBox.setSelected(false);
             }
             else
                 corrMafData.clear();
+            setRanges();
         }
         else if ("smoothed".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
+            	clearRunDataCheckboxes();
                 if (!setSmoothedMafData())
                     checkBox.setSelected(false);
             }
             else
                 smoothMafData.clear();
+            setRanges();
         }
         else if ("smoothing".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
@@ -848,24 +1037,84 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                 enableSmoothingView(true);
             else
                 enableSmoothingView(false);
+            setRanges();
         }
     }
     
+    private void clearNotRunDataCheckboxes() {
+    	if (checkBoxRunData.isSelected()) {
+    		checkBoxRunData.setSelected(false);
+    		runData.clear();
+    	}
+    	if (checkBoxCurrentMaf.isSelected()) {
+    		checkBoxCurrentMaf.setSelected(false);
+    		currMafData.clear();
+    	}
+    	if (checkBoxCorrectedMaf.isSelected()) {
+    		checkBoxCorrectedMaf.setSelected(false);
+    		corrMafData.clear();
+    	}
+    	if (checkBoxSmoothedMaf.isSelected()) {
+    		checkBoxSmoothedMaf.setSelected(false);
+    		smoothMafData.clear();
+    	}
+    }
+    
+    private void clearRunDataCheckboxes() {
+    	if (checkBoxDvdtData.isSelected()) {
+    		checkBoxDvdtData.setSelected(false);
+    		runData.clear();
+    	}
+    	if (checkBoxIatData.isSelected()) {
+    		checkBoxIatData.setSelected(false);
+    		runData.clear();
+    	}
+    	if (checkBoxTrpmData.isSelected()) {
+    		checkBoxTrpmData.setSelected(false);
+    		currMafData.clear();
+    		runData.clear();
+    	}
+    	if (checkBoxMnmdData.isSelected()) {
+    		checkBoxMnmdData.setSelected(false);
+    		currMafData.clear();
+    		corrMafData.clear();
+    		runData.clear();
+    	}
+    }
+    
     private void clearMafTable() {
-        while (MafTableColumnCount < mafTable.getColumnCount())
-            Utils.removeColumn(MafTableColumnCount, mafTable);
-        Utils.clearTable(mafTable);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    	try {
+	        while (MafTableColumnCount < mafTable.getColumnCount())
+	            Utils.removeColumn(MafTableColumnCount, mafTable);
+	        Utils.clearTable(mafTable);
+    	}
+    	finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    	}
     }
     
     private void clearLogDataTables() {
-        while (LogDataRowCount < logDataTable.getRowCount())
-            Utils.removeRow(LogDataRowCount, logDataTable);
-        Utils.clearTable(logDataTable);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    	try {
+	        while (LogDataRowCount < logDataTable.getRowCount())
+	            Utils.removeRow(LogDataRowCount, logDataTable);
+	        Utils.clearTable(logDataTable);
+    	}
+    	finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    	}
     }
     
     private void clearAfrDataTables() {
-        clearAfrDataTable(afr1Table);
-        clearAfrDataTable(afr2Table);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    	try {
+	        clearAfrDataTable(afr1Table);
+	        clearAfrDataTable(afr2Table);
+    	}
+    	finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    	}
     }
     
     private void clearAfrDataTable(JTable table) {
@@ -877,6 +1126,12 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     }
     
     private void clearData() {
+    	trimArray.clear();
+    	rpmArray.clear();
+    	timeArray.clear();
+    	iatArray.clear();
+    	mafvArray.clear();
+    	dvdtArray.clear();
         voltArray.clear();
         gsArray.clear();
         gsCorrected.clear();
@@ -886,14 +1141,16 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     }
     
     private void clearChartData() {
-        corrData.clear();
+        runData.clear();
         currMafData.clear();
         corrMafData.clear();
         smoothMafData.clear();
     }
     
     private void clearChartCheckBoxes() {
-        checkBoxCorrData.setSelected(false);
+    	checkBoxDvdtData.setSelected(false);
+    	checkBoxIatData.setSelected(false);
+        checkBoxRunData.setSelected(false);
         checkBoxCurrentMaf.setSelected(false);
         checkBoxCorrectedMaf.setSelected(false);
         checkBoxSmoothedMaf.setSelected(false);
@@ -902,7 +1159,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     private void calculateMafScaling() {
         if (!polfTable.validate())
             return;
-        chartPanel.setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
             clearData();
             clearChartData();
@@ -915,6 +1172,10 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             
             smoothGsArray.addAll(gsCorrected);
             checkBoxCorrectedMaf.setSelected(true);
+            
+            setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
+            
+            setRanges();
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -922,34 +1183,47 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);    
         }
         finally {
-            chartPanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
     
     private void calculateCorrectedGS() {
+        double time;
         double load;
         double rpm;
+        double dvdt;
         double afr;
+        double mafv;
         double stft;
         double ltft;
+        double iat;
         double corr;
         double val1;
         double val2;
+        String timeStr;
         String loadStr;
         String rpmStr;
+        String mafvStr;
         String afrStr;
         String stftStr;
         String ltftStr;
+        String dvdtStr;
+        String iatStr;
         int closestMafIdx;
         int closestRmpIdx;
         int closestLoadIdx;
         int i;
         String tableName = "Log Data";
-        ArrayList<Double> temp = new ArrayList<Double>(gsArray.size());
-        correctionArray = new ArrayList<Double>(gsArray.size());
+        ArrayList<Integer> temp = new ArrayList<Integer>(gsArray.size());
+        correctionMeanArray = new ArrayList<Double>(gsArray.size());
+        correctionModeArray = new ArrayList<Double>(gsArray.size());
+
+        ArrayList<HashMap<Double, Integer>> modeCalcArray = new ArrayList<HashMap<Double, Integer>>();
         for (i = 0; i < gsArray.size(); ++i) {
-            temp.add(0.0);
-            correctionArray.add(0.0);
+            temp.add(0);
+            correctionMeanArray.add(0.0);
+            correctionModeArray.add(0.0);
+            modeCalcArray.add(new HashMap<Double, Integer>());
         }
         ArrayList<Double> afrRpmArray = new ArrayList<Double>();
         for (i = 1; i < polfTable.getRowCount(); ++i) {
@@ -967,30 +1241,58 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             afr1Table.setValueAt(polfTable.getValueAt(0, i), 0, i);
             afr2Table.setValueAt(polfTable.getValueAt(0, i), 0, i);
         }
+        Integer val;
+        HashMap<Double, Integer> modeCountMap;
         for (i = 0; i < logDataTable.getRowCount(); ++i) {
-            loadStr = logDataTable.getValueAt(i, 0).toString();
-            rpmStr = logDataTable.getValueAt(i, 1).toString();
-            afrStr = logDataTable.getValueAt(i, 2).toString();
-            stftStr = logDataTable.getValueAt(i, 3).toString();
-            ltftStr = logDataTable.getValueAt(i, 4).toString();
-            if (loadStr.isEmpty() || rpmStr.isEmpty() || afrStr.isEmpty() || stftStr.isEmpty() || ltftStr.isEmpty())
+            timeStr = logDataTable.getValueAt(i, 0).toString();
+            loadStr = logDataTable.getValueAt(i, 1).toString();
+            rpmStr = logDataTable.getValueAt(i, 2).toString();
+            mafvStr = logDataTable.getValueAt(i, 3).toString();
+            afrStr = logDataTable.getValueAt(i, 4).toString();
+            stftStr = logDataTable.getValueAt(i, 5).toString();
+            ltftStr = logDataTable.getValueAt(i, 6).toString();
+            dvdtStr = logDataTable.getValueAt(i, 7).toString();
+            iatStr = logDataTable.getValueAt(i, 8).toString();
+            if (timeStr.isEmpty() || loadStr.isEmpty() || rpmStr.isEmpty() || mafvStr.isEmpty() ||
+            	afrStr.isEmpty() || stftStr.isEmpty() || ltftStr.isEmpty() || dvdtStr.isEmpty() || iatStr.isEmpty())
                 break;
-            if (!Utils.validateDouble(loadStr, i, 0, tableName) ||
-                !Utils.validateDouble(rpmStr, i, 0, tableName) ||
-                !Utils.validateDouble(afrStr, i, 0, tableName) ||
-                !Utils.validateDouble(stftStr, i, 0, tableName) ||
-                !Utils.validateDouble(ltftStr, i, 0, tableName))
+            if (!Utils.validateDouble(timeStr, i, 0, tableName) ||
+            	!Utils.validateDouble(loadStr, i, 1, tableName) ||
+                !Utils.validateDouble(rpmStr, i, 2, tableName) ||
+                !Utils.validateDouble(mafvStr, i, 3, tableName) ||
+                !Utils.validateDouble(afrStr, i, 4, tableName) ||
+                !Utils.validateDouble(stftStr, i, 5, tableName) ||
+                !Utils.validateDouble(ltftStr, i, 6, tableName) ||
+                !Utils.validateDouble(dvdtStr, i, 7, tableName) ||
+                !Utils.validateDouble(iatStr, i, 8, tableName))
                 return;
+            time = Double.valueOf(timeStr);
             load = Double.valueOf(loadStr);
             rpm = Double.valueOf(rpmStr);
+            mafv = Double.valueOf(mafvStr);
             afr = Double.valueOf(afrStr);
             stft = Double.valueOf(stftStr);
             ltft = Double.valueOf(ltftStr);
+            dvdt = Double.valueOf(dvdtStr);
+            iat = Double.valueOf(iatStr);
             corr = ltft + stft;
+            trimArray.add(corr);
+            rpmArray.add(rpm);
+            timeArray.add(time);
+            iatArray.add(iat);
+            mafvArray.add(mafv);
+            dvdtArray.add(dvdt);
             
             closestMafIdx = Utils.closestValueIndex(load * rpm / 60.0, gsArray);
-            correctionArray.set(closestMafIdx, (correctionArray.get(closestMafIdx) * temp.get(closestMafIdx) + corr) / (temp.get(closestMafIdx) + 1));
+            correctionMeanArray.set(closestMafIdx, (correctionMeanArray.get(closestMafIdx) * temp.get(closestMafIdx) + corr) / (temp.get(closestMafIdx) + 1));
             temp.set(closestMafIdx, temp.get(closestMafIdx) + 1);
+            modeCountMap = modeCalcArray.get(closestMafIdx);
+            double roundedCorr = ((double)Math.round(corr * 10.0)) / 10.0;
+            val = modeCountMap.get(roundedCorr);
+            if (val == null)
+            	modeCountMap.put(roundedCorr, 1);
+            else
+            	modeCountMap.put(roundedCorr, val + 1);
             
             closestRmpIdx = Utils.closestValueIndex(rpm, afrRpmArray) + 1;
             closestLoadIdx = Utils.closestValueIndex(load, afrLoadArray) + 1;
@@ -999,6 +1301,23 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             afr1Table.setValueAt((val1 * val2 + afr) / (val2 + 1.0), closestRmpIdx, closestLoadIdx);
             afr2Table.setValueAt(val2 + 1.0, closestRmpIdx, closestLoadIdx);
         }
+        
+        for (i = 0; i < modeCalcArray.size(); ++i) {
+        	modeCountMap = modeCalcArray.get(i);
+        	if (modeCountMap.size() > 0) {
+	            int maxValueInMap=(Collections.max(modeCountMap.values()));
+	            double sum = 0;
+	            int count = 0;
+	            for (Entry<Double, Integer> entry : modeCountMap.entrySet()) {
+	                if (entry.getValue() == maxValueInMap) {
+	                	sum += entry.getKey();
+	                	count += 1;
+	                }
+	            }
+	            correctionModeArray.set(i, sum / count);
+        	}
+        }
+        	
         int size = afrRpmArray.size() + 1;
         while (size < afr1Table.getRowCount())
             Utils.removeRow(size, afr1Table);
@@ -1006,10 +1325,10 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             Utils.removeRow(size, afr2Table);
         Utils.colorTable(afr1Table);
         Utils.colorTable(afr2Table);
-        for (i = 0; i < correctionArray.size(); ++i) {
+        for (i = 0; i < correctionMeanArray.size(); ++i) {
             corr = 1;
-            if (temp.get(i) > 50.0)
-                corr = 1.0 + correctionArray.get(i) / 100.00;
+            if (temp.get(i) > MinimumDataSampleCount)
+                corr = 1.0 + (correctionMeanArray.get(i) + correctionModeArray.get(i)) / 200.00;
             gsCorrected.add(i, gsArray.get(i) * corr);
         }
     }
@@ -1034,14 +1353,35 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         return true;
     }
 
-    private boolean plotCorrectionData() {
-        ArrayList<Double> xarr = new ArrayList<Double>();
-        ArrayList<Double> yarr = new ArrayList<Double>();
-        for (int i = 0; i < correctionArray.size(); ++i) {
-            xarr.add(voltArray.get(i));
-            yarr.add(correctionArray.get(i));
+    private boolean plotDvdtData() {
+        return setXYSeries(runData, timeArray, dvdtArray);
+    }
+
+    private boolean plotIatData() {
+        return setXYSeries(runData, timeArray, iatArray);
+    }
+
+    private boolean plotTrimRpmData() {
+        if (setXYSeries(runData, rpmArray, trimArray)) {
+	        double[] ols = Regression.getOLSRegression(mafChartPanel.getChartPanel().getChart().getXYPlot().getDataset(1), 0);
+	        Function2D curve = new LineFunction2D(ols[0], ols[1]);
+	        currMafData.clear();
+	        currMafData.add(runData.getMinX(), curve.getValue(runData.getMinX()));
+	        currMafData.add(runData.getMaxX(), curve.getValue(runData.getMaxX()));
+	        return true;
         }
-        return setXYSeries(corrData, xarr, yarr);
+        return false;
+    }
+
+    private boolean plotMeanModeData() {
+        return (setXYSeries(runData, mafvArray, trimArray) && setXYSeries(currMafData, voltArray, correctionMeanArray) && setXYSeries(corrMafData, voltArray, correctionModeArray));
+    }
+
+    private boolean plotCorrectionData() {
+        ArrayList<Double> yarr = new ArrayList<Double>();
+        for (int i = 0; i < correctionMeanArray.size(); ++i)
+            yarr.add((correctionMeanArray.get(i) + correctionModeArray.get(i)) / 2.0);
+        return setXYSeries(runData, voltArray, yarr);
     }
     
     private boolean plotCurrentMafData() {
@@ -1055,18 +1395,16 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             if (!getMafTableData(xarr, yarr))
                 return false;
         }
-        currMafData.clear();
-        for (int i = 0; i < xarr.size(); ++i)
-            currMafData.add(xarr.get(i), yarr.get(i));
-        return true;
+        return setXYSeries(currMafData, xarr, yarr);
     }
 
     private boolean setXYSeries(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
-        if (xarr.size() == 0 || yarr.size() == 0 || xarr.size() != yarr.size())
+        if (xarr.size() == 0 || xarr.size() != yarr.size())
             return false;
         series.clear();
         for (int i = 0; i < xarr.size(); ++i)
-            series.add(xarr.get(i), yarr.get(i));
+            series.add(xarr.get(i), yarr.get(i), false);
+        series.fireSeriesChanged();
         return true;
     }
 
@@ -1087,6 +1425,104 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     
     private boolean setSmoothedMafData() {
         return setXYSeries(smoothMafData, voltArray, smoothGsArray);
+    }
+    
+    private void setRanges() {
+    	double paddingX;
+    	double paddingY;
+        currMafData.setDescription(currentDataName);
+        corrMafData.setDescription(correctedDataName);
+        smoothMafData.setDescription(smoothedDataName);
+        XYPlot plot = mafChartPanel.getChartPanel().getChart().getXYPlot();
+    	plot.getDomainAxis(0).setLabel(XAxisName);
+    	plot.getRangeAxis(0).setLabel(Y1AxisName);
+    	plot.getRangeAxis(1).setLabel(Y2AxisName);
+    	plot.getRangeAxis(0).setVisible(true);
+        plot.getRenderer(0).setSeriesVisible(0, true);
+        plot.getRenderer(0).setSeriesVisible(1, true);
+        plot.getRenderer(0).setSeriesVisible(2, true);
+        if (checkBoxDvdtData.isSelected() && checkBoxDvdtData.isEnabled()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setVisible(false);
+	    	plot.getRangeAxis(1).setLabel(dvdtAxisName);
+	    	plot.getDomainAxis(0).setLabel(timeAxisName);
+	        plot.getRenderer(0).setSeriesVisible(0, false);
+	        plot.getRenderer(0).setSeriesVisible(1, false);
+	        plot.getRenderer(0).setSeriesVisible(2, false);
+        }
+        else if (checkBoxIatData.isSelected() && checkBoxIatData.isEnabled()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setVisible(false);
+	    	plot.getRangeAxis(1).setLabel(iatAxisName);
+	    	plot.getDomainAxis(0).setLabel(timeAxisName);
+	        plot.getRenderer(0).setSeriesVisible(0, false);
+	        plot.getRenderer(0).setSeriesVisible(1, false);
+	        plot.getRenderer(0).setSeriesVisible(2, false);
+        }
+        else if (checkBoxTrpmData.isSelected() && checkBoxTrpmData.isEnabled()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setVisible(false);
+	    	plot.getRangeAxis(1).setLabel(trpmAxisName);
+	    	plot.getDomainAxis(0).setLabel(rpmAxisName);
+	        plot.getRenderer(0).setSeriesVisible(0, false);
+	        plot.getRenderer(0).setSeriesVisible(1, false);
+	        currMafData.setDescription("Trend");
+        }
+        else if (checkBoxMnmdData.isSelected() && checkBoxMnmdData.isEnabled()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	plot.getRangeAxis(0).setLabel(mnmdAxisName);
+	    	plot.getRangeAxis(1).setLabel(mnmd2AxisName);
+	    	plot.getDomainAxis(0).setLabel(XAxisName);
+	        plot.getRenderer(0).setSeriesVisible(0, false);
+	        currMafData.setDescription("Mean");
+	        corrMafData.setDescription("Mode");
+        }
+        else if (checkBoxRunData.isSelected() && checkBoxRunData.isEnabled() &&
+        	     !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
+        	paddingX = runData.getMaxX() * 0.05;
+        	paddingY = runData.getMaxY() * 0.05;
+        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+        }
+        else if (checkBoxSmoothing.isSelected()) {
+        	double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
+        	double minY = Collections.max(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
+        	paddingX = smoothMafData.getMaxX() * 0.05;
+        	paddingY = maxY * 0.05;
+        	plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
+	    	plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
+        }
+        else if ((checkBoxCurrentMaf.isSelected() && checkBoxCurrentMaf.isEnabled()) ||
+            	 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
+            	 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
+        	paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
+        	paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
+        	plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
+	    	plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
+	    	if (checkBoxRunData.isSelected()) {
+	        	paddingX = runData.getMaxX() * 0.05;
+	        	paddingY = runData.getMaxY() * 0.05;
+	    		plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+	    	}
+        }
+        else {
+	    	plot.getRangeAxis(0).setAutoRange(true);
+        	plot.getDomainAxis(0).setAutoRange(true);
+        }
     }
     
     private void plotLineSlope(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
@@ -1117,6 +1553,7 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
             double Y2 = X2 * valueY - X1 * valueY + Y1;
             yarr.set(itemIndex + 1, Y2);
             mafSmoothingTable.setValueAt(Y2, 1, itemIndex + 1);
+            corrMafData.updateByIndex(itemIndex + 1, Y2);
             if (itemIndex + 1 < series.getItemCount()) {
                 X1 = X2;
                 X2 = xarr.get(itemIndex + 2);
@@ -1135,53 +1572,101 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         }
         smoothComboBox.setEnabled(flag);
         btnSmoothButton.setEnabled(flag);
-        checkBoxCorrData.setEnabled(!flag);
+        checkBoxDvdtData.setEnabled(!flag);
+        checkBoxIatData.setEnabled(!flag);
+        checkBoxTrpmData.setEnabled(!flag);
+        checkBoxMnmdData.setEnabled(!flag);
+        checkBoxRunData.setEnabled(!flag);
         checkBoxCurrentMaf.setEnabled(!flag);
         checkBoxCorrectedMaf.setEnabled(!flag);
         checkBoxSmoothedMaf.setEnabled(!flag);
         clearChartData();
         if (flag == true) {
-            mafSmoothingPanel.setVisible(true);
+            lblMafIncDec.setVisible(true);
+            mafIncDecTextField.setVisible(true);
+            btnPlusButton.setVisible(true);
+            btnMinusButton.setVisible(true);
+            setCorrectedMafData();
             plotSmoothingLineSlopes();
+            corrMafData.setDescription(mafCurveDataName);
+            currMafData.setDescription(currentSlopeDataName);
+            smoothMafData.setDescription(smoothedSlopeDataName);
         }
         else {
-            mafSmoothingPanel.setVisible(false);
-            if (checkBoxCorrData.isSelected())
-                plotCorrectionData();
-            if (checkBoxCurrentMaf.isSelected())
-                plotCurrentMafData();
-            if (checkBoxCorrectedMaf.isSelected())
-                setCorrectedMafData();
-            if (checkBoxSmoothedMaf.isSelected())
-                setSmoothedMafData();
+            lblMafIncDec.setVisible(false);
+            mafIncDecTextField.setVisible(false);
+            btnPlusButton.setVisible(false);
+            btnMinusButton.setVisible(false);
+            if (checkBoxDvdtData.isSelected())
+            	plotDvdtData();
+            else if (checkBoxIatData.isSelected())
+            	plotIatData();
+            else if (checkBoxTrpmData.isSelected())
+            	plotTrimRpmData();
+            else if (checkBoxMnmdData.isSelected())
+            	plotMeanModeData();
+            else {
+	            if (checkBoxRunData.isSelected())
+	                plotCorrectionData();
+	            if (checkBoxCurrentMaf.isSelected())
+	                plotCurrentMafData();
+	            if (checkBoxCorrectedMaf.isSelected())
+	                setCorrectedMafData();
+	            if (checkBoxSmoothedMaf.isSelected())
+	                setSmoothedMafData();
+            }
+            currMafData.setDescription(currentDataName);
+            corrMafData.setDescription(correctedDataName);
+            smoothMafData.setDescription(smoothedDataName);
         }
     }
     
     private void smoothReset() {
         if (gsCorrected.size() == 0)
             return;
-        smoothGsArray.clear();
-        smoothGsArray.addAll(gsCorrected);
-        if (checkBoxSmoothing.isSelected())
-            plotSmoothingLineSlopes();
-        else if (checkBoxSmoothedMaf.isSelected())
-            setSmoothedMafData();
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        try {
+	        smoothGsArray.clear();
+	        smoothGsArray.addAll(gsCorrected);
+	        corrMafData.clear();
+	        if (!checkBoxDvdtData.isEnabled() || !checkBoxDvdtData.isSelected() ||
+	        	!checkBoxTrpmData.isEnabled() || !checkBoxTrpmData.isSelected() || 
+	        	!checkBoxMnmdData.isEnabled() || !checkBoxMnmdData.isSelected() || 
+	        	!checkBoxIatData.isEnabled() || !checkBoxIatData.isSelected())
+	        	setCorrectedMafData();
+	        if (checkBoxSmoothing.isSelected())
+	            plotSmoothingLineSlopes();
+	        else if (checkBoxSmoothedMaf.isSelected())
+	            setSmoothedMafData();
+	        setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        }
     }
     
     public void changeMafSmoothingCellValue(boolean add) {
-        if (mafSmoothingTable.getSelectedRows() == null || mafSmoothingTable.getSelectedColumns() == null)
+        if (!Pattern.matches(Utils.fpRegex, mafIncDecTextField.getText())) {
+            JOptionPane.showMessageDialog(null, "Invalid Maf Scaling increment/decrement value", "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
+        }
+        double smoothingIncrement = Double.valueOf(mafIncDecTextField.getText());
+        
         int[] rows = mafSmoothingTable.getSelectedRows();
-        if (rows.length == 1 && rows[0] == 0)
-            return;
         int[] cols = mafSmoothingTable.getSelectedColumns();
+        if (rows == null || cols == null) {
+            JOptionPane.showMessageDialog(null, "Please select MAF table cell(s) to apply increment/decrement.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         double val;
         for (int col : cols) {
             if (!Pattern.matches(Utils.fpRegex, mafSmoothingTable.getValueAt(1, col).toString()))
                 continue;
-            val = (Double)(mafSmoothingTable.getValueAt(1, col)) + (add == true ? SmoothingIncrement : SmoothingIncrement * -1.0); 
+            val = (Double)(mafSmoothingTable.getValueAt(1, col)) + (add == true ? smoothingIncrement : smoothingIncrement * -1.0); 
             mafSmoothingTable.setValueAt(val, 1, col);
             smoothGsArray.set(col, val);
+            corrMafData.updateByIndex(col, val);
             if (col == 0)
                 smoothMafData.updateByIndex(col, (smoothGsArray.get(col + 1) - smoothGsArray.get(col)) / (voltArray.get(col + 1) - voltArray.get(col)));
             else if (col == smoothGsArray.size() - 1)
@@ -1196,43 +1681,59 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
     private void smoothCurve() {
         if (!checkBoxSmoothing.isSelected() || voltArray.size() == 0 || smoothGsArray.size() == 0)
             return;
-        int movWind;
-        ArrayList<Double> tmpArray = new ArrayList<Double>();
+
         int degree = Integer.parseInt(smoothComboBox.getSelectedItem().toString().trim());
-        if (degree == 3) {
-            movWind = 1;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
-                             0.5  * smoothGsArray.get(i) + 
-                             0.25 * smoothGsArray.get(i + 1));
-            for (int i = 0; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
+        int[] rows = mafSmoothingTable.getSelectedRows();
+        int[] cols = mafSmoothingTable.getSelectedColumns();
+        if (rows == null || cols == null || cols.length < degree) {
+            JOptionPane.showMessageDialog(null, "Please select MAF Scaling table cells range to apply smoothing. Number of selected columns must be greater than the smoothing degree value.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+            return;
+        }        
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        int start = cols[0];
+        int end = cols[cols.length - 1];
+        try {
+	        int movWind;
+	        int i;
+	        ArrayList<Double> tmpArray = new ArrayList<Double>();
+	        if (degree == 3) {
+	            movWind = 1;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
+	                             0.5  * smoothGsArray.get(i) + 
+	                             0.25 * smoothGsArray.get(i + 1));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        if (degree == 5) {
+	            movWind = 2;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
+	                             0.2 * smoothGsArray.get(i - 1) + 
+	                             0.4 * smoothGsArray.get(i) + 
+	                             0.2 * smoothGsArray.get(i + 1) +
+	                             0.1 * smoothGsArray.get(i + 2));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        if (degree == 7) {
+	            movWind = 3;
+	            for (i = movWind + start; i + movWind <= end; ++i)
+	                tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
+	                             0.1  * smoothGsArray.get(i - 2) + 
+	                             0.15 * smoothGsArray.get(i - 1) + 
+	                             0.4  * smoothGsArray.get(i) + 
+	                             0.15 * smoothGsArray.get(i + 1) +
+	                             0.1  * smoothGsArray.get(i + 2) +
+	                             0.05 * smoothGsArray.get(i + 3));
+	            for (i = 0; i < tmpArray.size(); ++i)
+	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+	        }
+	        plotSmoothingLineSlopes();
         }
-        if (degree == 5) {
-            movWind = 2;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
-                             0.2 * smoothGsArray.get(i - 1) + 
-                             0.4 * smoothGsArray.get(i) + 
-                             0.2 * smoothGsArray.get(i + 1) +
-                             0.1 * smoothGsArray.get(i + 2));
-            for (int i = movWind; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
-        if (degree == 7) {
-            movWind = 3;
-            for (int i = movWind; i + movWind < smoothGsArray.size(); ++i)
-                tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
-                             0.1  * smoothGsArray.get(i - 2) + 
-                             0.15 * smoothGsArray.get(i - 1) + 
-                             0.4  * smoothGsArray.get(i) + 
-                             0.15 * smoothGsArray.get(i + 1) +
-                             0.1  * smoothGsArray.get(i + 2) +
-                             0.05 * smoothGsArray.get(i + 3));
-            for (int i = movWind; i < tmpArray.size(); ++i)
-                smoothGsArray.set(i + movWind, tmpArray.get(i));
-        }
-        plotSmoothingLineSlopes();
     }
    
     public void saveData() {
@@ -1241,38 +1742,22 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         File file = fileChooser.getSelectedFile();
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         int i, j;
+        FileWriter out = null;
         try {
-            FileWriter out = new FileWriter(file);
-            try {
-                // write string identifier
-                out.write(SaveDataFileHeader + "\n");
-                // write maf data
-                for (i = 0; i < mafTable.getRowCount(); ++i) {
-                    for (j = 0; j < mafTable.getColumnCount(); ++j)
-                        out.write(mafTable.getValueAt(i, j).toString() + ",");
-                    out.write("\n");
-                }
-                // write log data
-                for (i = 0; i < logDataTable.getRowCount(); ++i) {
-                    for (j = 0; j < logDataTable.getColumnCount(); ++j)
-                        out.write(logDataTable.getValueAt(i, j).toString() + ",");
-                    out.write("\n");
-                }
-                // write fueling data
-                polfTable.write(out);
+        	out = new FileWriter(file);
+            // write string identifier
+            out.write(SaveDataFileHeader + "\n");
+            // write maf data
+            for (i = 0; i < mafTable.getRowCount(); ++i) {
+                for (j = 0; j < mafTable.getColumnCount(); ++j)
+                    out.write(mafTable.getValueAt(i, j).toString() + ",");
+                out.write("\n");
             }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error(e);
-            }
-            finally {
-                try {
-                    out.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    logger.error(e);
-                }
+            // write log data
+            for (i = 0; i < logDataTable.getRowCount(); ++i) {
+                for (j = 0; j < logDataTable.getColumnCount(); ++j)
+                    out.write(logDataTable.getValueAt(i, j).toString() + ",");
+                out.write("\n");
             }
         }
         catch (Exception e) {
@@ -1281,6 +1766,14 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        	if (out != null) {
+                try {
+                    out.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
+        	}
         }
     }
    
@@ -1290,73 +1783,61 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         File file = fileChooser.getSelectedFile();
         int i, j;
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        BufferedReader br = null;
         try {
-            BufferedReader br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            try {
-                String line = br.readLine();
-                if (line == null || !line.equals(SaveDataFileHeader)) {
-                    JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                line = br.readLine();
-                String[] elements;
-                i = 0;
-                int offset = 0;
-                boolean isLogData = false;
-                while (line != null) {
-                    elements = line.split(",", -1);
-                    switch (i) {
-                    case 0:
-                        Utils.ensureColumnCount(elements.length - 1, mafTable);
+        	br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            String line = br.readLine();
+            if (line == null || !line.equals(SaveDataFileHeader)) {
+                JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            line = br.readLine();
+            String[] elements;
+            i = 0;
+            int offset = 0;
+            boolean isLogData = false;
+            while (line != null) {
+                elements = line.split(",", -1);
+                switch (i) {
+                case 0:
+                    Utils.ensureColumnCount(elements.length - 1, mafTable);
+                    for (j = 0; j < elements.length - 1; ++j)
+                        mafTable.setValueAt(elements[j], i, j);
+                    break;
+                case 1:
+                    Utils.ensureColumnCount(elements.length - 1, mafTable);
+                    for (j = 0; j < elements.length - 1; ++j)
+                        mafTable.setValueAt(elements[j], i, j);
+                    break;
+                default:
+                    if (elements.length - 1 == logDataTable.getColumnCount()) {
+                    	if (!isLogData) {
+                    		offset = i;
+                    		isLogData = true;
+                    	}
+                        Utils.ensureRowCount(i - offset + 1, logDataTable);
                         for (j = 0; j < elements.length - 1; ++j)
-                            mafTable.setValueAt(elements[j], i, j);
-                        break;
-                    case 1:
-                        Utils.ensureColumnCount(elements.length - 1, mafTable);
-                        for (j = 0; j < elements.length - 1; ++j)
-                            mafTable.setValueAt(elements[j], i, j);
-                        break;
-                    default:
-                        if (elements.length - 1 == logDataTable.getColumnCount()) {
-                        	if (!isLogData) {
-                        		offset = i;
-                        		isLogData = true;
-                        	}
-                            Utils.ensureRowCount(i - offset + 1, logDataTable);
-                            for (j = 0; j < elements.length - 1; ++j)
-                                logDataTable.setValueAt(elements[j], i - offset, j);
-                        }
-                        else {
-                        	if (isLogData) {
-                        		offset = i;
-                        		isLogData = false;
-                        	}
-                            polfTable.setValueAtRow(i - offset, elements);
-                        }
+                            logDataTable.setValueAt(elements[j], i - offset, j);
                     }
-                    i += 1;
-                    line = br.readLine();
                 }
-                polfTable.validate();
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error(e);
-            }
-            finally {
-                try {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                    br.close();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    logger.error(e);
-                }
+                i += 1;
+                line = br.readLine();
             }
         }
         catch (Exception e) {
             e.printStackTrace();
             logger.error(e);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            if (br != null) {
+                try {
+                    br.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
+            }
         }
     }
     
@@ -1376,50 +1857,83 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;        
         File file = fileChooser.getSelectedFile();
-        BufferedReader br;
+        BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            try {
-                String line = br.readLine();
-                if (line != null) {
-                    String [] elements = line.split(",", -1);
-                    JTable table = new JTable() {
-                        private static final long serialVersionUID = 2L;
-                        public boolean isCellEditable(int row, int column) { return false; };
-                    };
-                    table.setColumnSelectionAllowed(false);
-                    table.setCellSelectionEnabled(true);
-                    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                    table.setBorder(new LineBorder(new Color(0, 0, 0)));
-                    table.setTableHeader(null);
-                    table.setModel(new DefaultTableModel(elements.length, 1));
-                    for (int i = 0; i < elements.length; ++i)
-                        table.setValueAt(elements[i], i, 0);
-                    JLabel spinnerLabel = new JLabel("CL/OL Status value for CL");
-                    JSpinner spinner = new JSpinner(new SpinnerNumberModel(-1, -1, 10, 1));
-                    JLabel lblMin = new JLabel("AFR Filter - valid minimum");
-                    NumberFormat doubleFmt = NumberFormat.getNumberInstance();
-                    doubleFmt.setMaximumFractionDigits(2);
-                    JFormattedTextField minTextField = new JFormattedTextField(doubleFmt);
-                    minTextField.setValue(new Double(afrMin));
-                    minTextField.setColumns(10);
-                    JLabel lblMax = new JLabel("AFR Filter - valid maximum");
-                    JFormattedTextField maxTextField = new JFormattedTextField(doubleFmt);
-                    maxTextField.setValue(new Double(afrMax));
-                    maxTextField.setColumns(10);
-                    lblMin.setVisible(false);
-                    minTextField.setVisible(false);
-                    lblMax.setVisible(false);
-                    maxTextField.setVisible(false);
-                    
-                    JComponent[] inputs = new JComponent[] { new JScrollPane(table), spinnerLabel, spinner, lblMin, minTextField, lblMax, maxTextField };
-                    
-                    if (logClOlStatusColIdx >= 0)
-                        table.changeSelection(logClOlStatusColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
-                    if (clValue >= 0)
-                        spinner.setValue(clValue);
+            String line = br.readLine();
+            if (line != null) {
+                String [] elements = line.split(",", -1);
+
+                ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
+                String logClOlStatusColName = Config.getClOlStatusColumnName();
+                String logAfLearningColName = Config.getAfLearningColumnName();
+                String logAfCorrectionColName = Config.getAfCorrectionColumnName();
+                String logAfrColName = Config.getAfrColumnName();
+                String logRpmColName = Config.getRpmColumnName();
+                String logLoadColName = Config.getLoadColumnName();
+                String logTimeColName = Config.getTimeColumnName();
+                String logMafvColName = Config.getMafVoltageColumnName();
+                String logIatColName = Config.getIatColumnName();
+                logClOlStatusColIdx = columns.indexOf(logClOlStatusColName);
+                logAfLearningColIdx = columns.indexOf(logAfLearningColName);
+                logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
+                logAfrColIdx = columns.indexOf(logAfrColName);
+                logRpmColIdx = columns.indexOf(logRpmColName);
+                logLoadColIdx = columns.indexOf(logLoadColName);
+                logTimeColIdx = columns.indexOf(logTimeColName);
+                logMafvColIdx = columns.indexOf(logMafvColName);
+                logIatColIdx = columns.indexOf(logIatColName);
+                boolean resetColumns = false;
+
+                if (logClOlStatusColIdx >= 0 ||
+                	logAfLearningColIdx >= 0 ||
+                	logAfCorrectionColIdx >= 0 ||
+                	logAfrColIdx >= 0 ||
+                	logRpmColIdx >= 0 ||
+                	logLoadColIdx >=0 ||
+                	logTimeColIdx >=0 ||
+                	logMafvColIdx >= 0 ||
+                	logIatColIdx >= 0 ) {
+                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    	resetColumns = true;
+                }
+                
+                JTable table = new JTable() {
+                    private static final long serialVersionUID = 2L;
+                    public boolean isCellEditable(int row, int column) { return false; };
+                };
+                table.setColumnSelectionAllowed(false);
+                table.setCellSelectionEnabled(true);
+                table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                table.setBorder(new LineBorder(new Color(0, 0, 0)));
+                table.setTableHeader(null);
+                table.setModel(new DefaultTableModel(elements.length, 1));
+                for (int i = 0; i < elements.length; ++i)
+                    table.setValueAt(elements[i], i, 0);
+                JLabel spinnerLabel = new JLabel("CL/OL Status value for CL");
+                JSpinner spinner = new JSpinner(new SpinnerNumberModel(clValue, -1, 10, 1));
+                JLabel lblMin = new JLabel("AFR Filter - valid minimum");
+                NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+                doubleFmt.setMaximumFractionDigits(2);
+                JFormattedTextField minTextField = new JFormattedTextField(doubleFmt);
+                minTextField.setValue(new Double(afrMin));
+                minTextField.setColumns(10);
+                JLabel lblMax = new JLabel("AFR Filter - valid maximum");
+                JFormattedTextField maxTextField = new JFormattedTextField(doubleFmt);
+                maxTextField.setValue(new Double(afrMax));
+                maxTextField.setColumns(10);
+                lblMin.setVisible(false);
+                minTextField.setVisible(false);
+                lblMax.setVisible(false);
+                maxTextField.setVisible(false);
+                
+                JComponent[] inputs = new JComponent[] { new JScrollPane(table), spinnerLabel, spinner, lblMin, minTextField, lblMax, maxTextField };
+                
+                if (logClOlStatusColIdx >= 0)
+                    table.changeSelection(logClOlStatusColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logClOlStatusColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select CL/OL Status Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;                    
                     logClOlStatusColIdx = table.getSelectedRow();
@@ -1432,31 +1946,21 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         JOptionPane.showMessageDialog(null, "Invalid CL/OL Status value for closed loop", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-/*
-                    spinnerLabel.setText("Throttle Angle % Change Filter - 0 to ...");
-                    spinner.setValue(thtlChange);
-                    if (logThtlAngleColIdx >= 0)
-                        table.changeSelection(logThtlAngleColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Throttle Angle % Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    thtlChange = Integer.valueOf(spinner.getValue().toString());
-                    if (thtlChange < 0 || thtlChange > 100) {
-                        JOptionPane.showMessageDialog(null, "Invalid Throttle Angle % Change Filter value", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-*/
-                    spinnerLabel.setVisible(false);
-                    spinner.setVisible(false);
-                    lblMax.setVisible(true);
-                    maxTextField.setVisible(true);
-                    lblMin.setVisible(true);
-                    minTextField.setVisible(true);
-                    if (logAfrColIdx >= 0)
-                        table.changeSelection(logAfrColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setClOlStatusColumnName(table.getValueAt(logClOlStatusColIdx, 0).toString());
+                    Config.setClOlStatusValue(clValue);
+                }
+                spinnerLabel.setVisible(false);
+                spinner.setVisible(false);
+                
+                lblMax.setVisible(true);
+                maxTextField.setVisible(true);
+                lblMin.setVisible(true);
+                minTextField.setVisible(true);
+                if (logAfrColIdx >= 0)
+                    table.changeSelection(logAfrColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfrColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR (Stock) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfrColIdx = table.getSelectedRow();
@@ -1474,14 +1978,20 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         return;
                     }
                     afrMax = Double.valueOf(maxTextField.getText());
-                    lblMax.setVisible(false);
-                    maxTextField.setVisible(false);
-                    lblMin.setVisible(false);
-                    minTextField.setVisible(false);
-                    if (logAfLearningColIdx >= 0)
-                        table.changeSelection(logAfLearningColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setAfrColumnName(table.getValueAt(logAfrColIdx, 0).toString());
+                    Config.setAfrMinimumValue(afrMin);
+                    Config.setAfrMaximumValue(afrMax);
+                }
+                lblMax.setVisible(false);
+                maxTextField.setVisible(false);
+                lblMin.setVisible(false);
+                minTextField.setVisible(false);
+                
+                if (logAfLearningColIdx >= 0)
+                    table.changeSelection(logAfLearningColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfLearningColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Learning (LTFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfLearningColIdx = table.getSelectedRow();
@@ -1489,10 +1999,14 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         JOptionPane.showMessageDialog(null, "Invalid AFR Learning (LTFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logAfCorrectionColIdx >= 0)
-                        table.changeSelection(logAfCorrectionColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setAfLearningColumnName(table.getValueAt(logAfLearningColIdx, 0).toString());
+                }
+                
+                if (logAfCorrectionColIdx >= 0)
+                    table.changeSelection(logAfCorrectionColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logAfCorrectionColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Correction (STFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logAfCorrectionColIdx = table.getSelectedRow();
@@ -1500,10 +2014,14 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         JOptionPane.showMessageDialog(null, "Invalid AFR Correction (STFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    if (logRpmColIdx >= 0)
-                        table.changeSelection(logRpmColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setAfCorrectionColumnName(table.getValueAt(logAfCorrectionColIdx, 0).toString());
+                }
+                
+                if (logRpmColIdx >= 0)
+                    table.changeSelection(logRpmColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logRpmColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Speed Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logRpmColIdx = table.getSelectedRow();
@@ -1511,14 +2029,18 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         JOptionPane.showMessageDialog(null, "Invalid Engine Speed Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    lblMin.setText("Engine Load Filter - minimum value");
-                    minTextField.setText(String.valueOf(minLoad));
-                    lblMin.setVisible(true);
-                    minTextField.setVisible(true);
-                    if (logLoadColIdx >= 0)
-                        table.changeSelection(logLoadColIdx, 0, false, false);
-                    else
-                    	table.clearSelection();
+                    Config.setRpmColumnName(table.getValueAt(logRpmColIdx, 0).toString());
+                }
+                
+                lblMin.setText("Engine Load Filter - minimum value");
+                minTextField.setText(String.valueOf(minLoad));
+                lblMin.setVisible(true);
+                minTextField.setVisible(true);
+                if (logLoadColIdx >= 0)
+                    table.changeSelection(logLoadColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logLoadColIdx < 0) {
                     if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Load Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                         return;
                     logLoadColIdx = table.getSelectedRow();
@@ -1531,76 +2053,172 @@ public class Mickeyd2005 extends JTabbedPane implements ActionListener, IMafChar
                         return;
                     }
                     minLoad = Double.valueOf(minTextField.getText());
-                    lblMin.setVisible(false);
-                    minTextField.setVisible(false);
-                    String[] flds;
-                    line = br.readLine();
-                    int clol;
-                    int i = 2;
-                    int row = getLogTableEmptyRow();
-/*
-                    double prevThrottleAngle = 0;
-                    double throttleAngle = 0;
-*/
-                    double afr = 0;
-                    double load;
-                    while (line != null) {
-                        flds = line.split(",", -1);
-                        try {
-                            clol = Integer.valueOf(flds[logClOlStatusColIdx]);
-                            if (clol == clValue) {
-                            	afr = Double.valueOf(flds[logAfrColIdx]);
-                            	load = Double.valueOf(flds[logLoadColIdx]);
-                            	if (afrMin <= afr && afr <= afrMax && minLoad <= load) {
-/*
-	                            	throttleAngle = Double.valueOf(flds[logThtlAngleColIdx]);
-	                            	if (row > 0 && thtlChange < Math.abs(throttleAngle - prevThrottleAngle))
-	                            		row -= 1;
-	                            	prevThrottleAngle = throttleAngle;
-*/
-	                                Utils.ensureRowCount(row + 1, logDataTable);
-	                                logDataTable.setValueAt(load, row, 0);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 1);
-	                                logDataTable.setValueAt(afr, row, 2);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 3);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 4);
-	                                row += 1;
-                            	}
-                            }
-                        }
-                        catch (NumberFormatException e) {
-                            logger.error(e);
-                            JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e.getMessage(), "Error processing file", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        line = br.readLine();
-                        i += 1;
+                    Config.setLoadColumnName(table.getValueAt(logLoadColIdx, 0).toString());
+                    Config.setLoadMinimumValue(minLoad);
+                }
+                lblMin.setVisible(false);
+                minTextField.setVisible(false);
+                
+                lblMax.setText("dV/dt Filter - maximum value");
+                maxTextField.setText(String.valueOf(maxDvDt));
+                lblMax.setVisible(true);
+                maxTextField.setVisible(true);
+                if (logTimeColIdx >= 0)
+                    table.changeSelection(logTimeColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logTimeColIdx < 0) {
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Time Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                        return;
+                    logTimeColIdx = table.getSelectedRow();
+                    if (logTimeColIdx == -1) {
+                        JOptionPane.showMessageDialog(null, "Invalid Time Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
                     }
+                    if (!Pattern.matches(Utils.fpRegex, maxTextField.getText())) {
+                        JOptionPane.showMessageDialog(null, "Invalid dV/dt Filter maximum value", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    maxDvDt = Double.valueOf(maxTextField.getText());
+                    Config.setTimeColumnName(table.getValueAt(logTimeColIdx, 0).toString());
+                    Config.setDvDtMaximumValue(maxDvDt);
+                }
+                lblMax.setVisible(false);
+                maxTextField.setVisible(false);
+
+                lblMax.setText("MafV Filter - maximum value");
+                maxTextField.setText(String.valueOf(maxMafV));
+                lblMax.setVisible(true);
+                maxTextField.setVisible(true);
+                if (logMafvColIdx >= 0)
+                    table.changeSelection(logMafvColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logMafvColIdx < 0) {
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Maf Voltage Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                        return;
+                    logMafvColIdx = table.getSelectedRow();
+                    if (logMafvColIdx == -1) {
+                        JOptionPane.showMessageDialog(null, "Invalid Maf Voltage Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    maxMafV = Double.valueOf(maxTextField.getText());
+                    Config.setMafVoltageColumnName(table.getValueAt(logMafvColIdx, 0).toString());
+                    Config.setMafVMaximumValue(maxMafV);
+                }
+                lblMax.setVisible(false);
+                maxTextField.setVisible(false);
+
+                lblMax.setText("IAT Filter - maximum value");
+                maxTextField.setText(String.valueOf(maxIat));
+                lblMax.setVisible(true);
+                maxTextField.setVisible(true);
+                if (logIatColIdx >= 0)
+                    table.changeSelection(logIatColIdx, 0, false, false);
+                else
+                	table.clearSelection();
+                if (resetColumns == true || logIatColIdx < 0) {
+                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select IAT Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                        return;
+                    logIatColIdx = table.getSelectedRow();
+                    if (logIatColIdx == -1) {
+                        JOptionPane.showMessageDialog(null, "Invalid IAT Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    maxIat = Double.valueOf(maxTextField.getText());
+                    Config.setIatColumnName(table.getValueAt(logIatColIdx, 0).toString());
+                    Config.setIatMaximumValue(maxIat);
+                }
+                lblMax.setVisible(false);
+                maxTextField.setVisible(false);
+                
+                String[] flds;
+                line = br.readLine();
+                int clol;
+                int i = 2;
+                int row = getLogTableEmptyRow();
+                double afr = 0;
+                double dVdt = 0;
+                double prevTime = 0;
+                double time = 0;
+                double timeMultiplier = 1.0;
+                double pmafv = 0;
+                double mafv = 0;
+                double load;
+                double iat;
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                try {
+	                while (line != null) {
+	                    flds = line.split(",", -1);
+	                    try {
+	                        clol = Integer.valueOf(flds[logClOlStatusColIdx]);
+	                        if (clol == clValue) {
+	                        	// Calculate dV/dt
+                            	prevTime = time;
+                            	time = Double.valueOf(flds[logTimeColIdx]);
+                            	if (timeMultiplier == 1.0 && (int)time - time < 0) {
+                            		timeMultiplier = 1000.0;
+                            		prevTime *= timeMultiplier;
+                            	}
+                        		time *= timeMultiplier;
+                            	pmafv = mafv;
+                            	mafv = Double.valueOf(flds[logMafvColIdx]);
+                            	if ((time - prevTime) == 0.0)
+                            		dVdt = 100.0;
+                            	else
+                            		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+	                            // Filters
+	                        	afr = Double.valueOf(flds[logAfrColIdx]);
+	                        	load = Double.valueOf(flds[logLoadColIdx]);
+	                        	iat = Double.valueOf(flds[logIatColIdx]);
+	                        	if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
+	                                Utils.ensureRowCount(row + 1, logDataTable);
+	                                logDataTable.setValueAt(time, row, 0);
+	                                logDataTable.setValueAt(load, row, 1);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 2);
+	                                logDataTable.setValueAt(mafv, row, 3);
+	                                logDataTable.setValueAt(afr, row, 4);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 5);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 6);
+	                                logDataTable.setValueAt(dVdt, row, 7);
+	                                logDataTable.setValueAt(iat, row, 8);
+	                                row += 1;
+	                        	}
+	                        }
+	                    }
+	                    catch (NumberFormatException e) {
+	                        logger.error(e);
+	                        JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e.getMessage(), "Error processing file", JOptionPane.ERROR_MESSAGE);
+	                        return;
+	                    }
+	                    line = br.readLine();
+	                    i += 1;
+	                }
+                }
+                finally {
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 }
             }
-            catch (Exception e) {
-                logger.error(e);
-                JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
-            }
-            finally {
+        }
+        catch (Exception e) {
+            logger.error(e);
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
+        }
+        finally {
+        	if (br != null) {
                 try {
                     br.close();
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
                     logger.error(e);
                 }
-            }
-        }
-        catch (FileNotFoundException e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, "Error: file " + file.getAbsoluteFile() + " not found", "File not found", JOptionPane.ERROR_MESSAGE);
+        	}
         }
     }
     
     private String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.mickeyd2005");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.closed_loop");
         return bundle.getString("usage"); 
     }
 }

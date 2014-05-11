@@ -48,20 +48,17 @@ import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SpinnerNumberModel;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
@@ -88,27 +85,27 @@ import org.jfree.util.ShapeUtilities;
 public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHolder {
     private static final long serialVersionUID = 2988105467764335997L;
     private static final Logger logger = Logger.getLogger(OpenLoop.class);
-    private final static String SaveDataFileHeader = "[open_loop run data]";
-    private final static String MafTableName = "Current MAF Scaling";
-    private final static String RunTableName = "Run ";
-    private final static String XAxisName = "MAF Sensor (Voltage)";
-    private final static String Y1AxisName = "Mass Airflow (g/s)";
-    private final static String Y2AxisName = "AFR Error (%)";
-    private final static String rpmAxisName = "RPM";
+    private static final String SaveDataFileHeader = "[open_loop run data]";
+    private static final String MafTableName = "Current MAF Scaling";
+    private static final String RunTableName = "Run ";
+    private static final String XAxisName = "MAF Sensor (Voltage)";
+    private static final String Y1AxisName = "Mass Airflow (g/s)";
+    private static final String Y2AxisName = "AFR Error (%)";
+    private static final String rpmAxisName = "RPM";
     private static final String runDataName = "AFR Error";
     private static final String currentDataName = "Current";
     private static final String correctedDataName = "Corrected";
     private static final String smoothedDataName = "Smoothed";
-    private static final String mafCurveDataName = "Maf Curve";
+    private static final String mafCurveDataName = "Smoothed Maf Curve";
     private static final String currentSlopeDataName = "Current Maf Slope";
     private static final String smoothedSlopeDataName = "Smoothed Maf Slope";
-    private final static int ColumnWidth = 50;
-    private final static int RunCount = 12;
-    private int MafTableColumnCount = 50;
-    private int RunRowsCount = 200;
-    private int wotPoint = Config.getWotStationaryPointValue();
+    private static final int ColumnWidth = 50;
+    private static final int RunCount = 12;
+    private static final int MafTableColumnCount = 50;
+    private static final int RunRowsCount = 200;
     private double minMafV = Config.getMafVMinimumValue();
-    private Double afrErrPrct = Config.getWidebandAfrErrorPercentValue();
+    private double afrErrPrct = Config.getWidebandAfrErrorPercentValue();
+    private int wotPoint = Config.getWotStationaryPointValue();
     private int logThtlAngleColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
@@ -128,6 +125,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     private JCheckBox checkBoxSmoothedMaf = null;
     private JCheckBox checkBoxSmoothing = null;
     private JComboBox<String> smoothComboBox = null;
+    private JButton btnCompareButton = null;
     private JButton btnSmoothButton = null;
     private JButton btnResetSmoothButton = null;
     private JButton btnPlusButton = null;
@@ -151,10 +149,12 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     private final XYSeries corrMafData = new XYSeries(correctedDataName);
     private final XYSeries smoothMafData = new XYSeries(smoothedDataName);
     private PrimaryOpenLoopFuelingTable polfTable = null;
+    private MafCompare mafCompare = null;
 
-    public OpenLoop(int tabPlacement, PrimaryOpenLoopFuelingTable table) {
+    public OpenLoop(int tabPlacement, PrimaryOpenLoopFuelingTable table, MafCompare comparer) {
         super(tabPlacement);
     	polfTable = table;
+    	mafCompare = comparer;
         initialize();
     }
 
@@ -177,7 +177,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         gbl_dataPanel.columnWidths = new int[] {0};
         gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0};
         gbl_dataPanel.columnWeights = new double[]{1.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0,0, 1.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 1.0};
         dataPanel.setLayout(gbl_dataPanel);
 
         JPanel cntlPanel = new JPanel();
@@ -476,14 +476,16 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         checkBoxSmoothedMaf.addActionListener(this);
         cntlPanel.add(checkBoxSmoothedMaf, gbc_checkBoxSmoothedMaf);
 
-        Component horizontalGlue = Box.createHorizontalGlue();
-        GridBagConstraints gbc_horizontalGlue = new GridBagConstraints();
-        gbc_horizontalGlue.weightx = 1.0;
-        gbc_horizontalGlue.fill = GridBagConstraints.HORIZONTAL;
-        gbc_horizontalGlue.insets = new Insets(0, 0, 3, 3);
-        gbc_horizontalGlue.gridx = 5;
-        gbc_horizontalGlue.gridy = 0;
-        cntlPanel.add(horizontalGlue, gbc_horizontalGlue);
+        btnCompareButton = new JButton("Compare");
+        GridBagConstraints gbc_btnCompareButton = new GridBagConstraints();
+        gbc_btnCompareButton.anchor = GridBagConstraints.CENTER;
+        gbc_btnCompareButton.insets = new Insets(0, 0, 3, 3);
+        gbc_btnCompareButton.weightx = 1.0;
+        gbc_btnCompareButton.gridx = 5;
+        gbc_btnCompareButton.gridy = 0;
+        btnCompareButton.setActionCommand("compare");
+        btnCompareButton.addActionListener(this);
+        cntlPanel.add(btnCompareButton, gbc_btnCompareButton);
 
         checkBoxSmoothing = new JCheckBox("Smoothing:");
         GridBagConstraints gbc_checkBoxSmoothing = new GridBagConstraints();
@@ -528,6 +530,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         cntlPanel.add(btnResetSmoothButton, gbc_btnResetSmoothButton);
         
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
+        chart.setBorderVisible(true);
         mafChartPanel = new MafChartPanel(chart, this);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
@@ -561,6 +564,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         lineRenderer.setSeriesShape(0, ShapeUtilities.createDiamond((float) 2.5));
         lineRenderer.setSeriesShape(1, ShapeUtilities.createUpTriangle((float) 2.5));
         lineRenderer.setSeriesShape(2, ShapeUtilities.createDownTriangle((float) 2.5));
+        mafChartPanel.enablePointsDrag(0);
 
         lineRenderer.setLegendItemLabelGenerator(
         		new StandardXYSeriesLabelGenerator() {
@@ -721,9 +725,11 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     
     private void createUsageTab() {
         JTextPane  usageTextArea = new JTextPane();
+        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
         usageTextArea.setContentType("text/html");
         usageTextArea.setText(usage());
         usageTextArea.setEditable(false);
+        usageTextArea.setCaretPosition(0);
 
         JScrollPane textScrollPane = new JScrollPane(usageTextArea);
         textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -756,6 +762,9 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         }
         else if ("go".equals(e.getActionCommand())) {
             calculateMafScaling();
+        }
+        else if ("compare".equals(e.getActionCommand())) {
+        	mafCompare.setVisible(true);
         }
         else if ("smooth".equals(e.getActionCommand())) {
             smoothCurve();
@@ -948,7 +957,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         catch (Exception e) {
             e.printStackTrace();
             logger.error(e);
-            JOptionPane.showMessageDialog(null, "Error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);    
+            JOptionPane.showMessageDialog(null, "Error: " + e, "Error", JOptionPane.ERROR_MESSAGE);    
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -997,10 +1006,12 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     
     private void calculateCorrectedGS(TreeMap<Integer, ArrayList<Double>> result) {
         ArrayList<Double> closestVolatageArray;
-        double gs;
-        double avgError;
+        double gs = 0;
+        double avgError = 0;
+        int lastErrIndex = 0;
+        int i;
         gsCorrected.addAll(gsArray);
-        for (int i = 0; i < gsCorrected.size(); ++i) {
+        for (i = 0; i < gsCorrected.size(); ++i) {
             gs = gsCorrected.get(i);
             avgError = 0;
             closestVolatageArray = result.get(i);
@@ -1008,11 +1019,23 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
                 for (int j = 0; j < closestVolatageArray.size(); ++j)
                     avgError += closestVolatageArray.get(j);
                 avgError /= closestVolatageArray.size();
+                lastErrIndex = i;
             }
             gsCorrected.set(i, gs +(gs * 0.01 * avgError));
         }
+        avgError = 0;
+        ArrayList<Double> sortedAfrArray = result.get(lastErrIndex);
+        Collections.sort(sortedAfrArray, Collections.reverseOrder());
+        for (i = 0; i < 10 && i < sortedAfrArray.size(); ++i)
+        	avgError += sortedAfrArray.get(i);
+        if (i > 0)
+        	avgError /= i;
+        for (i = lastErrIndex + 1; i < gsCorrected.size(); ++i) {
+            gs = gsCorrected.get(i);
+            gsCorrected.set(i, gs +(gs * 0.01 * avgError));
+        }
     }
-        
+
     private boolean getMafTableData(ArrayList<Double> voltArray, ArrayList<Double> gsArray) {
         String value;
         for (int i = 0; i < mafTable.getColumnCount(); ++i) {
@@ -1149,7 +1172,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
     }
     
-    public void onMovePoint(int itemIndex, double valueY) {
+    public void onMovePoint(int itemIndex, double valueX, double valueY) {
         ArrayList<Double> xarr = voltArray;
         ArrayList<Double> yarr = smoothGsArray;
         XYSeries series = smoothMafData;
@@ -1438,6 +1461,39 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         }
     }
     
+    private boolean getColumnsFilters(String[] elements) {
+    	boolean ret = true;
+        ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
+        String logThtlAngleColName = Config.getThrottleAngleColumnName();
+        String logAfLearningColName = Config.getAfLearningColumnName();
+        String logAfCorrectionColName = Config.getAfCorrectionColumnName();
+        String logMafvColName = Config.getMafVoltageColumnName();
+        String logAfrColName = Config.getWidebandAfrColumnName();
+        String logRpmColName = Config.getRpmColumnName();
+        String logLoadColName = Config.getLoadColumnName();
+        String logCommandedAfrColName = Config.getCommandedAfrColumnName();
+        logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
+        logAfLearningColIdx = columns.indexOf(logAfLearningColName);
+        logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
+        logMafvColIdx = columns.indexOf(logMafvColName);
+        logAfrColIdx = columns.indexOf(logAfrColName);
+        logRpmColIdx = columns.indexOf(logRpmColName);
+        logLoadColIdx = columns.indexOf(logLoadColName);
+        logCommandedAfrCol = columns.indexOf(logCommandedAfrColName);
+        if (logThtlAngleColIdx == -1)    { Config.setThrottleAngleColumnName(Config.NO_NAME); ret = false; }
+        if (logAfLearningColIdx == -1)   { Config.setAfLearningColumnName(Config.NO_NAME);    ret = false; }
+        if (logAfCorrectionColIdx == -1) { Config.setAfCorrectionColumnName(Config.NO_NAME);  ret = false; }
+        if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);    ret = false; }
+        if (logAfrColIdx == -1)          { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
+        if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
+        if (logLoadColIdx == -1)         { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
+        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME);  ret = false; }
+        wotPoint = Config.getWotStationaryPointValue();
+        minMafV = Config.getMafVMinimumValue();
+        afrErrPrct = Config.getWidebandAfrErrorPercentValue();
+        return ret;
+    }
+    
     private void loadLogFile() {
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
@@ -1448,202 +1504,20 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
             String line = br.readLine();
             if (line != null) {
                 String [] elements = line.split(",", -1);
-                ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
-                String logThtlAngleColName = Config.getThrottleAngleColumnName();
-                String logAfLearningColName = Config.getAfLearningColumnName();
-                String logAfCorrectionColName = Config.getAfCorrectionColumnName();
-                String logMafvColName = Config.getMafVoltageColumnName();
-                String logAfrColName = Config.getWidebandAfrColumnName();
-                String logRpmColName = Config.getRpmColumnName();
-                String logLoadColName = Config.getLoadColumnName();
-                String logCommandedAfrColName = Config.getCommandedAfrColumnName();
-                logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
-                logAfLearningColIdx = columns.indexOf(logAfLearningColName);
-                logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
-                logMafvColIdx = columns.indexOf(logMafvColName);
-                logAfrColIdx = columns.indexOf(logAfrColName);
-                logRpmColIdx = columns.indexOf(logRpmColName);
-                logLoadColIdx = columns.indexOf(logLoadColName);
-                logCommandedAfrCol = columns.indexOf(logCommandedAfrColName);
+                getColumnsFilters(elements);
+
                 boolean resetColumns = false;
-                
-                if (logThtlAngleColIdx >= 0 ||
-                	logAfLearningColIdx >= 0 ||
-                	logAfCorrectionColIdx >= 0 ||
-                	logMafvColIdx >= 0 ||
-                	logAfrColIdx >= 0 ||
-                	logRpmColIdx >= 0 ||
-                	logLoadColIdx >=0 ||
-                	logCommandedAfrCol >=0) {
+                if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
+                	logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
                     if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
                     	resetColumns = true;
                 }
                 
-                JTable table = new JTable() {
-                    private static final long serialVersionUID = 1L;
-                    public boolean isCellEditable(int row, int column) { return false; };
-                };
-                table.setColumnSelectionAllowed(false);
-                table.setCellSelectionEnabled(true);
-                table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                table.setBorder(new LineBorder(new Color(0, 0, 0)));
-                table.setTableHeader(null);
-                table.setModel(new DefaultTableModel(elements.length, 1));
-                for (int i = 0; i < elements.length; ++i)
-                    table.setValueAt(elements[i], i, 0);
-                JLabel noteLabel1 = new JLabel("Note: please check your log file if Throttle Angle % reaches 100%.");
-                JLabel noteLabel2 = new JLabel("If not, you could change WOT stationary point below or use Accel Pedal Angle.");
-                JLabel spinnerLabel = new JLabel("WOT stationary point (%)");
-                JSpinner spinner = new JSpinner(new SpinnerNumberModel(wotPoint, 50, 100, 5));
-                NumberFormat doubleFmt = NumberFormat.getNumberInstance();
-                doubleFmt.setMaximumFractionDigits(2);
-                JFormattedTextField valueField = new JFormattedTextField(doubleFmt);
-                valueField.setColumns(10);
-                valueField.setVisible(false);
-                JComponent[] inputs = new JComponent[] { new JScrollPane(table), noteLabel1, noteLabel2, spinnerLabel, spinner, valueField };
-                
-                if (logThtlAngleColIdx >= 0)
-                    table.changeSelection(logThtlAngleColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logThtlAngleColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Throttle Angle % Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logThtlAngleColIdx = table.getSelectedRow();
-                    if (logThtlAngleColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Throttle Angle % Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    wotPoint = Integer.valueOf(spinner.getValue().toString());
-                    Config.setThrottleAngleColumnName(table.getValueAt(logThtlAngleColIdx, 0).toString());
-                    Config.setWotStationaryPointValue(wotPoint);
-                }
-                noteLabel1.setVisible(false);
-                noteLabel2.setVisible(false);
-                spinnerLabel.setVisible(false);
-                spinner.setVisible(false);
-
-                if (logAfLearningColIdx >= 0)
-                    table.changeSelection(logAfLearningColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logAfLearningColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Learning (LTFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logAfLearningColIdx = table.getSelectedRow();
-                    if (logAfLearningColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid AFR Learning (LTFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Config.setAfLearningColumnName(table.getValueAt(logAfLearningColIdx, 0).toString());
-                }
-                
-                if (logAfCorrectionColIdx >= 0)
-                    table.changeSelection(logAfCorrectionColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logAfCorrectionColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select AFR Correction (STFT) Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logAfCorrectionColIdx = table.getSelectedRow();
-                    if (logAfCorrectionColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid AFR Correction (STFT) Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Config.setAfCorrectionColumnName(table.getValueAt(logAfCorrectionColIdx, 0).toString());
-                }
-                
-                noteLabel1.setText("MafV Filter - minimum value");
-                valueField.setText(String.valueOf(minMafV));
-                noteLabel1.setVisible(true);
-                valueField.setVisible(true);
-                if (logMafvColIdx >= 0)
-                    table.changeSelection(logMafvColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logMafvColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Maf Voltage Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logMafvColIdx = table.getSelectedRow();
-                    if (logMafvColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Maf Voltage Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    minMafV = Double.valueOf(valueField.getText());
-                    Config.setMafVoltageColumnName(table.getValueAt(logMafvColIdx, 0).toString());
-                    Config.setMafVMinimumValue(minMafV);
-                }
-                noteLabel1.setVisible(false);
-                valueField.setVisible(false);
-                
-                noteLabel1.setText("Afr Error Filter +/- % value");
-                valueField.setText(String.valueOf(afrErrPrct));
-                noteLabel1.setVisible(true);
-                valueField.setVisible(true);
-                if (logAfrColIdx >= 0)
-                    table.changeSelection(logAfrColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logAfrColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Wideband AFR Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logAfrColIdx = table.getSelectedRow();
-                    if (logAfrColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid AFR Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    afrErrPrct = Double.valueOf(valueField.getText());
-                    Config.setWidebandAfrColumnName(table.getValueAt(logAfrColIdx, 0).toString());
-                    Config.setWidebandAfrErrorPercentValue(afrErrPrct);
-                }
-                noteLabel1.setVisible(false);
-                valueField.setVisible(false);
-                
-                if (logRpmColIdx >= 0)
-                    table.changeSelection(logRpmColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logRpmColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Speed Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logRpmColIdx = table.getSelectedRow();
-                    if (logRpmColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Engine Speed Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Config.setRpmColumnName(table.getValueAt(logRpmColIdx, 0).toString());
-                }
-                
-                if (logLoadColIdx >= 0)
-                    table.changeSelection(logLoadColIdx, 0, false, false);
-                else
-                	table.clearSelection();
-                if (resetColumns == true || logLoadColIdx < 0) {
-                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Engine Load Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-                        return;
-                    logLoadColIdx = table.getSelectedRow();
-                    if (logLoadColIdx == -1) {
-                        JOptionPane.showMessageDialog(null, "Invalid Engine Load Column selection", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-                    Config.setLoadColumnName(table.getValueAt(logLoadColIdx, 0).toString());
-                }
-                
-                if (!polfTable.isSet()) {
-	                if (logCommandedAfrCol >= 0)
-	                    table.changeSelection(logCommandedAfrCol, 0, false, false);
-	                else
-	                	table.clearSelection();
-	                if (resetColumns == true || logCommandedAfrCol < 0) {
-	                    if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Select Commanded Afr Column", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-	                        return;
-	                    logCommandedAfrCol = table.getSelectedRow();
-	                    if (logCommandedAfrCol == -1) {
-	                        JOptionPane.showMessageDialog(null, "Invalid Commanded Afr Column selection. Please select Commanded Afr or set the Primary Open Loop Fueling table.", "Invalid selection", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
-	                    Config.setCommandedAfrColumnName(table.getValueAt(logCommandedAfrCol, 0).toString());
-	                }
+                if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
+                    	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !polfTable.isSet())) {
+                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.Loop.OPEN_LOOP, polfTable.isSet());
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                		return;
                 }
                 
                 String[] flds;
@@ -1658,7 +1532,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
                 double rpm;
                 double load;
                 double mafv;
-                double afrErr;
+                double afrErr = 0;
                 int i = 0;
                 for (; i < runTables.length; ++i) {
                     if (runTables[i].getValueAt(0, 0).toString().isEmpty())
@@ -1701,12 +1575,14 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
 	
 	                            afr = afr / ((100.0 - (ltft + stft)) / 100.0);
 	                            
-	                            if (!polfTable.isSet() && logCommandedAfrCol >= 0) {
+	                            if (logCommandedAfrCol >= 0) {
 	                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
 	                            	afrErr = (afr - cmdafr) / cmdafr * 100.0;
 	                            }
-	                            else
+	                            else if (polfTable.isSet())
 	                            	afrErr = calculateAfrError(rpm, load, afr);
+	                            else
+	                            	JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
 	                            
 	                            if (Math.abs(afrErr) <= afrErrPrct) {
 		                            runTables[i].setValueAt(rpm, j, 0);
@@ -1729,7 +1605,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         }
         catch (Exception e) {
             logger.error(e);
-            JOptionPane.showMessageDialog(null, e.getMessage(), "Error opening file", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
         }
         finally {
         	if (br != null) {

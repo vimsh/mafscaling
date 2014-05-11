@@ -108,7 +108,7 @@ public class ExcelAdapter implements ActionListener {
      * @param extendRows, if true will automatically add rows to the table to be able to paste all data
      * @param extendCols, if true will automatically add columns to the table to be able to paste all data
      */
-    private void addTable(JTable table, boolean disableCopy, boolean disableCut, boolean disablePaste, boolean disableClear, boolean extendRows, boolean extendCols) {
+    public void addTable(JTable table, boolean disableCopy, boolean disableCut, boolean disablePaste, boolean disableClear, boolean extendRows, boolean extendCols) {
     	addTable(table, disableCopy, disableCut, disablePaste, disableClear, true, true, true, extendRows, extendCols);
     }
 
@@ -254,7 +254,7 @@ public class ExcelAdapter implements ActionListener {
             onPasteVertical(tableHolder.getTable(), tableHolder.getExtendRows(), tableHolder.getExtendCols());
     }
     
-    private void onClearSelection(JTable table) {
+    protected void onClearSelection(JTable table) {
         // Check to ensure we have selected only a contiguous block of cells
         int numcols = table.getSelectedColumnCount();
         int numrows = table.getSelectedRowCount();
@@ -282,11 +282,11 @@ public class ExcelAdapter implements ActionListener {
         }
     }
     
-    private void onSelectAll(JTable table) {
+    protected void onSelectAll(JTable table) {
         table.selectAll();
     }
     
-    private void onCopy(JTable table) {
+    protected void onCopy(JTable table) {
         StringBuffer sbf = new StringBuffer();
         // Check to ensure we have selected only a contiguous block of cells
         int numcols = table.getSelectedColumnCount();
@@ -315,7 +315,7 @@ public class ExcelAdapter implements ActionListener {
         system.setContents(stsel, stsel);
     }
     
-    private void onCopyVertical(JTable table) {
+    protected void onCopyVertical(JTable table) {
         StringBuffer sbf = new StringBuffer();
         // Check to ensure we have selected only a contiguous block of cells
         int numcols = table.getSelectedColumnCount();
@@ -344,7 +344,7 @@ public class ExcelAdapter implements ActionListener {
         system.setContents(stsel, stsel);
     }
     
-    private void onCopyRR(JTable table) {
+    protected void onCopyRR(JTable table) {
         StringBuffer sbf = new StringBuffer("[Table2D]" + eol);
         // Check to ensure we have selected only a contiguous block of cells
         int numcols = table.getSelectedColumnCount();
@@ -373,7 +373,7 @@ public class ExcelAdapter implements ActionListener {
         system.setContents(stsel, stsel);
     }
     
-    private void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
         if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
             table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
             return;
@@ -393,16 +393,26 @@ public class ExcelAdapter implements ActionListener {
                 int colCount = entries.length;
                 if (extendCols && startCol + colCount > table.getColumnCount())
                 	Utils.ensureColumnCount(startCol + colCount, table);
-                // populate cells with the data
-                for (int i = 0; i < rowCount; ++i) {
-                    if (i > 0)
-                        rowstring = lines[i];
-                    entries = rowstring.split("\t", -1);
-                    for (int j = 0; j < entries.length; ++j) {
-                        value = entries[j];
-                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
-                            table.setValueAt(value, startRow + i, startCol + j);
-                    }
+                if (rowCount == 1 && colCount == 1) {
+                	int[] rows = table.getSelectedRows();
+                	int[] cols = table.getSelectedColumns();
+	                // populate cells with the data
+	                for (int i = 0; i < rows.length; ++i) {
+	                    for (int j = 0; j < cols.length; ++j)
+	                    	table.setValueAt(entries[0], rows[i], cols[j]);
+	                }
+                }
+                else {
+	                for (int i = 0; i < rowCount; ++i) {
+	                    if (i > 0)
+	                        rowstring = lines[i];
+	                    entries = rowstring.split("\t", -1);
+	                    for (int j = 0; j < entries.length; ++j) {
+	                        value = entries[j];
+	                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
+	                            table.setValueAt(value, startRow + i, startCol + j);
+	                    }
+	                }
                 }
             }
         }
@@ -412,7 +422,7 @@ public class ExcelAdapter implements ActionListener {
         }
     }
     
-    private void onPasteVertical(JTable table, boolean extendRows, boolean extendCols) {
+    protected void onPasteVertical(JTable table, boolean extendRows, boolean extendCols) {
         if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
             table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
             return;

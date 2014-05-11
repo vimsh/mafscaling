@@ -22,7 +22,9 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
@@ -59,10 +61,14 @@ public final class Utils {
      * @return array of unique gradient colors
      */
     public static Color[] getColorArray(Color begin, Color end, int numColors) {
-        Color[] gradient = new Color[numColors];
+    	Color[] gradient;
+    	if (numColors == 1)
+    		gradient = new Color[3];
+    	else
+    		gradient = new Color[numColors];
         float[] hsv1 = Color.RGBtoHSB(begin.getRed(), begin.getGreen(), begin.getBlue(), null);  
         float[] hsv2 = Color.RGBtoHSB(end.getRed(), end.getGreen(), end.getBlue(), null);  
-        int a1 = begin.getAlpha() ;  
+        int a1 = begin.getAlpha();
         float h1 = hsv1[0] ;  
         float s1 = hsv1[1];  
         float v1 = hsv1[2];  
@@ -70,12 +76,14 @@ public final class Utils {
         float dh = hsv2[0] - h1;  
         float ds = hsv2[1]- s1;  
         float dv = hsv2[2] - v1;
-        for (int i = 0; i < gradient.length; ++i) {  
+        for (int i = 0; i < gradient.length; ++i) {
             float rel = i / (float)(gradient.length - 1);
-            int rgb = Color.HSBtoRGB(h1 + dh * rel, s1 + ds * rel, v1 + dv * rel) ;  
-            rgb +=(((int)(a1 + da * rel)) << 24) ;   
+            int rgb = Color.HSBtoRGB(h1 + dh * rel, s1 + ds * rel, v1 + dv * rel);  
+            rgb +=(((int)(a1 + da * rel)) << 24);
             gradient[i] = new Color(rgb);
         }
+    	if (numColors == 1)
+    		gradient = new Color[] { gradient[1] };
         return gradient;
     }
 
@@ -143,6 +151,25 @@ public final class Utils {
     }
     
     /**
+     * Method sets gradient background color for first row and first column assuming those are headers.
+     * The table must have default renderer set as BgColorFormatRenderer
+     * @param table
+     */
+    public static void colorTableHeaders(JTable table) {
+        Color[][] colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
+        if (colorMatrix != null) {
+            for (int i = 0; i < colorMatrix.length; ++i)
+                colorMatrix[i][0] = Color.LIGHT_GRAY;
+            for (int i = 0; i < colorMatrix[0].length; ++i)
+                colorMatrix[0][i] = Color.LIGHT_GRAY;
+            BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
+            if (renderer != null)
+                renderer.setColors(colorMatrix);
+        }
+        ((DefaultTableModel)table.getModel()).fireTableDataChanged();
+    }
+    
+    /**
      * Method clears the table cells and sets default value - an empty string
      * @param table
      */
@@ -184,7 +211,7 @@ public final class Utils {
         int[] minwidth = new int[count];
         int[] maxwidth = new int[count];
         int[] prefwidth = new int[count];
-        int i;
+        int i, j;
         for (i = 0; i < table.getColumnCount(); ++i) {
 	        minwidth[i] = table.getColumnModel().getColumn(i).getMinWidth();
 	        maxwidth[i] = table.getColumnModel().getColumn(i).getMaxWidth();
@@ -196,7 +223,7 @@ public final class Utils {
             minwidth[i] = minwidth[i - 1];
             maxwidth[i] = maxwidth[i - 1];
             prefwidth[i] = prefwidth[i - 1];
-            for (int j = 0; j < table.getRowCount(); ++j)
+            for (j = 0; j < table.getRowCount(); ++j)
             	table.setValueAt("", j, i);
         }
         for (i = 0; i < count; ++i) {
@@ -213,8 +240,12 @@ public final class Utils {
      */
     public static void ensureRowCount(int count, JTable table) {
         DefaultTableModel model = (DefaultTableModel)table.getModel();
-        while (count > table.getRowCount())
+        int i, j;
+        for (i = table.getRowCount(); i < count; ++i) {
             model.addRow(new Object[table.getColumnCount()]);
+            for (j = 0; j < table.getColumnCount(); ++j)
+            	table.setValueAt("", i, j);
+        }
     }
     
     /**
@@ -322,6 +353,118 @@ public final class Utils {
             return val - list.get(idxPrev) <= list.get(idxNext) - val ? idxPrev : idxNext;
         }
         return index;
+    }
+
+    /**
+     * Method returns a linearly interpolated value
+     * @param x is X value you want to interpolate at
+     * @param x1 is X value for previous point
+     * @param x2 is X value for following point
+     * @param y1 is Y value for previous point
+     * @param y2 is Y value for following point
+     * @return Y interpolated value
+     */
+    public static double linearInterpolation(double x, double x1, double x2, double y1, double y2) {
+        return (x1 == x2) ? 0.0 : (y1 + (x - x1) * (y2 - y1) / (x2 - x1));
+    }
+    
+    /**
+     * Method rounds input number by a specific step
+     * @param input
+     * @param step
+     * @return
+     */
+    public static double round(double input, double step) {
+    	return ((Math.round(input / step)) * step);
+    }
+
+    /**
+     * Calculate mean of the array
+     * @param data
+     * @return
+     */
+    public static double mean(List<Double> data) {
+    	double val = 0;
+    	for (int i = 0; i < data.size(); ++i)
+			val += data.get(i);
+		return val / data.size();
+    }
+
+    /**
+     * Calculate median of the array
+     * @param data
+     * @return
+     */
+    public static double median(List<Double> data) {
+    	double val = 0;
+		Collections.sort(data);
+		int mid = data.size() / 2;
+		if (data.size() % 2 == 1)
+			val = data.get(mid);
+		else
+			val = (data.get(mid - 1) + data.get(mid)) / 2;
+		return val;
+    }
+
+    /**
+     * Calculate mode of the array
+     * @param data
+     * @return
+     */
+    public static double mode(List<Double> data) {
+    	ArrayList<Double> modes = new ArrayList<Double>();
+    	HashMap<Double, Integer> countMap = new HashMap<Double, Integer>();
+	    int max = -1;
+	    Integer count;
+	    for (Double n : data) {
+	    	count = countMap.get(n);
+	    	if (count == null)
+	    		count = 0;
+	    	count += 1;
+	    	countMap.put(n, count);
+	        if (count > max)
+	            max = count;
+	    }
+	    for (Map.Entry<Double, Integer> entry : countMap.entrySet()) {
+	        if (entry.getValue() == max)
+	            modes.add(entry.getKey());
+	    }
+	    Collections.sort(modes);
+	    return modes.get(modes.size() / 2);
+    }
+
+    /**
+     * Calculate range of the array
+     * @param data
+     * @return
+     */
+    public static double range(List<Double> data) {
+		return Collections.max(data) - Collections.min(data);
+    }
+
+    /**
+     * Calculate variance of the array
+     * @param data
+     * @return
+     */
+    public static double variance(List<Double> data) {
+    	double mean = mean(data);
+    	double sum = 0;
+    	double diff = 0;
+    	for (Double d : data) {
+    		diff = d - mean;
+    		sum += (diff * diff);
+    	}
+		return sum / data.size();
+    }
+
+    /**
+     * Calculate standard deviation of the array
+     * @param data
+     * @return
+     */
+    public static double standardDeviation(List<Double> data) {
+		return Math.sqrt(variance(data));
     }
 
 }

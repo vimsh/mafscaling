@@ -1,3 +1,21 @@
+/*
+* Open-Source tuning tools
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 package com.vgi.mafscaling;
 
 import java.awt.Component;
@@ -57,7 +75,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
 	        return false;
 	    }
 	}
-    private static final Logger logger = Logger.getLogger(ClosedLoop.class);
+    private static final Logger logger = Logger.getLogger(PrimaryOpenLoopFuelingTable.class);
     private final static int ColumnWidth = 40;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
     private JFileChooser fileChooser = null;
@@ -78,8 +96,14 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     		fuelingTable = loadPolFueling(fuelingTable, fileName);
     		if (fuelingTable == null) {
     			Config.setDefaultPOLFueling("");
-    			String files = Config.getPOLFuelingFiles();
-    			Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", ""));
+                String[] files = Config.getPOLFuelingFiles().split(",");
+                String fs = "";
+                for (String fn : files) {
+                	if (fn.equals(fileName) || fn.isEmpty())
+                		continue;
+                	fs += ("," + fn);
+                }
+                Config.setPOLFuelingFiles(fs);
     			fileName = "";
     		}
     		else {
@@ -87,6 +111,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
 	        		btnSetDefault.setText("Unset Default");
     		}
     	}
+        else if (Config.getDefaultPOLFueling().equals(fileName))
+    		btnSetDefault.setText("Unset Default");
     }
     
     public boolean getSetUserFueling() {
@@ -104,11 +130,10 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         gbc_loadList.insets = new Insets(1, 5, 1, 1);
         gbc_loadList.gridx = 0;
         gbc_loadList.gridy = 0;
-        if (!fileName.isEmpty())
-        	loadList.setSelectedItem(fileName);
+        loadList.setSelectedItem(fileName);
         loadList.setActionCommand("polselected");
         loadList.addActionListener(this);
-        loadList.setPreferredSize(new Dimension(150, 25));
+        loadList.setPreferredSize(new Dimension(150, 23));
         loadList.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         fuelingPanel.add(loadList, gbc_loadList);
         
@@ -449,8 +474,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     	else {
 	    	if (!tempFileName.isEmpty())
 	    		save(fuelingTable);
-	    	if (!tempFileName.isEmpty())
-	    		Config.setDefaultPOLFueling(tempFileName);
+	    	Config.setDefaultPOLFueling(tempFileName);
+    		btnSetDefault.setText("Unset Default");
     	}
     }
     
@@ -486,8 +511,15 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                     }
             	}
             }
-            String files = Config.getPOLFuelingFiles();
-            Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", "") + "," + tempFileName);
+            String[] files = Config.getPOLFuelingFiles().split(",");
+            String fs = "";
+            for (String fn : files) {
+            	if (fn.equals(fileName) || fn.isEmpty())
+            		continue;
+            	fs += ("," + fn);
+            }
+        	fs += ("," + tempFileName);
+            Config.setPOLFuelingFiles(fs);
             loadList.addItem(tempFileName);
             loadList.setSelectedItem(tempFileName);
     	}
@@ -510,13 +542,21 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         	}
         	else {
             	loadList.removeItem(fileName);
-            	loadList.setSelectedIndex(0);
+            	loadList.setSelectedItem("");
             	if (!fileName.isEmpty()) {
-	    			String files = Config.getPOLFuelingFiles();
-	    			Config.setPOLFuelingFiles(files.replaceAll("," + fileName + "\\b", ""));
+                    String[] files = Config.getPOLFuelingFiles().split(",");
+                    String fs = "";
+                    for (String fn : files) {
+                    	if (fn.equals(fileName) || fn.isEmpty())
+                    		continue;
+                    	fs += ("," + fn);
+                    }
+                    Config.setPOLFuelingFiles(fs);
             	}
         	}
         }
+        else if (Config.getDefaultPOLFueling().equals(fileName))
+    		btnSetDefault.setText("Unset Default");
     }
 
     @Override

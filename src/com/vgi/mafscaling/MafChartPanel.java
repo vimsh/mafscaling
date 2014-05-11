@@ -1,3 +1,21 @@
+/*
+* Open-Source tuning tools
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 package com.vgi.mafscaling;
 
 import java.awt.Cursor;
@@ -9,6 +27,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.HashSet;
 
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartPanel;
@@ -21,14 +40,16 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 public class MafChartPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
     private static final Logger logger = Logger.getLogger(MafChartPanel.class);
-    ChartPanel chartPanel = null;
-	IMafChartHolder chartHolder = null;
+    private ChartPanel chartPanel = null;
+	private IMafChartHolder chartHolder = null;
     private XYItemEntity xyItemEntity = null;
+    private HashSet<Integer> pointDraggableSet = null;
     private boolean AllowPointMove = true;
     private boolean IsMovable = false;
     private double initialMovePointY = 0;
 
 	public MafChartPanel(JFreeChart chart, IMafChartHolder holder) {
+		pointDraggableSet = new HashSet<Integer>();
 		chartPanel = new ChartPanel(chart, true, true, true, true, true);
 		chartHolder = holder;
 		chartPanel.addMouseMotionListener(this);
@@ -36,6 +57,10 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
 		chartPanel.addMouseWheelListener(this);
 		chartPanel.setAutoscrolls(true);
 		chartPanel.setMouseZoomable(false);
+	}
+	
+	public void enablePointsDrag(int seriesIndex) {
+		pointDraggableSet.add(seriesIndex);
 	}
 	
 	public ChartPanel getChartPanel() {
@@ -47,7 +72,7 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
             if (IsMovable) {
                 int itemIndex = xyItemEntity.getItem();
                 int seriesIndex = xyItemEntity.getSeriesIndex();
-                if (seriesIndex != 0)
+                if (!pointDraggableSet.contains(seriesIndex))
                     return;
                 XYSeries series = ((XYSeriesCollection)xyItemEntity.getDataset()).getSeries(seriesIndex);
                 XYPlot plot = chartPanel.getChart().getXYPlot();
@@ -59,7 +84,7 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
                     series.getY(itemIndex).doubleValue() + difference < 0.0)
                     initialMovePointY = finalMovePointY;
                 series.updateByIndex(itemIndex, series.getY(itemIndex).doubleValue() + difference);
-                chartHolder.onMovePoint(itemIndex, series.getY(itemIndex).doubleValue());
+                chartHolder.onMovePoint(itemIndex, series.getX(itemIndex).doubleValue(), series.getY(itemIndex).doubleValue());
                 chartPanel.getChart().fireChartChanged();
                 chartPanel.updateUI();
                 initialMovePointY = finalMovePointY;

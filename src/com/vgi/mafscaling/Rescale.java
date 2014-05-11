@@ -1,0 +1,832 @@
+/*
+* Open-Source tuning tools
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
+package com.vgi.mafscaling;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Stroke;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
+import javax.swing.JTextPane;
+import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+
+import org.apache.log4j.Logger;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.SeriesRenderingOrder;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYSplineRenderer;
+import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleEdge;
+import org.jfree.util.ShapeUtilities;
+
+public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListener {
+	private static final long serialVersionUID = -3803091816206090707L;
+    private static final Logger logger = Logger.getLogger(Rescale.class);
+    private static final int MafTableColumnCount = 50;
+    private static final int ColumnWidth = 50;
+    private static final int CellsPerSection = 2;
+    private static final String OrigMafTableName = "Original MAF Scaling";
+    private static final String NewMafTableName = "New MAF Scaling";
+    private static final String XAxisName = "MAF Sensor (Voltage)";
+    private static final String YAxisName = "Mass Airflow (g/s)";
+    private static final String currentDataName = "Original";
+    private static final String correctedDataName = "Rescaled";
+    private final XYSeries currMafData = new XYSeries(currentDataName);
+    private final XYSeries corrMafData = new XYSeries(correctedDataName);
+    private JTable origMafTable = null;
+    private JTable newMafTable = null;
+    private TableCellListener newMafTableCellListener = null;
+	private JFormattedTextField newMaxVFmtTextBox = null;
+	private JFormattedTextField maxVUnchangedFmtTextBox = null;
+	private JFormattedTextField minVFmtTextBox = null;
+	private JFormattedTextField modeDeltaVFmtTextBox = null;
+	
+	private MafChartPanel mafChartPanel = null;
+    private ExcelAdapter excelAdapter = null;
+    private ExcelAdapter newMafExcelAdapter = null;
+	private ArrayList<Double> origVoltArray = null;
+	private ArrayList<Double> origGsArray = null;
+    private ArrayList<Double> deltaVoltArray = null;
+    private double modeDeltaV;
+
+	public Rescale(int tabPlacement) {
+        super(tabPlacement);
+        excelAdapter = new ExcelAdapter() {
+    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+    	    	super.onPaste(table, extendRows, extendCols);
+    	    	calculateModeDeltaV();
+    	    }
+    	    protected void onPasteVertical(JTable table, boolean extendRows, boolean extendCols) {
+    	    	super.onPasteVertical(table, extendRows, extendCols);
+    	    	calculateModeDeltaV();
+    	    }
+    	    protected void onClearSelection(JTable table) {
+    	    	super.onClearSelection(table);
+    	    	calculateModeDeltaV();
+    	    	updateNewMafScale();
+    	    }
+    	};
+    	newMafExcelAdapter = new ExcelAdapter() {
+    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+    	    	super.onPaste(table, extendRows, extendCols);
+    	    	recalculateNewGs();
+    	    }
+    	    protected void onPasteVertical(JTable table, boolean extendRows, boolean extendCols) {
+    	    	super.onPasteVertical(table, extendRows, extendCols);
+    	    	recalculateNewGs();
+    	    }
+    	};
+        initialize();
+    }
+
+    private void initialize() {
+        createDataTab();
+        createUsageTab();
+    }
+
+	public TableCellListener getNewMafTableCellListenerListener() {
+		return newMafTableCellListener;
+	}
+
+	public void setNewMafTableCellListenerListener(TableCellListener listener) {
+		newMafTableCellListener = listener;
+	}
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // DATA TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    private void createDataTab() {
+        JPanel dataPanel = new JPanel();
+        add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
+        GridBagLayout gbl_dataPanel = new GridBagLayout();
+        gbl_dataPanel.columnWidths = new int[] {0};
+        gbl_dataPanel.rowHeights = new int[] {0, 0, 0};
+        gbl_dataPanel.columnWeights = new double[]{0.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 1.0};
+        dataPanel.setLayout(gbl_dataPanel);
+
+        createControlPanel(dataPanel);
+        createMafScalesScrollPane(dataPanel);
+        createGraghPanel(dataPanel);
+    }
+    
+    private void createControlPanel(JPanel dataPanel) {
+        JPanel cntlPanel = new JPanel();
+        GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
+        gbl_ctrlPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
+        gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbl_ctrlPanel.weightx = 1.0;
+        gbl_ctrlPanel.gridx = 0;
+        gbl_ctrlPanel.gridy = 0;
+        dataPanel.add(cntlPanel, gbl_ctrlPanel);
+        
+        GridBagLayout gbl_cntlPanel = new GridBagLayout();
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.rowHeights = new int[]{0, 0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.rowWeights = new double[]{0};
+        cntlPanel.setLayout(gbl_cntlPanel);
+        
+        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+        doubleFmt.setGroupingUsed(false);
+        doubleFmt.setMaximumIntegerDigits(1);
+        doubleFmt.setMinimumIntegerDigits(1);
+        doubleFmt.setMaximumFractionDigits(3);
+        doubleFmt.setMinimumFractionDigits(1);
+        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+        
+        NumberFormat scaleDoubleFmt = NumberFormat.getNumberInstance();
+        scaleDoubleFmt.setGroupingUsed(false);
+        scaleDoubleFmt.setMaximumIntegerDigits(1);
+        scaleDoubleFmt.setMinimumIntegerDigits(1);
+        scaleDoubleFmt.setMaximumFractionDigits(8);
+        scaleDoubleFmt.setMinimumFractionDigits(1);
+        scaleDoubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+        
+        JLabel newMaxVLabel = new JLabel("New Max V");
+        newMaxVLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_newMaxVLabel = new GridBagConstraints();
+        gbc_newMaxVLabel.anchor = GridBagConstraints.EAST;
+        gbc_newMaxVLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_newMaxVLabel.gridx = 0;
+        gbc_newMaxVLabel.gridy = 0;
+        cntlPanel.add(newMaxVLabel, gbc_newMaxVLabel);
+        
+        newMaxVFmtTextBox = new JFormattedTextField(doubleFmt);
+        newMaxVFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        newMaxVFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+	            Object source = e.getSource();
+	            if (source == newMaxVFmtTextBox)
+	                updateNewMafScale();
+			}
+        });
+        GridBagConstraints gbc_newMaxV = new GridBagConstraints();
+        gbc_newMaxV.anchor = GridBagConstraints.WEST;
+        gbc_newMaxV.insets = new Insets(3, 3, 3, 3);
+        gbc_newMaxV.gridx = 1;
+        gbc_newMaxV.gridy = 0;
+        cntlPanel.add(newMaxVFmtTextBox, gbc_newMaxV);
+        
+        JLabel minVLabel = new JLabel("Min V");
+        minVLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_minVLabel = new GridBagConstraints();
+        gbc_minVLabel.anchor = GridBagConstraints.EAST;
+        gbc_minVLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_minVLabel.gridx = 2;
+        gbc_minVLabel.gridy = 0;
+        cntlPanel.add(minVLabel, gbc_minVLabel);
+        
+        minVFmtTextBox = new JFormattedTextField(doubleFmt);
+        minVFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        minVFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+	            Object source = e.getSource();
+	            if (source == minVFmtTextBox)
+	                updateNewMafScale();
+			}
+        });
+        GridBagConstraints gbc_minVFmtTextBox = new GridBagConstraints();
+        gbc_minVFmtTextBox.anchor = GridBagConstraints.WEST;
+        gbc_minVFmtTextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_minVFmtTextBox.gridx = 3;
+        gbc_minVFmtTextBox.gridy = 0;
+        cntlPanel.add(minVFmtTextBox, gbc_minVFmtTextBox);
+        
+        JLabel maxVUnchangedLabel = new JLabel("Max Unchanged");
+        maxVUnchangedLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_maxVUnchangedLabel = new GridBagConstraints();
+        gbc_maxVUnchangedLabel.anchor = GridBagConstraints.EAST;
+        gbc_maxVUnchangedLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_maxVUnchangedLabel.gridx = 4;
+        gbc_maxVUnchangedLabel.gridy = 0;
+        cntlPanel.add(maxVUnchangedLabel, gbc_maxVUnchangedLabel);
+        
+        maxVUnchangedFmtTextBox = new JFormattedTextField(doubleFmt);
+        maxVUnchangedFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        maxVUnchangedFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
+			public void propertyChange(PropertyChangeEvent e) {
+	            Object source = e.getSource();
+	            if (source == maxVUnchangedFmtTextBox)
+	                updateNewMafScale();
+			}
+        });
+        GridBagConstraints gbc_maxVUnchangedFmtTextBox = new GridBagConstraints();
+        gbc_maxVUnchangedFmtTextBox.anchor = GridBagConstraints.WEST;
+        gbc_maxVUnchangedFmtTextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_maxVUnchangedFmtTextBox.gridx = 5;
+        gbc_maxVUnchangedFmtTextBox.gridy = 0;
+        cntlPanel.add(maxVUnchangedFmtTextBox, gbc_maxVUnchangedFmtTextBox);
+        
+        JLabel modeDeltaVChangeLabel = new JLabel("Mode deltaV");
+        modeDeltaVChangeLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_modeDeltaVChangeLabel = new GridBagConstraints();
+        gbc_modeDeltaVChangeLabel.anchor = GridBagConstraints.EAST;
+        gbc_modeDeltaVChangeLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_modeDeltaVChangeLabel.gridx = 6;
+        gbc_modeDeltaVChangeLabel.gridy = 0;
+        cntlPanel.add(modeDeltaVChangeLabel, gbc_modeDeltaVChangeLabel);
+        
+        modeDeltaVFmtTextBox = new JFormattedTextField(scaleDoubleFmt);
+        modeDeltaVFmtTextBox.setPreferredSize(new Dimension(80, 18));
+        modeDeltaVFmtTextBox.setEditable(false);
+        modeDeltaVFmtTextBox.setBackground(new Color(210,210,210));
+        GridBagConstraints gbc_modeDeltaVFmtTextBox = new GridBagConstraints();
+        gbc_modeDeltaVFmtTextBox.anchor = GridBagConstraints.WEST;
+        gbc_modeDeltaVFmtTextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_modeDeltaVFmtTextBox.gridx = 7;
+        gbc_modeDeltaVFmtTextBox.gridy = 0;
+        cntlPanel.add(modeDeltaVFmtTextBox, gbc_modeDeltaVFmtTextBox);
+    }
+
+    private void createMafScalesScrollPane(JPanel dataPanel) {
+        JPanel mafPanel = new JPanel();
+        
+        JScrollPane mafScrollPane = new JScrollPane(mafPanel);
+        mafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        GridBagConstraints gbl_mafScrollPane = new GridBagConstraints();
+        gbl_mafScrollPane.insets = new Insets(3, 3, 3, 3);
+        gbl_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbl_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbl_mafScrollPane.ipady = 110;
+        gbl_mafScrollPane.weightx = 1.0;
+        gbl_mafScrollPane.gridx = 0;
+        gbl_mafScrollPane.gridy = 1;
+        
+        dataPanel.add(mafScrollPane, gbl_mafScrollPane);
+        
+        GridBagLayout gbl_mafPanelLayout = new GridBagLayout();
+        gbl_mafPanelLayout.columnWidths = new int[]{0};
+        gbl_mafPanelLayout.rowHeights = new int[]{0, 0};
+        gbl_mafPanelLayout.columnWeights = new double[]{0.0, 1.0};
+        gbl_mafPanelLayout.rowWeights = new double[]{0.0, 1.0};
+        mafPanel.setLayout(gbl_mafPanelLayout);
+        
+        JScrollPane origMafScrollPane = new JScrollPane();
+        origMafScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        origMafScrollPane.setViewportBorder(new TitledBorder(null, OrigMafTableName, TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        origMafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        origMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        GridBagConstraints gbc_origMafScrollPane = new GridBagConstraints();
+        gbc_origMafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_origMafScrollPane.weightx = 1.0;
+        gbc_origMafScrollPane.insets = new Insets(0, 0, 0, 0);
+        gbc_origMafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_origMafScrollPane.gridx = 0;
+        gbc_origMafScrollPane.gridy = 0;
+        mafPanel.add(origMafScrollPane, gbc_origMafScrollPane);
+        
+        JPanel origDataMafPanel = new JPanel();
+        origMafScrollPane.setViewportView(origDataMafPanel);
+        GridBagLayout gbl_origDataMafPanel = new GridBagLayout();
+        gbl_origDataMafPanel.columnWidths = new int[]{0, 0, 0};
+        gbl_origDataMafPanel.rowHeights = new int[] {0, 0};
+        gbl_origDataMafPanel.columnWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
+        gbl_origDataMafPanel.rowWeights = new double[]{0.0, 0.0};
+        origDataMafPanel.setLayout(gbl_origDataMafPanel);
+        
+        JLabel origVoltLabel = new JLabel("volt");
+        GridBagConstraints gbc_origVoltLabel = new GridBagConstraints();
+        gbc_origVoltLabel.anchor = GridBagConstraints.PAGE_START;
+        gbc_origVoltLabel.insets = new Insets(1, 1, 1, 5);
+        gbc_origVoltLabel.weightx = 0;
+        gbc_origVoltLabel.weighty = 0;
+        gbc_origVoltLabel.gridx = 0;
+        gbc_origVoltLabel.gridy = 0;
+        origDataMafPanel.add(origVoltLabel, gbc_origVoltLabel);
+        
+        JLabel origGSLabel = new JLabel(" g/s");
+        GridBagConstraints gbc_origGSLabel = new GridBagConstraints();
+        gbc_origGSLabel.anchor = GridBagConstraints.PAGE_START;
+        gbc_origGSLabel.insets = new Insets(1, 1, 1, 5);
+        gbc_origGSLabel.weightx = 0;
+        gbc_origGSLabel.weighty = 0;
+        gbc_origGSLabel.gridx = 0;
+        gbc_origGSLabel.gridy = 1;
+        origDataMafPanel.add(origGSLabel, gbc_origGSLabel);
+
+        origMafTable = new JTable();
+        origMafTable.setColumnSelectionAllowed(true);
+        origMafTable.setCellSelectionEnabled(true);
+        origMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
+        origMafTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        origMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        origMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount) {
+			private static final long serialVersionUID = -2179977830999030022L;
+			public boolean isCellEditable(int row, int column) { return false; };
+        });
+        origMafTable.setTableHeader(null);
+        Utils.initializeTable(origMafTable, ColumnWidth);
+        GridBagConstraints gbc_origMafTable = new GridBagConstraints();
+        gbc_origMafTable.insets = new Insets(0, 0, 0, 0);
+        gbc_origMafTable.fill = GridBagConstraints.BOTH;
+        gbc_origMafTable.weightx = 1.0;
+        gbc_origMafTable.weighty = 1.0;
+        gbc_origMafTable.gridx = 1;
+        gbc_origMafTable.gridy = 0;
+        gbc_origMafTable.gridheight = 2;
+        origDataMafPanel.add(origMafTable, gbc_origMafTable);
+        excelAdapter.addTable(origMafTable, false, false, false, false, false, false, false, false, true);
+
+        JScrollPane newMafScrollPane = new JScrollPane();
+        newMafScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        newMafScrollPane.setViewportBorder(new TitledBorder(null, NewMafTableName, TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        newMafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        newMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        GridBagConstraints gbc_newMafScrollPane = new GridBagConstraints();
+        gbc_newMafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_newMafScrollPane.weightx = 1.0;
+        gbc_newMafScrollPane.insets = new Insets(0, 0, 0, 0);
+        gbc_newMafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_newMafScrollPane.gridx = 0;
+        gbc_newMafScrollPane.gridy = 1;
+        mafPanel.add(newMafScrollPane, gbc_newMafScrollPane);
+        
+        JPanel newDataMafPanel = new JPanel();
+        newMafScrollPane.setViewportView(newDataMafPanel);
+        GridBagLayout gbl_newDataMafPanel = new GridBagLayout();
+        gbl_newDataMafPanel.columnWidths = new int[]{0, 0, 0};
+        gbl_newDataMafPanel.rowHeights = new int[] {0, 0};
+        gbl_newDataMafPanel.columnWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
+        gbl_newDataMafPanel.rowWeights = new double[]{0.0, 0.0};
+        newDataMafPanel.setLayout(gbl_newDataMafPanel);
+        
+        JLabel newVoltLabel = new JLabel("volt");
+        GridBagConstraints gbc_newVoltLabel = new GridBagConstraints();
+        gbc_newVoltLabel.anchor = GridBagConstraints.PAGE_START;
+        gbc_newVoltLabel.insets = new Insets(1, 1, 1, 5);
+        gbc_newVoltLabel.weightx = 0;
+        gbc_newVoltLabel.weighty = 0;
+        gbc_newVoltLabel.gridx = 0;
+        gbc_newVoltLabel.gridy = 0;
+        newDataMafPanel.add(newVoltLabel, gbc_newVoltLabel);
+        
+        JLabel newGSLabel = new JLabel(" g/s");
+        GridBagConstraints gbc_newGSLabel = new GridBagConstraints();
+        gbc_newGSLabel.anchor = GridBagConstraints.PAGE_START;
+        gbc_newGSLabel.insets = new Insets(1, 1, 1, 5);
+        gbc_newGSLabel.weightx = 0;
+        gbc_newGSLabel.weighty = 0;
+        gbc_newGSLabel.gridx = 0;
+        gbc_newGSLabel.gridy = 1;
+        newDataMafPanel.add(newGSLabel, gbc_newGSLabel);
+
+        newMafTable = new JTable() {
+			private static final long serialVersionUID = 7749582128758153892L;
+			public boolean isCellEditable(int row, int column) { if (row == 1) return false; return true; };
+        };
+        newMafTable.setColumnSelectionAllowed(true);
+        newMafTable.setCellSelectionEnabled(true);
+        newMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
+        newMafTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+        newMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        newMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount));
+        newMafTable.setTableHeader(null);
+        Utils.initializeTable(newMafTable, ColumnWidth);
+        GridBagConstraints gbc_newMafTable = new GridBagConstraints();
+        gbc_newMafTable.insets = new Insets(0, 0, 0, 0);
+        gbc_newMafTable.fill = GridBagConstraints.BOTH;
+        gbc_newMafTable.weightx = 1.0;
+        gbc_newMafTable.weighty = 1.0;
+        gbc_newMafTable.gridx = 1;
+        gbc_newMafTable.gridy = 0;
+        gbc_newMafTable.gridheight = 2;
+        newDataMafPanel.add(newMafTable, gbc_newMafTable);
+        newMafExcelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
+/*
+        TableModelListener newTableListener = new TableModelListener() {
+            public void tableChanged(TableModelEvent tme) {
+                if (tme.getType() == TableModelEvent.UPDATE) {
+                	int colCount = newMafTable.getColumnCount();
+                	corrMafData.clear();
+                	for (int i = 0; i < colCount; ++i) {
+                		if (Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(0, i).toString()) &&
+                			Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(1, i).toString())) {
+                			corrMafData.add(Double.valueOf(newMafTable.getValueAt(0, i).toString()), Double.valueOf(newMafTable.getValueAt(1, i).toString()));
+                		}
+                		else
+                			break;
+                	}
+                	if (colCount != corrMafData.getItemCount())
+                    	corrMafData.clear();
+                	corrMafData.fireSeriesChanged();
+                }
+            }
+        };
+        newMafTable.getModel().addTableModelListener(newTableListener);
+*/
+
+        Action action = new AbstractAction() {
+			private static final long serialVersionUID = 1L;
+			public void actionPerformed(ActionEvent e) {
+    	    	recalculateNewGs();
+            }
+        };
+        
+        setNewMafTableCellListenerListener(new TableCellListener(newMafTable, action));
+    }
+    
+    private void createGraghPanel(JPanel dataPanel) {
+        JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
+        chart.setBorderVisible(true);
+        mafChartPanel = new MafChartPanel(chart, this);
+        
+        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
+        gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
+        gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_chartPanel.fill = GridBagConstraints.BOTH;
+        gbl_chartPanel.weightx = 1.0;
+        gbl_chartPanel.weighty = 1.0;
+        gbl_chartPanel.gridx = 0;
+        gbl_chartPanel.gridy = 2;
+        dataPanel.add(mafChartPanel.getChartPanel(), gbl_chartPanel);
+
+        XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
+        lineRenderer.setUseFillPaint(true);
+        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+                StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
+                new DecimalFormat("0.00"), new DecimalFormat("0.00")));
+        
+        Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
+        lineRenderer.setSeriesStroke(0, stroke);
+        lineRenderer.setSeriesStroke(1, stroke);
+        lineRenderer.setSeriesPaint(0, new Color(201, 0, 0));
+        lineRenderer.setSeriesPaint(1, new Color(0, 0, 255));
+        lineRenderer.setSeriesShape(0, ShapeUtilities.createDiamond((float) 2.5));
+        lineRenderer.setSeriesShape(1, ShapeUtilities.createUpTriangle((float) 2.5));
+        
+        ValueAxis mafvDomain = new NumberAxis(XAxisName);
+        ValueAxis mafgsRange = new NumberAxis(YAxisName);
+        
+        XYSeriesCollection lineDataset = new XYSeriesCollection();
+
+        lineDataset.addSeries(currMafData);
+        lineDataset.addSeries(corrMafData);
+        
+        XYPlot plot = chart.getXYPlot();
+        plot.setRangePannable(true);
+        plot.setDomainPannable(true);
+        plot.setDomainGridlinePaint(Color.DARK_GRAY);
+        plot.setRangeGridlinePaint(Color.DARK_GRAY);
+        plot.setBackgroundPaint(new Color(224, 224, 224));
+        plot.setSeriesRenderingOrder(SeriesRenderingOrder.FORWARD);
+
+        plot.setDataset(0, lineDataset);
+        plot.setRenderer(0, lineRenderer);
+        plot.setDomainAxis(0, mafvDomain);
+        plot.setRangeAxis(0, mafgsRange);
+        plot.mapDatasetToDomainAxis(0, 0);
+        plot.mapDatasetToRangeAxis(0, 0);
+
+        
+        LegendTitle legend = new LegendTitle(plot.getRenderer()); 
+        legend.setItemFont(new Font("Arial", 0, 10));
+        legend.setPosition(RectangleEdge.TOP);
+        chart.addLegend(legend);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CREATE USAGE TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    private void createUsageTab() {
+        JTextPane  usageTextArea = new JTextPane();
+        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
+        usageTextArea.setContentType("text/html");
+        usageTextArea.setText(usage());
+        usageTextArea.setEditable(false);
+        usageTextArea.setCaretPosition(0);
+
+        JScrollPane textScrollPane = new JScrollPane(usageTextArea);
+        textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        add(textScrollPane, "<html><div style='text-align: center;'>U<br>s<br>a<br>g<br>e</div></html>");
+    }
+    
+    private String usage() {
+        ResourceBundle bundle;
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.rescale");
+        return bundle.getString("usage"); 
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // WORK FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////////////////
+
+    private boolean getMafTableData(JTable mafTable, ArrayList<Double> voltArray, ArrayList<Double> gsArray) {
+        String value;
+        for (int i = 0; i < mafTable.getColumnCount(); ++i) {
+            for (int j = 0; j < mafTable.getRowCount(); ++j) {
+                value = mafTable.getValueAt(j, i).toString();
+                if (value.isEmpty())
+                    return true;
+                if (!Utils.validateDouble(value, j, i, mafTable.getName()))
+                    return false;
+            }
+            voltArray.add(Double.parseDouble(mafTable.getValueAt(0, i).toString()));
+            gsArray.add(Double.parseDouble(mafTable.getValueAt(1, i).toString()));
+        }
+        if (voltArray.size() != gsArray.size()) {
+            JOptionPane.showMessageDialog(null, "Data sets (volt/gs) in  " + mafTable.getName() + " have different length", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    
+    private void calculateModeDeltaV() {
+		origVoltArray = new ArrayList<Double>();
+		origGsArray = new ArrayList<Double>();
+		if (!getMafTableData(origMafTable, origVoltArray, origGsArray) || origVoltArray.size() == 0)
+			return;
+    	deltaVoltArray = new ArrayList<Double>();
+    	deltaVoltArray.add(0.0);
+    	int i;
+    	for (i = 1; i < origVoltArray.size(); ++i)
+    		deltaVoltArray.add(origVoltArray.get(i) - origVoltArray.get(i - 1));
+    	modeDeltaV = Utils.mode(deltaVoltArray);
+    	modeDeltaVFmtTextBox.setValue(modeDeltaV);
+    	for (i = deltaVoltArray.size() - 1; i > 0; --i) {
+    		if (modeDeltaV == deltaVoltArray.get(i)) {
+    			// hack as if value being set is the same then change even is not sent and updateNewMafScale() is not triggered
+    	    	maxVUnchangedFmtTextBox.setValue(null);
+    			maxVUnchangedFmtTextBox.setValue(origVoltArray.get(i));
+    			return;
+    		}
+    	}
+    	maxVUnchangedFmtTextBox.setValue(null);
+    }
+    
+    private void calculateNewGs(ArrayList<Double> newVoltArray, ArrayList<Double> newGsArray) {
+    	TreeMap<Double, Integer> vgsTree = new TreeMap<Double, Integer>();
+    	for (int i = origVoltArray.size() - 1; i >= 0; --i)
+    		vgsTree.put(origVoltArray.get(i), i);
+    	Map.Entry<Double, Integer> kv;
+    	double x0, y0, x, y, x1, y1;
+    	for (int i = 1; i < newVoltArray.size(); ++i) {
+    		x = newVoltArray.get(i);
+    		kv = vgsTree.floorEntry(x); 
+    		if (kv == null) {
+    			newGsArray.add(0.0);
+    			continue;
+    		}
+    		x0 = kv.getKey();
+    		if (x0 == x) {
+    			newGsArray.add(origGsArray.get(kv.getValue()));
+    			continue;
+    		}
+    		y0 = origGsArray.get(kv.getValue());
+    		kv = vgsTree.ceilingEntry(x);
+    		if (kv == null) {
+    			newGsArray.add(0.0);
+    			continue;
+    		}
+    		x1 = kv.getKey();
+    		y1 = origGsArray.get(kv.getValue());
+    		y = Utils.linearInterpolation(x, x0, x1, y0, y1);
+    		newGsArray.add(y);
+    	}
+    }
+    
+    private void recalculateNewGs() {
+    	try {
+    		if (origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
+    			return;
+	    	ArrayList<Double> newVoltArray = new ArrayList<Double>();
+    		ArrayList<Double> newGsArray = new ArrayList<Double>();
+	    	newGsArray.add(origGsArray.get(0));
+    		for (int i = 0; i < newMafTable.getColumnCount(); ++i) {
+        		if (Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(0, i).toString()))
+        			newVoltArray.add(Double.valueOf(newMafTable.getValueAt(0, i).toString()));
+        		else
+        			break;
+    		}
+    		if (newVoltArray.size() != origVoltArray.size())
+    			return;
+			calculateNewGs(newVoltArray, newGsArray);
+	    	for (int i = 0; i < newVoltArray.size(); ++i)
+	    		newMafTable.setValueAt(newGsArray.get(i), 1, i);
+        	corrMafData.clear();
+	    	setXYSeries(corrMafData, newVoltArray, newGsArray);
+		}
+    	catch (Exception e) {
+    		e.printStackTrace();
+            logger.error(e);
+		}
+    }
+    
+    private void updateNewMafScale() {
+    	try {
+        	corrMafData.clear();
+        	currMafData.clear();
+        	Utils.clearTable(newMafTable);
+        	
+        	if (newMaxVFmtTextBox.getValue() == null || 
+        		maxVUnchangedFmtTextBox.getValue() == null ||
+        		minVFmtTextBox.getValue() == null ||
+        		origMafTable.getValueAt(0, 0).toString().isEmpty())
+        		return;
+        	
+        	if (origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
+        		return;
+        	
+        	if (origVoltArray.size() < 10) {
+        		JOptionPane.showMessageDialog(null, "It looks like you have only partial original MAF scale table", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+        		return;
+        	}
+
+        	double newMafV = (((Number)newMaxVFmtTextBox.getValue()).doubleValue());
+			if (newMafV < origVoltArray.get(0)) {
+	            JOptionPane.showMessageDialog(null, "New Max V [" + newMafV + "] can't be lower than first MAF table value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+			if (newMafV > origVoltArray.get(origVoltArray.size() - 1)) {
+	            JOptionPane.showMessageDialog(null, "New Max V [" + newMafV + "] can't be higher than last MAF table value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+
+        	double minV = (((Number)minVFmtTextBox.getValue()).doubleValue());
+			if (minV <= origVoltArray.get(1)) {
+	            JOptionPane.showMessageDialog(null, "Min V [" + minV + "] must be higher than second MAF table value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+			if (minV > newMafV) {
+	            JOptionPane.showMessageDialog(null, "Min V [" + minV + "] can't be higher than new MAF V value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+
+        	double maxVUnch = (((Number)maxVUnchangedFmtTextBox.getValue()).doubleValue());
+			if (maxVUnch <= minV) {
+	            JOptionPane.showMessageDialog(null, "Max Unchanged [" + maxVUnch + "] must be higher than Min V value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+			if (maxVUnch > newMafV) {
+	            JOptionPane.showMessageDialog(null, "Max Unchanged [" + maxVUnch + "] can't be higher than new MAF V value", "Invalid Data", JOptionPane.ERROR_MESSAGE);
+	            return;
+			}
+	    	
+	    	int i, j, z;
+	    	ArrayList<Double> newVoltArray = new ArrayList<Double>();
+    		ArrayList<Double> newGsArray = new ArrayList<Double>();
+	    	newVoltArray.add(origVoltArray.get(0));
+	    	newGsArray.add(origGsArray.get(0));
+
+	    	// Find first value greater than MinV from original scale, 
+	    	// calculate mid-point and add them as second and third values to the new array.
+	    	// After that simply copy all original values up until Max Unchanged value.
+	    	boolean minFound = false;
+	    	double val;
+	    	for (i = 2; i < origVoltArray.size(); ++i) {
+	    		val = origVoltArray.get(i);
+	    		if (minFound) {
+	    			if (val <= maxVUnch)
+		    			newVoltArray.add(val);
+	    			else
+	    				break;
+	    		}
+	    		else if (minV <= val) {
+	    			newVoltArray.add((val - origVoltArray.get(0)) / 2.0 + origVoltArray.get(0));
+	    			newVoltArray.add(val);
+	    			minFound = true;
+	    		}
+	    	}
+	    	int newMaxUnchIdx = newVoltArray.size() - 1;
+	    	
+			// Find avg % change per section in the original scale but for the same number of points as new scale 
+	    	double pointsCount = origVoltArray.size() - newVoltArray.size();
+			int sectionCount = (int)Math.ceil((double)pointsCount / (double)CellsPerSection);
+			List<Double> modDeltaList = deltaVoltArray.subList(newMaxUnchIdx, deltaVoltArray.size());
+			double avgDelta = Utils.mean(modDeltaList);
+			double maxDelta = Collections.max(modDeltaList);
+			double minDelta = Collections.min(modDeltaList);
+			double avgSectionChange = (maxDelta - minDelta) / sectionCount;
+			double changePercent = (maxDelta - minDelta) / avgSectionChange;
+			
+			// Calculate delta per section
+			double delta;
+			ArrayList<Double> adj = new ArrayList<Double>();
+			for (i = 0; i < sectionCount; ++i)
+				adj.add(avgDelta);
+			int end = (int) Math.floor(sectionCount / 2.0);
+			for (i = 0, j = sectionCount - 1; i < j; ++i, --j) {
+				delta = avgDelta / 100.00 * changePercent * (end - i);
+				adj.set(i, avgDelta - delta);
+				adj.set(j, avgDelta + delta);
+			}
+			// Apply diff for each cell of each section
+			for (i = newMaxUnchIdx + 1, j = 0, z = 0; i < origVoltArray.size(); ++i, ++j) {
+				double diff = adj.get(z);
+				if (j >= CellsPerSection) {
+					j = 0;
+					++z;
+					diff = adj.get(z);
+				}
+				newVoltArray.add(newVoltArray.get(i - 1) + diff);
+			}
+			// Since the above diffs are based of the original scale change simply adjust the new values to fit the new scale
+			double corr = (newMafV - newVoltArray.get(newVoltArray.size() - 1)) / pointsCount;
+			for (i = newMaxUnchIdx + 1, j = 1; i < newVoltArray.size(); ++i, ++j)
+				newVoltArray.set(i, newVoltArray.get(i) + j * corr);
+
+			calculateNewGs(newVoltArray, newGsArray);
+
+            Utils.ensureColumnCount(newVoltArray.size(), newMafTable);
+	    	for (i = 0; i < newVoltArray.size(); ++i) {
+	    		newMafTable.setValueAt(newVoltArray.get(i), 0, i);
+	    		newMafTable.setValueAt(newGsArray.get(i), 1, i);
+	    	}
+	    	setXYSeries(currMafData, origVoltArray, origGsArray);
+	    	setXYSeries(corrMafData, newVoltArray, newGsArray);
+	    	setRanges(mafChartPanel);
+		}
+    	catch (Exception e) {
+            logger.error(e);
+		}
+    }
+    
+    private boolean setXYSeries(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
+        if (xarr.size() == 0 || xarr.size() != yarr.size())
+            return false;
+        series.clear();
+        for (int i = 0; i < xarr.size(); ++i)
+            series.add(xarr.get(i), yarr.get(i), false);
+        series.fireSeriesChanged();
+        return true;
+    }
+
+    private void setRanges(MafChartPanel chartPanel) {
+    	double paddingX = currMafData.getMaxX() * 0.05;
+    	double paddingY = currMafData.getMaxY() * 0.05;
+    	chartPanel.getChartPanel().getChart().getXYPlot().getDomainAxis(0).setRange(currMafData.getMinX() - paddingX, currMafData.getMaxX() + paddingX);
+    	chartPanel.getChartPanel().getChart().getXYPlot().getRangeAxis(0).setRange(currMafData.getMinY() - paddingY, currMafData.getMaxY() + paddingY);
+    }
+
+	@Override
+	public void onMovePoint(int itemIndex, double valueX, double valueY) {
+        newMafTable.setValueAt(valueX, 0, itemIndex);
+        newMafTable.setValueAt(valueY, 1, itemIndex);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+	}
+
+}

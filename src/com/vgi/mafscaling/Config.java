@@ -1,3 +1,21 @@
+/*
+* Open-Source tuning tools
+*
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation; either version 2 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program; if not, write to the Free Software Foundation, Inc.,
+* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
+
 package com.vgi.mafscaling;
 
 import java.awt.Dimension;
@@ -15,7 +33,20 @@ import org.apache.log4j.Logger;
 public class Config {
     private static final Logger logger = Logger.getLogger(Config.class);
 	private static final String CFG_FILE = "config.xml";
+	public static final String NO_NAME = "#$#";
 	private static Properties props = new Properties();
+
+	public static String getProperty(String name) {
+		return props.getProperty(name, "");
+	}
+
+	public static void setProperty(String name, String prop) {
+		props.setProperty(name, prop);
+	}
+
+	public static void removeProperty(String name) {
+		props.remove(name);
+	}
 	
 	public static Dimension getWindowSize() {
 		return new Dimension(Integer.parseInt(props.getProperty("WindowWidth", "300")), Integer.parseInt(props.getProperty("WindowHeight", "200")));
@@ -33,6 +64,24 @@ public class Config {
 	public static void setWindowLocation(Point p) {
 		props.setProperty("WindowPositionX", Integer.toString(p.x));
 		props.setProperty("WindowPositionY", Integer.toString(p.y));
+	}
+	
+	public static Dimension getCompWindowSize() {
+		return new Dimension(Integer.parseInt(props.getProperty("CompareWindowWidth", "300")), Integer.parseInt(props.getProperty("WindowHeight", "140")));
+	}
+	
+	public static void setCompWindowSize(Dimension d) {
+		props.setProperty("CompareWindowWidth", Integer.toString(d.width));
+		props.setProperty("CompareWindowHeight", Integer.toString(d.height));
+	}
+
+	public static Point getCompWindowLocation() {
+		return new Point(Integer.parseInt(props.getProperty("CompareWindowPositionX", "50")), Integer.parseInt(props.getProperty("WindowPositionY", "50")));
+	}
+
+	public static void setCompWindowLocation(Point p) {
+		props.setProperty("CompareWindowPositionX", Integer.toString(p.x));
+		props.setProperty("CompareWindowPositionY", Integer.toString(p.y));
 	}
 	
 	public static String getThrottleAngleColumnName() {
@@ -233,6 +282,22 @@ public class Config {
 
 	public static void setPOLFuelingFiles(String s) {
 		props.setProperty("POLFuelingFiles", s);
+	}
+
+	public static String getXAxisTemplates() {
+		return props.getProperty("XAxisTemplates", ",");
+	}
+
+	public static void setXAxisTemplates(String s) {
+		props.setProperty("XAxisTemplates", s);
+	}
+
+	public static String getYAxisTemplates() {
+		return props.getProperty("YAxisTemplates", ",");
+	}
+
+	public static void setYAxisTemplates(String s) {
+		props.setProperty("YAxisTemplates", s);
 	}
 	
 	public static void load() {

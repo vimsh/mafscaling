@@ -436,7 +436,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
         rbGroup.add(rbScatterPlot);
         cntlPanel.add(rbScatterPlot, gbc_rbScatterPlot);
         
-        plot = new Plot3DPanel("NORTH") {
+        plot = new Plot3DPanel("SOUTH") {
 			private static final long serialVersionUID = 7914951068593204419L;
 			public void addPlotToolBar(String location) {
 				super.addPlotToolBar(location);

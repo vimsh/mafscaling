@@ -42,12 +42,10 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
@@ -57,7 +55,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.LineBorder;
@@ -71,7 +68,7 @@ import org.math.plot.Plot3DPanel;
 public class LogStats extends JTabbedPane implements ActionListener {
 	private enum Statistics {COUNT, MINIMUM, MAXIMUM, MEAN, MEDIAN, MODE, RANGE, VARIANCE, STDDEV};
 	private enum Plot3D {GRID, BAR, LINE, SCATTER};
-	private enum DataFilter {NONE, LESS, EQUAL, GREATER};
+	private enum DataFilter {NONE, LESS, LESS_EQUAL, EQUAL, GREATER_EQUAL, GREATER};
 	private static final long serialVersionUID = -7486851151646396168L;
 	private static final Logger logger = Logger.getLogger(LogStats.class);
     private static final int ColumnWidth = 50;
@@ -83,10 +80,18 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JComboBox<String> dataColumn = null;
+    private JComboBox<String> filter1Column = null;
+    private JComboBox<String> filter2Column = null;
+    private JComboBox<String> filter3Column = null;
     private JComboBox<String> statistics = null;
-    private JComboBox<String> filters = null;
+    private JComboBox<String> filter1ComboBox = null;
+    private JComboBox<String> filter2ComboBox = null;
+    private JComboBox<String> filter3ComboBox = null;
     private JFormattedTextField xAxisRoundTextBox = null;
     private JFormattedTextField yAxisRoundTextBox = null;
+    private JFormattedTextField filter1TextBox = null;
+    private JFormattedTextField filter2TextBox = null;
+    private JFormattedTextField filter3TextBox = null;
     private JTable dataTable = null;
     private ExcelAdapter excelAdapter = null;
     private HashMap<Double, HashMap<Double, ArrayList<Double>>> xData = null;
@@ -98,9 +103,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private JRadioButton rbScatterPlot = null;
     private ArrayList<Double> xAxisArray;
     private ArrayList<Double> yAxisArray;
-    private DataFilter dataFilterType = DataFilter.NONE;
-    private double dataFilter = Double.NaN;
-    private int dataRounding = 0;
 
 	public LogStats(int tabPlacement) {
         super(tabPlacement);
@@ -135,11 +137,17 @@ public class LogStats extends JTabbedPane implements ActionListener {
         createDataPanel(dataPanel);
     }
     
-    private void createControlPanel(JPanel dataPanel) {        
+    private void createControlPanel(JPanel dataPanel) {
         NumberFormat doubleFmt = NumberFormat.getNumberInstance();
         doubleFmt.setGroupingUsed(false);
         doubleFmt.setMaximumFractionDigits(2);
         doubleFmt.setMinimumFractionDigits(1);
+        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+        
+        NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
+        doubleFmt.setGroupingUsed(false);
+        doubleFmt.setMaximumFractionDigits(6);
+        doubleFmt.setMinimumFractionDigits(0);
         doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
         
         JPanel cntlPanel = new JPanel();
@@ -153,16 +161,16 @@ public class LogStats extends JTabbedPane implements ActionListener {
         dataPanel.add(cntlPanel, gbc_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
         cntlPanel.setLayout(gbl_cntlPanel);
         
-        JButton selectLogButton = new JButton("Select Log");
+        JButton selectLogButton = new JButton("<html><center>Select<br>Log</center></html>");
         GridBagConstraints gbc_selectLogButton = new GridBagConstraints();
         gbc_selectLogButton.anchor = GridBagConstraints.PAGE_START;
-        gbc_selectLogButton.insets = new Insets(3, 3, 3, 3);
+        gbc_selectLogButton.insets = new Insets(3, 0, 3, 3);
         gbc_selectLogButton.gridx = 0;
         gbc_selectLogButton.gridy = 0;
         gbc_selectLogButton.gridheight = 3;
@@ -185,10 +193,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
         gbc_xAxisColumn.insets = new Insets(3, 3, 3, 3);
         gbc_xAxisColumn.gridx = 2;
         gbc_xAxisColumn.gridy = 0;
-        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         cntlPanel.add(xAxisColumn, gbc_xAxisColumn);
 
-        JLabel xAxisScalingLabel = new JLabel("X-Axis Step");
+        JLabel xAxisScalingLabel = new JLabel("X-Step");
         xAxisScalingLabel.setHorizontalAlignment(LEFT);
         GridBagConstraints gbc_xAxisScalingLabel = new GridBagConstraints();
         gbc_xAxisScalingLabel.anchor = GridBagConstraints.EAST;
@@ -222,10 +230,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
         gbc_yAxisColumn.insets = new Insets(3, 3, 3, 3);
         gbc_yAxisColumn.gridx = 2;
         gbc_yAxisColumn.gridy = 1;
-        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         cntlPanel.add(yAxisColumn, gbc_yAxisColumn);
 
-        JLabel yAxisScalingLabel = new JLabel("Y-Axis Step");
+        JLabel yAxisScalingLabel = new JLabel("Y-Step");
         yAxisScalingLabel.setHorizontalAlignment(LEFT);
         GridBagConstraints gbc_yAxisScalingLabel = new GridBagConstraints();
         gbc_yAxisScalingLabel.anchor = GridBagConstraints.EAST;
@@ -259,10 +267,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
         gbc_dataColumn.insets = new Insets(3, 3, 3, 3);
         gbc_dataColumn.gridx = 2;
         gbc_dataColumn.gridy = 2;
-        dataColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        dataColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         cntlPanel.add(dataColumn, gbc_dataColumn);
 
-        JLabel statisticsLabel = new JLabel("Statistics");
+        JLabel statisticsLabel = new JLabel("Stats");
         statisticsLabel.setHorizontalAlignment(LEFT);
         GridBagConstraints gbc_statisticsLabel = new GridBagConstraints();
         gbc_statisticsLabel.anchor = GridBagConstraints.EAST;
@@ -271,7 +279,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
         gbc_statisticsLabel.gridy = 2;
         cntlPanel.add(statisticsLabel, gbc_statisticsLabel);
         
-        statistics = new JComboBox<String>(new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Std Deviation"});
+        statistics = new JComboBox<String>(new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Std Devn"});
         GridBagConstraints gbc_statistics = new GridBagConstraints();
         gbc_statistics.anchor = GridBagConstraints.PAGE_START;
         gbc_statistics.insets = new Insets(3, 3, 3, 3);
@@ -289,9 +297,9 @@ public class LogStats extends JTabbedPane implements ActionListener {
         gbc_orLabel.gridheight = 2;
         cntlPanel.add(orLabel, gbc_orLabel);
 
-        JButton btnSetAxisButton = new JButton("Set Axis");
+        JButton btnSetAxisButton = new JButton("<html><center>Set<br>Axis</center></html>");
         GridBagConstraints gbc_btnSetAxisButton = new GridBagConstraints();
-        gbc_btnSetAxisButton.anchor = GridBagConstraints.CENTER;
+        gbc_btnSetAxisButton.anchor = GridBagConstraints.WEST;
         gbc_btnSetAxisButton.insets = new Insets(3, 3, 3, 3);
         gbc_btnSetAxisButton.gridx = 6;
         gbc_btnSetAxisButton.gridy = 0;
@@ -299,24 +307,129 @@ public class LogStats extends JTabbedPane implements ActionListener {
         btnSetAxisButton.setActionCommand("setaxis");
         btnSetAxisButton.addActionListener(this);
         cntlPanel.add(btnSetAxisButton, gbc_btnSetAxisButton);
-        
-        filters = new JComboBox<String>(new String[] {"", "Less", "Equal", "Greater"});
-        GridBagConstraints gbc_filters = new GridBagConstraints();
-        gbc_filters.anchor = GridBagConstraints.PAGE_START;
-        gbc_filters.fill = GridBagConstraints.HORIZONTAL;
-        gbc_filters.insets = new Insets(3, 3, 3, 3);
-        gbc_filters.gridx = 6;
-        gbc_filters.gridy = 2;
-        filters.setActionCommand("filter");
-        filters.addActionListener(this);
-        cntlPanel.add(filters, gbc_filters);
 
+        JLabel filter1Label = new JLabel("Filter1");
+        filter1Label.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_filter1Label = new GridBagConstraints();
+        gbc_filter1Label.anchor = GridBagConstraints.WEST;
+        gbc_filter1Label.insets = new Insets(3, 3, 3, 0);
+        gbc_filter1Label.gridx = 7;
+        gbc_filter1Label.gridy = 0;
+        cntlPanel.add(filter1Label, gbc_filter1Label);
+
+        JLabel filter2Label = new JLabel("Filter2");
+        filter2Label.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_filter2Label = new GridBagConstraints();
+        gbc_filter2Label.anchor = GridBagConstraints.WEST;
+        gbc_filter2Label.insets = new Insets(3, 3, 3, 0);
+        gbc_filter2Label.gridx = 7;
+        gbc_filter2Label.gridy = 1;
+        cntlPanel.add(filter2Label, gbc_filter2Label);
+
+        JLabel filter3Label = new JLabel("Filter3");
+        filter3Label.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_filter3Label = new GridBagConstraints();
+        gbc_filter3Label.anchor = GridBagConstraints.WEST;
+        gbc_filter3Label.insets = new Insets(3, 3, 3, 0);
+        gbc_filter3Label.gridx = 7;
+        gbc_filter3Label.gridy = 2;
+        cntlPanel.add(filter3Label, gbc_filter3Label);
+        
+        filter1Column = new JComboBox<String>();
+        GridBagConstraints gbc_filter1Column = new GridBagConstraints();
+        gbc_filter1Column.anchor = GridBagConstraints.WEST;
+        gbc_filter1Column.insets = new Insets(3, 3, 3, 3);
+        gbc_filter1Column.gridx = 8;
+        gbc_filter1Column.gridy = 0;
+        filter1Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(filter1Column, gbc_filter1Column);
+        
+        filter2Column = new JComboBox<String>();
+        GridBagConstraints gbc_filter2Column = new GridBagConstraints();
+        gbc_filter2Column.anchor = GridBagConstraints.WEST;
+        gbc_filter2Column.insets = new Insets(3, 3, 3, 3);
+        gbc_filter2Column.gridx = 8;
+        gbc_filter2Column.gridy = 1;
+        filter2Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(filter2Column, gbc_filter2Column);
+        
+        filter3Column = new JComboBox<String>();
+        GridBagConstraints gbc_filter3Column = new GridBagConstraints();
+        gbc_filter3Column.anchor = GridBagConstraints.WEST;
+        gbc_filter3Column.insets = new Insets(3, 3, 3, 3);
+        gbc_filter3Column.gridx = 8;
+        gbc_filter3Column.gridy = 2;
+        filter3Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(filter3Column, gbc_filter3Column);
+        
+        filter1ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+        GridBagConstraints gbc_filter1ComboBox = new GridBagConstraints();
+        gbc_filter1ComboBox.anchor = GridBagConstraints.WEST;
+        gbc_filter1ComboBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter1ComboBox.gridx = 9;
+        gbc_filter1ComboBox.gridy = 0;
+        cntlPanel.add(filter1ComboBox, gbc_filter1ComboBox);
+        
+        filter2ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+        GridBagConstraints gbc_filter2ComboBox = new GridBagConstraints();
+        gbc_filter2ComboBox.anchor = GridBagConstraints.WEST;
+        gbc_filter2ComboBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter2ComboBox.gridx = 9;
+        gbc_filter2ComboBox.gridy = 1;
+        cntlPanel.add(filter2ComboBox, gbc_filter2ComboBox);
+        
+        filter3ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+        GridBagConstraints gbc_filter3ComboBox = new GridBagConstraints();
+        gbc_filter3ComboBox.anchor = GridBagConstraints.WEST;
+        gbc_filter3ComboBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter3ComboBox.gridx = 9;
+        gbc_filter3ComboBox.gridy = 2;
+        cntlPanel.add(filter3ComboBox, gbc_filter3ComboBox);
+        
+        filter1TextBox = new JFormattedTextField(doubleFmtFilters);
+        filter1TextBox.setPreferredSize(new Dimension(60, 20));
+        GridBagConstraints gbc_filter1TextBox = new GridBagConstraints();
+        gbc_filter1TextBox.anchor = GridBagConstraints.WEST;
+        gbc_filter1TextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter1TextBox.gridx = 10;
+        gbc_filter1TextBox.gridy = 0;
+        cntlPanel.add(filter1TextBox, gbc_filter1TextBox);
+        
+        filter2TextBox = new JFormattedTextField(doubleFmtFilters);
+        filter2TextBox.setPreferredSize(new Dimension(60, 20));
+        GridBagConstraints gbc_filter2TextBox = new GridBagConstraints();
+        gbc_filter2TextBox.anchor = GridBagConstraints.WEST;
+        gbc_filter2TextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter2TextBox.gridx = 10;
+        gbc_filter2TextBox.gridy = 1;
+        cntlPanel.add(filter2TextBox, gbc_filter2TextBox);
+        
+        filter3TextBox = new JFormattedTextField(doubleFmtFilters);
+        filter3TextBox.setPreferredSize(new Dimension(60, 20));
+        GridBagConstraints gbc_filter3TextBox = new GridBagConstraints();
+        gbc_filter3TextBox.anchor = GridBagConstraints.WEST;
+        gbc_filter3TextBox.insets = new Insets(3, 3, 3, 3);
+        gbc_filter3TextBox.gridx = 10;
+        gbc_filter3TextBox.gridy = 2;
+        cntlPanel.add(filter3TextBox, gbc_filter3TextBox);
+        
+        JButton clearFiltersButton = new JButton("<html><center>Clear<br>Filters</center></html>");
+        GridBagConstraints gbc_clearFiltersButton = new GridBagConstraints();
+        gbc_clearFiltersButton.anchor = GridBagConstraints.PAGE_START;
+        gbc_clearFiltersButton.insets = new Insets(3, 0, 3, 3);
+        gbc_clearFiltersButton.gridx = 11;
+        gbc_clearFiltersButton.gridy = 0;
+        gbc_clearFiltersButton.gridheight = 3;
+        clearFiltersButton.setActionCommand("clearfilters");
+        clearFiltersButton.addActionListener(this);
+        cntlPanel.add(clearFiltersButton, gbc_clearFiltersButton);
+        
         JButton btnGoButton = new JButton("GO");
         GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
         gbc_btnGoButton.anchor = GridBagConstraints.EAST;
         gbc_btnGoButton.insets = new Insets(3, 3, 3, 3);
         gbc_btnGoButton.weightx = 1.0;
-        gbc_btnGoButton.gridx = 7;
+        gbc_btnGoButton.gridx = 12;
         gbc_btnGoButton.gridy = 0;
         gbc_btnGoButton.gridheight = 3;
         btnGoButton.setActionCommand("go");
@@ -507,9 +620,15 @@ public class LogStats extends JTabbedPane implements ActionListener {
         xAxisColumn.removeAllItems();
         yAxisColumn.removeAllItems();
         dataColumn.removeAllItems();
+        filter1Column.removeAllItems();
+        filter2Column.removeAllItems();
+        filter3Column.removeAllItems();
         logFile = fileChooser.getSelectedFile();
         BufferedReader br = null;
         try {
+            filter1Column.addItem("");
+            filter2Column.addItem("");
+            filter3Column.addItem("");
             br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
             String line = br.readLine();
             if (line != null) {
@@ -518,6 +637,9 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	                xAxisColumn.addItem(item);
 	                yAxisColumn.addItem(item);
 	                dataColumn.addItem(item);
+	                filter1Column.addItem(item);
+	                filter2Column.addItem(item);
+	                filter3Column.addItem(item);
                 }
             }
         }
@@ -562,20 +684,71 @@ public class LogStats extends JTabbedPane implements ActionListener {
 		return Statistics.MEAN;
     }
     
-    private DataFilter getType() {
-    	if (filters.getSelectedItem() == null)
+    private DataFilter getType(JComboBox<String> filter) {
+    	if (filter.getSelectedItem() == null)
     		return DataFilter.NONE;
-    	String name = (String)filters.getSelectedItem();
-    	if ("Less".equals(name))
+    	String name = (String)filter.getSelectedItem();
+    	if ("<".equals(name))
     		return DataFilter.LESS;
-    	if ("Equal".equals(name))
+    	if ("<=".equals(name))
+    		return DataFilter.LESS;
+    	if ("=".equals(name))
     		return DataFilter.EQUAL;
-    	if ("Greater".equals(name))
+    	if (">=".equals(name))
+    		return DataFilter.GREATER;
+    	if (">".equals(name))
     		return DataFilter.GREATER;
     	return DataFilter.NONE;
     }
+    
+    private int getFilterRounding(JFormattedTextField filterTextBox) {
+    	int rounding = 0;
+		String filterString = filterTextBox.getText();
+		if (filterString.indexOf('.') != -1) {
+			filterString = filterString.substring(filterString.indexOf('.'));
+			rounding = filterString.length() - 1;
+		}
+		return rounding;
+    }
+    
+    private boolean checkAgainstFilter(boolean useFIlter, double value, DataFilter type, double filter, int rounding) {
+    	boolean ret = true;
+        if (useFIlter) {
+        	switch (type) {
+        	case LESS:
+        		if (value >= filter)
+        			ret = false;
+        		break;
+        	case LESS_EQUAL:
+        		if (value > filter)
+        			ret = false;
+        		break;
+        	case EQUAL:
+            	double rndVal = value;
+            	if (rounding > 0)
+            		rndVal = Math.round(value * rounding * 10.0) / (rounding * 10.0);
+            	else
+            		rndVal = Math.round(value);
+        		if (rndVal != filter)
+        			ret = false;
+        		break;
+        	case GREATER_EQUAL:
+        		if (value < filter)
+        			ret = false;
+        		break;
+        	case GREATER:
+        		if (value <= filter)
+        			ret = false;
+        		break;
+        	default:
+        		break;
+        	}
+        }
+        return ret;
+    }
 
     private void processLog() {
+    	// Get and validate required fields
     	Utils.clearTable(dataTable);
     	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItem() == null)
     		return;
@@ -608,7 +781,47 @@ public class LogStats extends JTabbedPane implements ActionListener {
     	String xAxisColName = (String)xAxisColumn.getSelectedItem();
     	String yAxisColName = (String)yAxisColumn.getSelectedItem();
     	String dataColName = (String)dataColumn.getSelectedItem();
+    	
+    	// Get filters
+    	String filter1ColName = null;
+    	String filter2ColName = null;
+    	String filter3ColName = null;
+    	if (filter1Column.getSelectedItem() != null)
+    		filter1ColName = (String)filter1Column.getSelectedItem();
+    	if (filter2Column.getSelectedItem() != null)
+    		filter2ColName = (String)filter2Column.getSelectedItem();
+    	if (filter3Column.getSelectedItem() != null)
+    		filter3ColName = (String)filter3Column.getSelectedItem();
+    	
+    	DataFilter filter1Type = getType(filter1ComboBox);
+    	DataFilter filter2Type = getType(filter2ComboBox);
+    	DataFilter filter3Type = getType(filter3ComboBox);
+    	
+    	double filter1 = Double.NaN;
+    	double filter2 = Double.NaN;
+    	double filter3 = Double.NaN;
+    	if (filter1TextBox.getValue() != null)
+    		filter1 = (((Number)filter1TextBox.getValue()).doubleValue());
+    	if (filter2TextBox.getValue() != null)
+    		filter2 = (((Number)filter2TextBox.getValue()).doubleValue());
+    	if (filter3TextBox.getValue() != null)
+    		filter3 = (((Number)filter3TextBox.getValue()).doubleValue());
+    	
+    	int filter1Rounding = getFilterRounding(filter1TextBox);
+    	int filter2Rounding = getFilterRounding(filter2TextBox);
+    	int filter3Rounding = getFilterRounding(filter3TextBox);
+    	
+    	boolean useFilter1 = false;
+    	boolean useFilter2 = false;
+    	boolean useFilter3 = false;
+    	if (filter1ColName != null && !filter1ColName.isEmpty() && filter1Type != DataFilter.NONE && !Double.isNaN(filter1))
+    		useFilter1 = true;
+    	if (filter2ColName != null && !filter2ColName.isEmpty() && filter2Type != DataFilter.NONE && !Double.isNaN(filter2))
+    		useFilter2 = true;
+    	if (filter3ColName != null && !filter3ColName.isEmpty() && filter3Type != DataFilter.NONE && !Double.isNaN(filter3))
+    		useFilter3 = true;
 
+    	// Process log file
         BufferedReader br = null;
         try {
         	String [] elements;
@@ -620,7 +833,19 @@ public class LogStats extends JTabbedPane implements ActionListener {
                 int xColIdx = columns.indexOf(xAxisColName);
                 int yColIdx = columns.indexOf(yAxisColName);
                 int vColIdx = columns.indexOf(dataColName);
-                double x, y, val, roundedVal;
+                int fltr1ColIdx = -1;
+                if (useFilter1)
+                	fltr1ColIdx = columns.indexOf(filter1ColName);
+                int fltr2ColIdx = -1;
+                if (useFilter2)
+                	fltr2ColIdx = columns.indexOf(filter2ColName);
+                int fltr3ColIdx = -1;
+                if (useFilter3)
+                	fltr3ColIdx = columns.indexOf(filter3ColName);
+                double x, y, val;
+                double f1 = 0;
+                double f2 = 0;
+                double f3 = 0;
                 int i = 2;
                 // data struct where first hash set is X-Axis containing second hash set which is Y-Axis containing array of values
                 xData = new HashMap<Double, HashMap<Double, ArrayList<Double>>>();
@@ -628,11 +853,44 @@ public class LogStats extends JTabbedPane implements ActionListener {
                 ArrayList<Double> data;
                 try {
                 	line = br.readLine();
-                	boolean proceed = true;
 	                while (line != null) {
 	                	elements = line.split(",", -1);
-	                    try {
-	                    	proceed = true;
+	                	if (useFilter1) {
+	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr1ColIdx])) {
+	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 1, column " + (fltr1ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+	                            return;
+	                        }
+	                        f1 = Double.valueOf(elements[fltr1ColIdx]);
+	                	}
+	                	if (useFilter2) {
+	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr2ColIdx])) {
+	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 2, column " + (fltr2ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+	                            return;
+	                        }
+	                        f2 = Double.valueOf(elements[fltr2ColIdx]);
+	                	}
+	                	if (useFilter3) {
+	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr3ColIdx])) {
+	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 3, column " + (fltr3ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+	                            return;
+	                        }
+	                        f3 = Double.valueOf(elements[fltr3ColIdx]);
+	                	}
+                    	if (checkAgainstFilter(useFilter1, f1, filter1Type, filter1, filter1Rounding) &&
+                    		checkAgainstFilter(useFilter2, f2, filter2Type, filter2, filter2Rounding) &&
+                    		checkAgainstFilter(useFilter3, f3, filter3Type, filter3, filter3Rounding)) {
+                            if (!Pattern.matches(Utils.fpRegex, elements[xColIdx])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                            if (!Pattern.matches(Utils.fpRegex, elements[yColIdx])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for Data, column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
 	                    	if (Double.isNaN(xRound))
 	                    		x = xAxisArray.get(Utils.closestValueIndex(Double.valueOf(elements[xColIdx]), xAxisArray));
 	                    	else
@@ -642,48 +900,19 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	                    	else
 	                    		y = Utils.round(Double.valueOf(elements[yColIdx]), yRound);
 	                        val = Double.valueOf(elements[vColIdx]);
-	                        if (dataFilterType != DataFilter.NONE && !Double.isNaN(dataFilter)) {
-	                        	switch (dataFilterType) {
-	                        	case LESS:
-	                        		if (val > dataFilter)
-	                        			proceed = false;
-	                        		break;
-	                        	case EQUAL:
-		                        	roundedVal = val;
-		                        	if (dataRounding > 0)
-		                        		roundedVal = Math.round(val * dataRounding * 10.0) / (dataRounding * 10.0);
-		                        	else
-		                        		roundedVal = Math.round(val);
-	                        		if (roundedVal != dataFilter)
-	                        			proceed = false;
-	                        		break;
-	                        	case GREATER:
-	                        		if (val < dataFilter)
-	                        			proceed = false;
-	                        		break;
-	                        	default:
-                        			proceed = true;
-	                        	}
+
+	                        yData = xData.get(x);
+	                        if (yData == null) {
+	                        	yData = new HashMap<Double, ArrayList<Double>>();
+	                        	xData.put(x, yData);
 	                        }
-	                        if (proceed) {
-		                        yData = xData.get(x);
-		                        if (yData == null) {
-		                        	yData = new HashMap<Double, ArrayList<Double>>();
-		                        	xData.put(x, yData);
-		                        }
-		                        data = yData.get(y);
-		                        if (data == null) {
-		                        	data = new ArrayList<Double>();
-		                        	yData.put(y, data);
-		                        }
-		                        data.add(val);
+	                        data = yData.get(y);
+	                        if (data == null) {
+	                        	data = new ArrayList<Double>();
+	                        	yData.put(y, data);
 	                        }
-	                    }
-	                    catch (NumberFormatException e) {
-	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
+	                        data.add(val);
+                    	}
 	                    line = br.readLine();
 	                    i += 1;
 	                }
@@ -904,45 +1133,18 @@ public class LogStats extends JTabbedPane implements ActionListener {
         plot.setAxisLabel(2, dataColumn.getSelectedItem().toString());
     }
     
-    private void getFilter() {
-		dataFilterType = getType();
-    	if (dataFilterType != DataFilter.NONE) {
-    		String temp = "";
-    		DecimalFormat dblFmt = new DecimalFormat("#.######");
-	        JTextField filterTextField = new JTextField("");
-	        if (!Double.isNaN(dataFilter))
-	        	filterTextField.setText(dblFmt.format(dataFilter));
-	        JComponent[] inputs = new JComponent[] {
-		        		new JLabel("Set data filter value (Double)"),
-		        		filterTextField
-		        };
-	        boolean done = false;
-	        do {
-	        	if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Data Filter", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-	        		return;
-	        	temp = filterTextField.getText().trim();
-	        	if (Pattern.matches(Utils.fpRegex, temp)) {
-	        		dataFilter = Double.valueOf(temp);
-	        		done = true;
-	        		dataRounding = 0;
-	        		if (temp.indexOf('.') != -1) {
-	        			temp = temp.substring(temp.indexOf('.'));
-	        			dataRounding = temp.length() - 1;
-	        		}
-	        	}
-	        	else {
-	        		if (!Double.isNaN(dataFilter))
-	        			dblFmt.format(dataFilter);
-	        		else
-	        			filterTextField.setText("");
-	        	}
-	        }
-	        while (!done);
-    	}
-    	else
-			dataFilter = Double.NaN;
+    private void clearFilters() {
+    	filter1Column.setSelectedItem(null);
+    	filter2Column.setSelectedItem(null);
+    	filter3Column.setSelectedItem(null);
+    	filter1ComboBox.setSelectedItem(null);
+    	filter2ComboBox.setSelectedItem(null);
+    	filter3ComboBox.setSelectedItem(null);
+    	filter1TextBox.setValue(null);
+    	filter2TextBox.setValue(null);
+    	filter3TextBox.setValue(null);	
     }
-
+    
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if ("selectlog".equals(e.getActionCommand()))
@@ -967,8 +1169,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	    	if (xData != null)
 	    		display3D(Plot3D.SCATTER);
 		}
-		else if ("filter".equals(e.getActionCommand())) {
-			getFilter();
+		else if ("clearfilters".equals(e.getActionCommand())) {
+	    	clearFilters();
 		}
 	}
 }

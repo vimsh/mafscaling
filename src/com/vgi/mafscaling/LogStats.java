@@ -64,10 +64,11 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import org.apache.log4j.Logger;
 import org.math.plot.Plot3DPanel;
+import org.math.plot.plots.HistogramPlot3D;
 
 public class LogStats extends JTabbedPane implements ActionListener {
 	private enum Statistics {COUNT, MINIMUM, MAXIMUM, MEAN, MEDIAN, MODE, RANGE, VARIANCE, STDDEV};
-	private enum Plot3D {GRID, BAR, LINE, SCATTER};
+	private enum Plot3D {GRID, HIST, BAR, LINE, SCATTER};
 	private enum DataFilter {NONE, LESS, LESS_EQUAL, EQUAL, GREATER_EQUAL, GREATER};
 	private static final long serialVersionUID = -7486851151646396168L;
 	private static final Logger logger = Logger.getLogger(LogStats.class);
@@ -97,10 +98,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private HashMap<Double, HashMap<Double, ArrayList<Double>>> xData = null;
     private Plot3DPanel plot = null;
     private ButtonGroup rbGroup = new ButtonGroup();
-    private JRadioButton rbGridPlot = null;
-    private JRadioButton rbBarPlot = null;
-    private JRadioButton rbLinePlot = null;
-    private JRadioButton rbScatterPlot = null;
     private ArrayList<Double> xAxisArray;
     private ArrayList<Double> yAxisArray;
 
@@ -499,13 +496,13 @@ public class LogStats extends JTabbedPane implements ActionListener {
         plotPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
-        rbGridPlot = new JRadioButton("Grid");
+        JRadioButton rbGridPlot = new JRadioButton("Grid");
         GridBagConstraints gbc_rbGridPlot = new GridBagConstraints();
         gbc_rbGridPlot.anchor = GridBagConstraints.WEST;
         gbc_rbGridPlot.insets = new Insets(0, 0, 3, 3);
@@ -515,34 +512,45 @@ public class LogStats extends JTabbedPane implements ActionListener {
         rbGridPlot.addActionListener(this);
         rbGroup.add(rbGridPlot);
         cntlPanel.add(rbGridPlot, gbc_rbGridPlot);
+
+        JRadioButton rbHistPlot = new JRadioButton("Histogram");
+        GridBagConstraints gbc_rbHistPlot = new GridBagConstraints();
+        gbc_rbHistPlot.anchor = GridBagConstraints.WEST;
+        gbc_rbHistPlot.insets = new Insets(0, 0, 3, 3);
+        gbc_rbHistPlot.gridx = 1;
+        gbc_rbHistPlot.gridy = 0;
+        rbHistPlot.setActionCommand("hist");
+        rbHistPlot.addActionListener(this);
+        rbGroup.add(rbHistPlot);
+        cntlPanel.add(rbHistPlot, gbc_rbHistPlot);
         
-        rbBarPlot = new JRadioButton("Bar");
+        JRadioButton rbBarPlot = new JRadioButton("Bar");
         GridBagConstraints gbc_rbBarPlot = new GridBagConstraints();
         gbc_rbBarPlot.anchor = GridBagConstraints.WEST;
         gbc_rbBarPlot.insets = new Insets(0, 0, 3, 3);
-        gbc_rbBarPlot.gridx = 1;
+        gbc_rbBarPlot.gridx = 2;
         gbc_rbBarPlot.gridy = 0;
         rbBarPlot.setActionCommand("bar");
         rbBarPlot.addActionListener(this);
         rbGroup.add(rbBarPlot);
         cntlPanel.add(rbBarPlot, gbc_rbBarPlot);
         
-        rbLinePlot = new JRadioButton("Line");
+        JRadioButton rbLinePlot = new JRadioButton("Line");
         GridBagConstraints gbc_rbLinePlot = new GridBagConstraints();
         gbc_rbLinePlot.anchor = GridBagConstraints.WEST;
         gbc_rbLinePlot.insets = new Insets(0, 0, 3, 3);
-        gbc_rbLinePlot.gridx = 2;
+        gbc_rbLinePlot.gridx = 3;
         gbc_rbLinePlot.gridy = 0;
         rbLinePlot.setActionCommand("line");
         rbLinePlot.addActionListener(this);
         rbGroup.add(rbLinePlot);
         cntlPanel.add(rbLinePlot, gbc_rbLinePlot);
         
-        rbScatterPlot = new JRadioButton("Scatter");
+        JRadioButton rbScatterPlot = new JRadioButton("Scatter");
         GridBagConstraints gbc_rbScatterPlot = new GridBagConstraints();
         gbc_rbScatterPlot.anchor = GridBagConstraints.WEST;
         gbc_rbScatterPlot.insets = new Insets(0, 0, 3, 3);
-        gbc_rbScatterPlot.gridx = 3;
+        gbc_rbScatterPlot.gridx = 4;
         gbc_rbScatterPlot.gridy = 0;
         rbScatterPlot.setActionCommand("scatter");
         rbScatterPlot.addActionListener(this);
@@ -553,8 +561,9 @@ public class LogStats extends JTabbedPane implements ActionListener {
 			private static final long serialVersionUID = 7914951068593204419L;
 			public void addPlotToolBar(String location) {
 				super.addPlotToolBar(location);
-        		super.plotToolBar.remove(4);
+        		super.plotToolBar.remove(7);
         		super.plotToolBar.remove(5);
+        		super.plotToolBar.remove(4);
         	}        	
         };
         plot.setAutoBounds();
@@ -1016,7 +1025,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        else {
 	        	Utils.clearTable(dataTable);
 	        }
-	        rbGridPlot.setSelected(true);
+	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
+	        button.setSelected(true);
 	        display3D(Plot3D.GRID);
         }
         catch (Exception e) {
@@ -1031,6 +1041,18 @@ public class LogStats extends JTabbedPane implements ActionListener {
     		for (int j = 0; j < y.length; ++j) {
     			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
     				z[j][i] = Double.valueOf(dataTable.getValueAt(j + 1, i + 1).toString());
+    		}
+    	}
+    	return z;
+    }
+
+    public Color[][] doubleColorArray(double[] x, double[] y) {
+        BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
+    	Color[][] z = new Color[y.length][x.length];
+    	for (int i = 0; i < x.length; ++i) {
+    		for (int j = 0; j < y.length; ++j) {
+    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
+    				z[j][i] = renderer.getColorAt(j + 1, i + 1);
     		}
     	}
     	return z;
@@ -1055,17 +1077,37 @@ public class LogStats extends JTabbedPane implements ActionListener {
         for (Double key : yAxisMap.keySet())
         	y[i++] = key;
         double[][] z = doubleZArray(x, y);
-        plot.addGridPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), x, y, z);
+        Color[][] colors = doubleColorArray(x, y);
+        plot.addGridPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, x, y, z);
+    }
+    
+    private void addHistogramPlot(Color[] colors, double[][] xyzArray) {
+    	double minXDiff = Double.NaN;
+    	double minYDiff = Double.NaN;
+    	double diff;
+    	for (int i = 1; i < dataTable.getColumnCount() - 1; ++i) {
+    		diff = Double.valueOf(dataTable.getValueAt(0, i + 1).toString()) - Double.valueOf(dataTable.getValueAt(0, i).toString());
+    		if (diff < minXDiff || Double.isNaN(minXDiff))
+    			minXDiff = diff;
+    	}
+    	for (int i = 1; i < dataTable.getRowCount() - 1; ++i) {
+    		diff = Double.valueOf(dataTable.getValueAt(i + 1, 0).toString()) - Double.valueOf(dataTable.getValueAt(i, 0).toString());
+    		if (diff < minYDiff || Double.isNaN(minYDiff))
+    			minYDiff = diff;
+    	}
+        plot.addPlot(new HistogramPlot3D(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray, minXDiff, minYDiff));
     }
 
     private void addBarLineScatterPlot(Plot3D type) {
     	if (xData == null || xData.size() == 0)
     		return;
-        ArrayList<Double> xAxisArray = new ArrayList<Double>();
-        ArrayList<Double> yAxisArray = new ArrayList<Double>();
-        ArrayList<Double> zAxisArray = new ArrayList<Double>();
+    	int k = 0;
     	String val;
     	double X, Y;
+        double[][] array = new double[dataTable.getColumnCount() * dataTable.getRowCount()][3];
+
+        BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
+        Color[] colors = new Color[array.length];
     	for (int i = 1; i < dataTable.getColumnCount(); ++i) {
     		val = dataTable.getValueAt(0, i).toString();
     		if (val.isEmpty())
@@ -1078,33 +1120,28 @@ public class LogStats extends JTabbedPane implements ActionListener {
     			Y = Double.valueOf(val.toString());
     			val = dataTable.getValueAt(j, i).toString();
     			if (!val.isEmpty()) {
-    				xAxisArray.add(X);
-    				yAxisArray.add(Y);
-    				zAxisArray.add(Double.valueOf(val));
+    				colors[k] = renderer.getColorAt(j, i);
+    				array[k][0] = X;
+    				array[k][1] = Y;
+    				array[k++][2] = Double.valueOf(val);
     			}
     		}
     	}
-        double[] x = new double[xAxisArray.size()];
-        int i = 0;
-        for (Double v : xAxisArray)
-        	x[i++] = v;
-        double[] y = new double[yAxisArray.size()];
-        i = 0;
-        for (Double v : yAxisArray)
-        	y[i++] = v;
-        double[] z = new double[zAxisArray.size()];
-        i = 0;
-        for (Double v : zAxisArray)
-        	z[i++] = v;
+    	double[][] xyzArray = new double[k][3];
+    	for (k = 0; k < xyzArray.length; ++k)
+    		System.arraycopy(array[k], 0, xyzArray[k], 0, 3);
         switch (type) {
         case BAR:
-            plot.addBarPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), x, y, z);
+            plot.addBarPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            break;
+        case HIST:
+        	addHistogramPlot(colors, xyzArray);
             break;
         case LINE:
-            plot.addLinePlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), x, y, z);
+            plot.addLinePlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
             break;
         case SCATTER:
-            plot.addScatterPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), x, y, z);
+            plot.addScatterPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
 		default:
 			break;
         }
@@ -1115,6 +1152,9 @@ public class LogStats extends JTabbedPane implements ActionListener {
         switch (type) {
         case GRID:
         	addGridPlot();
+            break;
+        case HIST:
+        	addBarLineScatterPlot(type);
             break;
         case BAR:
         	addBarLineScatterPlot(type);
@@ -1156,6 +1196,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
 		else if ("grid".equals(e.getActionCommand())) {
 	    	if (xData != null)
 	    		display3D(Plot3D.GRID);
+		}
+		else if ("hist".equals(e.getActionCommand())) {
+	    	if (xData != null)
+	    		display3D(Plot3D.HIST);
 		}
 		else if ("bar".equals(e.getActionCommand())) {
 	    	if (xData != null)

@@ -54,6 +54,18 @@ public class BgColorFormatRenderer extends DefaultTableCellRenderer {
         if (colors != null && row < colors.length && column < colors[0].length)
             colors[row][column] = color;
     }
+    
+    /**
+     * Method returns background color for a specific cell
+     * @param row, cell row index
+     * @param column, cell column index
+     * @return Color
+     */
+    public Color getColorAt(int row, int column) {
+        if (colors != null && row < colors.length && column < colors[0].length)
+            return colors[row][column];
+        return bgColor;
+    }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {

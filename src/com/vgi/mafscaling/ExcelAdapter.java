@@ -345,12 +345,16 @@ public class ExcelAdapter implements ActionListener {
     }
     
     protected void onCopyRR(JTable table) {
-        StringBuffer sbf = new StringBuffer("[Table2D]" + eol);
+        StringBuffer sbf = new StringBuffer("");
         // Check to ensure we have selected only a contiguous block of cells
         int numcols = table.getSelectedColumnCount();
         int numrows = table.getSelectedRowCount();
         if (numcols == 0 || numrows == 0)
             return;
+        if (numcols > 2 && numrows > 2)
+        	sbf.append("[Table3D]" + eol);
+        else
+        	sbf.append("[Table2D]" + eol);
         int[] rowsselected = table.getSelectedRows();
         int[] colsselected = table.getSelectedColumns();
         if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] &&

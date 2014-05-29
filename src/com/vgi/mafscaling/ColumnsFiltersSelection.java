@@ -39,16 +39,19 @@ import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.table.DefaultTableModel;
 
 public class ColumnsFiltersSelection implements ActionListener {
-	public enum  Loop {
+	public enum  TaskTab {
 		OPEN_LOOP,
-		CLOSED_LOOP
+		CLOSED_LOOP,
+		LOAD_COMP
 	}
     private static final String rpmLabelText = "Engine Speed";
     private static final String loadLabelText = "Engine Load";
+    private static final String mpLabelText = "Manifold Pressure";
     private static final String afLearningLabelText = "AFR Learning (LTFT)";
     private static final String afCorrectionLabelText = "AFR Correction (STFT)";
     private static final String mafVLabelText = "MAF Voltage";
@@ -68,7 +71,9 @@ public class ColumnsFiltersSelection implements ActionListener {
     private static final String minEngineLoadLabelText = "Engine Load Minimum";
     private static final String wotStationaryLabelText = "WOT stationary point (Angle %)";
     private static final String afrErrorLabelText = "AFR Error +/- % value";
-	private boolean isOpenLoop;
+    private static final String iatOffsetLabelText = "IAT variance from lowest";
+    private static final String trimsVarianceLabelText = "Fuel Trims +/- variance";
+	private TaskTab taskTab;
 	private boolean isPolfTableSet;
 	private JTable columnsTable = null;
 	private JTextField thtlAngleName = null;
@@ -79,6 +84,7 @@ public class ColumnsFiltersSelection implements ActionListener {
 	private JTextField stockAfrName = null;
 	private JTextField rpmName = null;
 	private JTextField loadName = null;
+	private JTextField mpName = null;
 	private JTextField commAfrName = null;
 	private JTextField clolStatusName = null;
 	private JTextField timeName = null;
@@ -89,16 +95,14 @@ public class ColumnsFiltersSelection implements ActionListener {
 	private JFormattedTextField afrErrorFilter = null;
 	private JFormattedTextField maxAfrFilter = null;
 	private JFormattedTextField minAfrFilter = null;
+	private JFormattedTextField trimsVarianceFilter = null;
 	private JFormattedTextField maxIatFilter = null;
 	private JFormattedTextField maxDvdtFilter = null;
 	private JSpinner wotStationaryPointFilter = null;
 	private JSpinner clolStatusFilter = null;
 	
-	public ColumnsFiltersSelection(Loop loop, boolean isPolfTableSet) {
-		if (loop == Loop.OPEN_LOOP)
-			isOpenLoop = true;
-		else
-			isOpenLoop = false;
+	public ColumnsFiltersSelection(TaskTab taskTab, boolean isPolfTableSet) {
+		this.taskTab = taskTab;
 		this.isPolfTableSet = isPolfTableSet;
 	}
     
@@ -106,9 +110,9 @@ public class ColumnsFiltersSelection implements ActionListener {
         JPanel selectionPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0};
-        gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         selectionPanel.setLayout(gbl_dataPanel);
         
         Dimension minTextDimension = new Dimension(200, 16);
@@ -179,39 +183,76 @@ public class ColumnsFiltersSelection implements ActionListener {
         rpmButton.addActionListener(this);
         selectionPanel.add(rpmButton, gbc_rpmButton);
         
-        row += 1;
-        // Load
-        JLabel loadLabel = new JLabel(loadLabelText);
-        GridBagConstraints gbc_loadLabel = new GridBagConstraints();
-        gbc_loadLabel.anchor = GridBagConstraints.NORTHEAST;
-        gbc_loadLabel.insets = insets3;
-        gbc_loadLabel.gridx = 0;
-        gbc_loadLabel.gridy = row;
-        selectionPanel.add(loadLabel, gbc_loadLabel);
-        
-        loadName = new JTextField(isEmpty(Config.getLoadColumnName()));
-        loadName.setMinimumSize(minTextDimension);
-        loadName.setEditable(false);
-        loadName.setBackground(Color.WHITE);
-        GridBagConstraints gbc_loadName = new GridBagConstraints();
-        gbc_loadName.anchor = GridBagConstraints.NORTHWEST;
-        gbc_loadName.insets = insets3;
-        gbc_loadName.gridx = 1;
-        gbc_loadName.gridy = row;
-        selectionPanel.add(loadName, gbc_loadName);
-
-        JButton loadButton = new JButton("", arrowImage);
-        loadButton.setMargin(insets0);
-        loadButton.setBorderPainted(false);
-        loadButton.setContentAreaFilled(false);
-        GridBagConstraints gbc_loadButton = new GridBagConstraints();
-        gbc_loadButton.anchor = GridBagConstraints.CENTER;
-        gbc_loadButton.insets = insets1;
-        gbc_loadButton.gridx = 2;
-        gbc_loadButton.gridy = row;
-        loadButton.setActionCommand("load");
-        loadButton.addActionListener(this);
-        selectionPanel.add(loadButton, gbc_loadButton);
+        if (taskTab == TaskTab.LOAD_COMP) {
+	        row += 1;
+	        // MP
+	        JLabel mpLabel = new JLabel(mpLabelText);
+	        GridBagConstraints gbc_mpLabel = new GridBagConstraints();
+	        gbc_mpLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_mpLabel.insets = insets3;
+	        gbc_mpLabel.gridx = 0;
+	        gbc_mpLabel.gridy = row;
+	        selectionPanel.add(mpLabel, gbc_mpLabel);
+	        
+	        mpName = new JTextField(isEmpty(Config.getMpColumnName()));
+	        mpName.setMinimumSize(minTextDimension);
+	        mpName.setEditable(false);
+	        mpName.setBackground(Color.WHITE);
+	        GridBagConstraints gbc_mpName = new GridBagConstraints();
+	        gbc_mpName.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_mpName.insets = insets3;
+	        gbc_mpName.gridx = 1;
+	        gbc_mpName.gridy = row;
+	        selectionPanel.add(mpName, gbc_mpName);
+	
+	        JButton mpButton = new JButton("", arrowImage);
+	        mpButton.setMargin(insets0);
+	        mpButton.setBorderPainted(false);
+	        mpButton.setContentAreaFilled(false);
+	        GridBagConstraints gbc_mpButton = new GridBagConstraints();
+	        gbc_mpButton.anchor = GridBagConstraints.CENTER;
+	        gbc_mpButton.insets = insets1;
+	        gbc_mpButton.gridx = 2;
+	        gbc_mpButton.gridy = row;
+	        mpButton.setActionCommand("mp");
+	        mpButton.addActionListener(this);
+	        selectionPanel.add(mpButton, gbc_mpButton);
+        }
+        else {
+	        row += 1;
+	        // Load
+	        JLabel loadLabel = new JLabel(loadLabelText);
+	        GridBagConstraints gbc_loadLabel = new GridBagConstraints();
+	        gbc_loadLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_loadLabel.insets = insets3;
+	        gbc_loadLabel.gridx = 0;
+	        gbc_loadLabel.gridy = row;
+	        selectionPanel.add(loadLabel, gbc_loadLabel);
+	        
+	        loadName = new JTextField(isEmpty(Config.getLoadColumnName()));
+	        loadName.setMinimumSize(minTextDimension);
+	        loadName.setEditable(false);
+	        loadName.setBackground(Color.WHITE);
+	        GridBagConstraints gbc_loadName = new GridBagConstraints();
+	        gbc_loadName.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_loadName.insets = insets3;
+	        gbc_loadName.gridx = 1;
+	        gbc_loadName.gridy = row;
+	        selectionPanel.add(loadName, gbc_loadName);
+	
+	        JButton loadButton = new JButton("", arrowImage);
+	        loadButton.setMargin(insets0);
+	        loadButton.setBorderPainted(false);
+	        loadButton.setContentAreaFilled(false);
+	        GridBagConstraints gbc_loadButton = new GridBagConstraints();
+	        gbc_loadButton.anchor = GridBagConstraints.CENTER;
+	        gbc_loadButton.insets = insets1;
+	        gbc_loadButton.gridx = 2;
+	        gbc_loadButton.gridy = row;
+	        loadButton.setActionCommand("load");
+	        loadButton.addActionListener(this);
+	        selectionPanel.add(loadButton, gbc_loadButton);
+        }
 
         row += 1;
         // LTFT
@@ -315,7 +356,7 @@ public class ColumnsFiltersSelection implements ActionListener {
         mafVButton.addActionListener(this);
         selectionPanel.add(mafVButton, gbc_mafVButton);
         
-        if (isOpenLoop) {
+        if (taskTab == TaskTab.OPEN_LOOP) {
             row += 1;
 	        // Wideband AFR
 	        JLabel wbAfrLabel = new JLabel(wbAfrLabelText);
@@ -418,7 +459,7 @@ public class ColumnsFiltersSelection implements ActionListener {
 	        commAfrButton.addActionListener(this);
 	        selectionPanel.add(commAfrButton, gbc_commAfrButton);
         }
-        else {
+        else if (taskTab == TaskTab.CLOSED_LOOP) {
             row += 1;
 	        // Stock AFR
 	        JLabel stockAfrLabel = new JLabel(stockAfrLabelText);
@@ -555,6 +596,75 @@ public class ColumnsFiltersSelection implements ActionListener {
 	        iatButton.addActionListener(this);
 	        selectionPanel.add(iatButton, gbc_iatButton);
         }
+        else if (taskTab == TaskTab.LOAD_COMP) {
+	        row += 1;
+	        // Time
+	        JLabel timeLabel = new JLabel(timeLabelText);
+	        GridBagConstraints gbc_timeLabel = new GridBagConstraints();
+	        gbc_timeLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_timeLabel.insets = insets3;
+	        gbc_timeLabel.gridx = 0;
+	        gbc_timeLabel.gridy = row;
+	        selectionPanel.add(timeLabel, gbc_timeLabel);
+	        
+	        timeName = new JTextField(isEmpty(Config.getTimeColumnName()));
+	        timeName.setMinimumSize(minTextDimension);
+	        timeName.setEditable(false);
+	        timeName.setBackground(Color.WHITE);
+	        GridBagConstraints gbc_timeName = new GridBagConstraints();
+	        gbc_timeName.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_timeName.insets = insets3;
+	        gbc_timeName.gridx = 1;
+	        gbc_timeName.gridy = row;
+	        selectionPanel.add(timeName, gbc_timeName);
+	
+	        JButton timeButton = new JButton("", arrowImage);
+	        timeButton.setMargin(insets0);
+	        timeButton.setBorderPainted(false);
+	        timeButton.setContentAreaFilled(false);
+	        GridBagConstraints gbc_timeButton = new GridBagConstraints();
+	        gbc_timeButton.anchor = GridBagConstraints.CENTER;
+	        gbc_timeButton.insets = insets1;
+	        gbc_timeButton.gridx = 2;
+	        gbc_timeButton.gridy = row;
+	        timeButton.setActionCommand("time");
+	        timeButton.addActionListener(this);
+	        selectionPanel.add(timeButton, gbc_timeButton);
+
+	        row += 1;
+	        // IAT
+	        JLabel iatLabel = new JLabel(iatLabelText);
+	        GridBagConstraints gbc_iatLabel = new GridBagConstraints();
+	        gbc_iatLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_iatLabel.insets = insets3;
+	        gbc_iatLabel.gridx = 0;
+	        gbc_iatLabel.gridy = row;
+	        selectionPanel.add(iatLabel, gbc_iatLabel);
+	        
+	        iatName = new JTextField(isEmpty(Config.getIatColumnName()));
+	        iatName.setMinimumSize(minTextDimension);
+	        iatName.setEditable(false);
+	        iatName.setBackground(Color.WHITE);
+	        GridBagConstraints gbc_iatName = new GridBagConstraints();
+	        gbc_iatName.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_iatName.insets = insets3;
+	        gbc_iatName.gridx = 1;
+	        gbc_iatName.gridy = row;
+	        selectionPanel.add(iatName, gbc_iatName);
+	
+	        JButton iatButton = new JButton("", arrowImage);
+	        iatButton.setMargin(insets0);
+	        iatButton.setBorderPainted(false);
+	        iatButton.setContentAreaFilled(false);
+	        GridBagConstraints gbc_iatButton = new GridBagConstraints();
+	        gbc_iatButton.anchor = GridBagConstraints.CENTER;
+	        gbc_iatButton.insets = insets1;
+	        gbc_iatButton.gridx = 2;
+	        gbc_iatButton.gridy = row;
+	        iatButton.setActionCommand("iat");
+	        iatButton.addActionListener(this);
+	        selectionPanel.add(iatButton, gbc_iatButton);
+        }
 
         // Columns selection table
         columnsTable = new JTable() {
@@ -576,7 +686,7 @@ public class ColumnsFiltersSelection implements ActionListener {
         gbc_selectionPanel.fill = GridBagConstraints.BOTH;
         gbc_selectionPanel.gridx = 3;
         gbc_selectionPanel.gridy = 2;
-        gbc_selectionPanel.gridheight = (isOpenLoop? 8 : 9);
+        gbc_selectionPanel.gridheight = (taskTab == TaskTab.OPEN_LOOP ? 8 : (taskTab == TaskTab.CLOSED_LOOP ? 9 : 7));
         JScrollPane scrollPane = new JScrollPane(columnsTable);
         selectionPanel.add(scrollPane, gbc_selectionPanel);
 
@@ -592,7 +702,7 @@ public class ColumnsFiltersSelection implements ActionListener {
         gbc_filtNoteLabel.gridwidth = 4;
         selectionPanel.add(filtNoteLabel, gbc_filtNoteLabel);
         
-        if (isOpenLoop) {
+        if (taskTab == TaskTab.OPEN_LOOP) {
             row += 1;
             // MAF Voltage Minimum Note
             JLabel minMafVNoteLabel = new JLabel("Set this filter to process just Open Loop part of MAF curve data");
@@ -688,7 +798,7 @@ public class ColumnsFiltersSelection implements ActionListener {
 	        gbc_afrErrorFilter.gridy = row;
 	        selectionPanel.add(afrErrorFilter, gbc_afrErrorFilter);
         }
-        else {
+        else if (taskTab == TaskTab.CLOSED_LOOP) {
             row += 1;
             // CL/OL Status value for CL Note
             JLabel clolStatusNoteLabel = new JLabel("Set this filter to filter out Open Loop data using logged OL/CL status");
@@ -912,10 +1022,111 @@ public class ColumnsFiltersSelection implements ActionListener {
 	        gbc_maxDvdtFilter.gridy = row;
 	        selectionPanel.add(maxDvdtFilter, gbc_maxDvdtFilter);
         }
+        else if (taskTab == TaskTab.LOAD_COMP) {
+            row += 1;
+            // Intake Air Temperature Maximum Note
+            JLabel maxIatNoteLabel = new JLabel("Set this filter to filter out data with high Intake Air Temperature");
+            maxIatNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_maxIatNoteLabel = new GridBagConstraints();
+            gbc_maxIatNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_maxIatNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_maxIatNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_maxIatNoteLabel.gridx = 0;
+            gbc_maxIatNoteLabel.gridy = row;
+            gbc_maxIatNoteLabel.gridwidth = 4;
+            selectionPanel.add(maxIatNoteLabel, gbc_maxIatNoteLabel);
+            
+	        row += 1;
+	        JLabel maxIatLabel = new JLabel(iatOffsetLabelText);
+	        GridBagConstraints gbc_maxIatLabel = new GridBagConstraints();
+	        gbc_maxIatLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_maxIatLabel.insets = insets3;
+	        gbc_maxIatLabel.gridx = 0;
+	        gbc_maxIatLabel.gridy = row;
+	        selectionPanel.add(maxIatLabel, gbc_maxIatLabel);
+	        
+	        maxIatFilter = new JFormattedTextField(doubleFmt);
+	        maxIatFilter.setText(String.valueOf(Config.getIatLCMinimumOffset()));
+	        maxIatFilter.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_maxIatFilter = new GridBagConstraints();
+	        gbc_maxIatFilter.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_maxIatFilter.insets = insets3;
+	        gbc_maxIatFilter.gridx = 1;
+	        gbc_maxIatFilter.gridy = row;
+	        selectionPanel.add(maxIatFilter, gbc_maxIatFilter);
+	        
+            row += 1;
+            // Trims Maximum Note
+            JLabel maxTrimsNoteLabel = new JLabel("Remove data where combined \"Fuel Trims\" are above/below the specified variance");
+            maxTrimsNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_maxTrimsNoteLabel = new GridBagConstraints();
+            gbc_maxTrimsNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_maxTrimsNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_maxTrimsNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_maxTrimsNoteLabel.gridx = 0;
+            gbc_maxTrimsNoteLabel.gridy = row;
+            gbc_maxTrimsNoteLabel.gridwidth = 4;
+            selectionPanel.add(maxTrimsNoteLabel, gbc_maxTrimsNoteLabel);
+	        
+	        row += 1;
+	        JLabel trimsVarianceLabel = new JLabel(trimsVarianceLabelText);
+	        GridBagConstraints gbc_trimsVarianceLabel = new GridBagConstraints();
+	        gbc_trimsVarianceLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_trimsVarianceLabel.insets = insets3;
+	        gbc_trimsVarianceLabel.gridx = 0;
+	        gbc_trimsVarianceLabel.gridy = row;
+	        selectionPanel.add(trimsVarianceLabel, gbc_trimsVarianceLabel);
+	        
+	        trimsVarianceFilter = new JFormattedTextField(doubleFmt);
+	        trimsVarianceFilter.setText(String.valueOf(Config.getTrimsLCVarianceValue()));
+	        trimsVarianceFilter.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_trimsVarianceFilter = new GridBagConstraints();
+	        gbc_trimsVarianceFilter.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_trimsVarianceFilter.insets = insets3;
+	        gbc_trimsVarianceFilter.gridx = 1;
+	        gbc_trimsVarianceFilter.gridy = row;
+	        selectionPanel.add(trimsVarianceFilter, gbc_trimsVarianceFilter);
+	        
+            row += 1;
+            // dVdt Maximum Note
+            JLabel maxDvdtNoteLabel = new JLabel("Remove data where \"dV/dt\" is above the specified maximum");
+            maxDvdtNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_maxDvdtNoteLabel = new GridBagConstraints();
+            gbc_maxDvdtNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_maxDvdtNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_maxDvdtNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_maxDvdtNoteLabel.gridx = 0;
+            gbc_maxDvdtNoteLabel.gridy = row;
+            gbc_maxDvdtNoteLabel.gridwidth = 4;
+            selectionPanel.add(maxDvdtNoteLabel, gbc_maxDvdtNoteLabel);
+	        
+	        row += 1;
+	        JLabel maxDvdtLabel = new JLabel(maxDvdtLabelText);
+	        GridBagConstraints gbc_maxDvdtLabel = new GridBagConstraints();
+	        gbc_maxDvdtLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_maxDvdtLabel.insets = insets3;
+	        gbc_maxDvdtLabel.gridx = 0;
+	        gbc_maxDvdtLabel.gridy = row;
+	        selectionPanel.add(maxDvdtLabel, gbc_maxDvdtLabel);
+	        
+	        maxDvdtFilter = new JFormattedTextField(doubleFmt);
+	        maxDvdtFilter.setText(String.valueOf(Config.getDvDtLCMaximumValue()));
+	        maxDvdtFilter.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_maxDvdtFilter = new GridBagConstraints();
+	        gbc_maxDvdtFilter.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_maxDvdtFilter.insets = insets3;
+	        gbc_maxDvdtFilter.gridx = 1;
+	        gbc_maxDvdtFilter.gridy = row;
+	        selectionPanel.add(maxDvdtFilter, gbc_maxDvdtFilter);
+        }
         
         // Set window params
-        selectionPanel.setPreferredSize(new Dimension(650, (isOpenLoop ? 400 : 600)));
-        JComponent[] inputs = new JComponent[] { selectionPanel };
+        selectionPanel.setPreferredSize(new Dimension(650, (taskTab == TaskTab.CLOSED_LOOP ? 600 : 400)));
+        JScrollPane pane = new JScrollPane(selectionPanel);
+        pane.setPreferredSize(new Dimension(670, 420));
+        pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        pane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        JComponent[] inputs = new JComponent[] { pane };
         do {
             if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Columns / Filters Settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
                 return false;
@@ -946,15 +1157,28 @@ public class ColumnsFiltersSelection implements ActionListener {
     	}
     	else
     		Config.setRpmColumnName(value);
-    	// Engine Load
-    	value = loadName.getText().trim();
-    	colName = loadLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error += "\"" + colName + "\" column must be specified\n";
+    	if (taskTab == TaskTab.LOAD_COMP) {
+	    	// MP
+	    	value = mpName.getText().trim();
+	    	colName = mpLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error += "\"" + colName + "\" column must be specified\n";
+	    	}
+	    	else
+	    		Config.setMpColumnName(value);
     	}
-    	else
-    		Config.setLoadColumnName(value);
+    	else {
+	    	// Engine Load
+	    	value = loadName.getText().trim();
+	    	colName = loadLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error += "\"" + colName + "\" column must be specified\n";
+	    	}
+	    	else
+	    		Config.setLoadColumnName(value);
+    	}
     	// AFR Learning
     	value = afLearningName.getText().trim();
     	colName = afLearningLabelText;
@@ -982,7 +1206,7 @@ public class ColumnsFiltersSelection implements ActionListener {
     	}
     	else
     		Config.setMafVoltageColumnName(value);
-    	if (isOpenLoop) {
+    	if (taskTab == TaskTab.OPEN_LOOP) {
 	    	// Wideband AFR
 	    	value = wbAfrName.getText().trim();
 	    	colName = wbAfrLabelText;
@@ -1024,7 +1248,7 @@ public class ColumnsFiltersSelection implements ActionListener {
 	    	// Afr Error filter
 	    	Config.setWidebandAfrErrorPercentValue(Double.valueOf(afrErrorFilter.getText()));
     	}
-    	else {
+    	else if (taskTab == TaskTab.CLOSED_LOOP) {
 	    	// Stock AFR
 	    	value = stockAfrName.getText().trim();
 	    	colName = stockAfrLabelText;
@@ -1075,6 +1299,32 @@ public class ColumnsFiltersSelection implements ActionListener {
 	    	// dV/dt filter
 	    	Config.setDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
     	}
+    	else if (taskTab == TaskTab.LOAD_COMP) {
+	    	// Time
+	    	value = timeName.getText().trim();
+	    	colName = timeLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error += "\"" + colName + "\" column must be specified\n";
+	    	}
+	    	else
+	    		Config.setTimeColumnName(value);
+	    	// Intake Air Temperature
+	    	value = iatName.getText().trim();
+	    	colName = iatLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error += "\"" + colName + "\" column must be specified\n";
+	    	}
+	    	else
+	    		Config.setIatColumnName(value);
+	    	// IAT filter
+	    	Config.setIatLCMinimumOffset(Double.valueOf(maxIatFilter.getText()));
+	    	// Trims filters
+	    	Config.setTrimsLCVarianceValue(Double.valueOf(trimsVarianceFilter.getText()));
+	    	// dV/dt filter
+	    	Config.setDvDtLCMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
+    	}
     	if (!ret)
     		JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
     	return ret;
@@ -1102,6 +1352,8 @@ public class ColumnsFiltersSelection implements ActionListener {
         	rpmName.setText(value);
         else if ("load".equals(e.getActionCommand()))
         	loadName.setText(value);
+        else if ("mp".equals(e.getActionCommand()))
+        	mpName.setText(value);
         else if ("cmdafr".equals(e.getActionCommand()))
         	commAfrName.setText(value);
         else if ("afr".equals(e.getActionCommand()))

@@ -51,7 +51,7 @@ public class LogStatsFixedAxis implements ActionListener {
     private static final Logger logger = Logger.getLogger(LogStatsFixedAxis.class);
 	private enum Axis {XAXIS, YAXIS};
     private final static int ColumnWidth = 40;
-    private final static int AxisColumnCount = 15;
+    private final static int AxisColumnCount = 25;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
     private JTable xAxisTable = null;
     private JTable yAxisTable = null;
@@ -407,7 +407,6 @@ public class LogStatsFixedAxis implements ActionListener {
     
     /**
      * Method validates that all data is populated and valid.
-     * @param fuelingTable, table to be checked
      * @return
      */
     private boolean validateTemplateData() {
@@ -420,7 +419,7 @@ public class LogStatsFixedAxis implements ActionListener {
 	            !((templateTable.getValueAt(0, 0).toString().equals("")) &&
 	              Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, 1).toString()) &&
 	              Pattern.matches(Utils.fpRegex, templateTable.getValueAt(1, 0).toString()))) {
-	            JOptionPane.showMessageDialog(null, "Invalid data in table.\n\nPlease post data into first cell", "Error", JOptionPane.ERROR_MESSAGE);
+	            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease post valid table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
 	            return false;
 	        }
 	        if (templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
@@ -681,11 +680,13 @@ public class LogStatsFixedAxis implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if ("clearxaxis".equals(e.getActionCommand())) {
-            Utils.clearTable(xAxisTable);
+        	xAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+            Utils.initializeTable(xAxisTable, ColumnWidth);
             xAxisList.setSelectedIndex(-1);
         }
         else if ("clearyaxis".equals(e.getActionCommand())) {
-        	Utils.clearTable(yAxisTable);
+        	yAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+            Utils.initializeTable(yAxisTable, ColumnWidth);
             yAxisList.setSelectedIndex(-1);
         }
         else if ("cleartempl".equals(e.getActionCommand()))

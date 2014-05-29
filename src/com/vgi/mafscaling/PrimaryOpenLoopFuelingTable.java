@@ -442,7 +442,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             	return fuelingTable;
         }
         catch (FileNotFoundException e) {
-            logger.error(e);            	
+            logger.error(e);
         }
         catch (Exception e) {
             e.printStackTrace();

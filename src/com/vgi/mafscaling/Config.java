@@ -124,6 +124,14 @@ public class Config {
 		props.setProperty("AfrColumnName", name);
 	}
 
+	public static String getMpColumnName() {
+		return props.getProperty("MPColumnName", "#$#");
+	}
+	
+	public static void setMpColumnName(String name) {
+		props.setProperty("MPColumnName", name);
+	}
+
 	public static String getRpmColumnName() {
 		return props.getProperty("RpmColumnName", "#$#");
 	}
@@ -266,6 +274,30 @@ public class Config {
 
 	public static void setDvDtMaximumValue(double v) {
 		props.setProperty("DvDtMaximum", Double.toString(v));
+	}
+
+	public static double getDvDtLCMaximumValue() {
+		return Double.parseDouble(props.getProperty("DvDtLoadCompMaximum", "0.7"));
+	}
+
+	public static void setDvDtLCMaximumValue(double v) {
+		props.setProperty("DvDtLoadCompMaximum", Double.toString(v));
+	}
+
+	public static double getIatLCMinimumOffset() {
+		return Double.parseDouble(props.getProperty("IATLoadCompMinimumOffset", "10"));
+	}
+
+	public static void setIatLCMinimumOffset(double v) {
+		props.setProperty("IATLoadCompMinimumOffset", Double.toString(v));
+	}
+
+	public static double getTrimsLCVarianceValue() {
+		return Double.parseDouble(props.getProperty("TrimsLoadCompVariance", "10"));
+	}
+
+	public static void setTrimsLCVarianceValue(double v) {
+		props.setProperty("TrimsLoadCompVariance", Double.toString(v));
 	}
 
 	public static String getDefaultPOLFueling() {

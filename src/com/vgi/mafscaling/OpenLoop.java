@@ -357,9 +357,9 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         JPanel dataRunPanel = new JPanel();
         dataScrollPane.setViewportView(dataRunPanel);
         GridBagLayout gbl_dataRunPanel = new GridBagLayout();
-        gbl_dataRunPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataRunPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_dataRunPanel.rowHeights = new int[] {0};
-        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
@@ -1515,7 +1515,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
                 
                 if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
                     	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !polfTable.isSet())) {
-                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.Loop.OPEN_LOOP, polfTable.isSet());
+                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.OPEN_LOOP, polfTable.isSet());
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

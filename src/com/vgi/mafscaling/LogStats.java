@@ -38,12 +38,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -57,6 +59,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -80,7 +83,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private File logFile = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
-    private JComboBox<String> dataColumn = null;
+    private JMultiSelectionBox dataColumn = null;
     private JComboBox<String> filter1Column = null;
     private JComboBox<String> filter2Column = null;
     private JComboBox<String> filter3Column = null;
@@ -93,6 +96,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private JFormattedTextField filter1TextBox = null;
     private JFormattedTextField filter2TextBox = null;
     private JFormattedTextField filter3TextBox = null;
+    private JButton filter2Button = null;
+    private JButton filter3Button = null;
     private JTable dataTable = null;
     private ExcelAdapter excelAdapter = null;
     private HashMap<Double, HashMap<Double, ArrayList<Double>>> xData = null;
@@ -135,303 +140,322 @@ public class LogStats extends JTabbedPane implements ActionListener {
     }
     
     private void createControlPanel(JPanel dataPanel) {
-        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
-        doubleFmt.setGroupingUsed(false);
-        doubleFmt.setMaximumFractionDigits(2);
-        doubleFmt.setMinimumFractionDigits(1);
-        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
-        
-        NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
-        doubleFmt.setGroupingUsed(false);
-        doubleFmt.setMaximumFractionDigits(6);
-        doubleFmt.setMinimumFractionDigits(0);
-        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
-        
-        JPanel cntlPanel = new JPanel();
-        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
-        gbc_ctrlPanel.insets = new Insets(3, 3, 3, 3);
-        gbc_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
-        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
-        gbc_ctrlPanel.weightx = 1.0;
-        gbc_ctrlPanel.gridx = 0;
-        gbc_ctrlPanel.gridy = 0;
-        dataPanel.add(cntlPanel, gbc_ctrlPanel);
-        
-        GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
-        cntlPanel.setLayout(gbl_cntlPanel);
-        
-        JButton selectLogButton = new JButton("<html><center>Select<br>Log</center></html>");
-        GridBagConstraints gbc_selectLogButton = new GridBagConstraints();
-        gbc_selectLogButton.anchor = GridBagConstraints.PAGE_START;
-        gbc_selectLogButton.insets = new Insets(3, 0, 3, 3);
-        gbc_selectLogButton.gridx = 0;
-        gbc_selectLogButton.gridy = 0;
-        gbc_selectLogButton.gridheight = 3;
-        selectLogButton.setActionCommand("selectlog");
-        selectLogButton.addActionListener(this);
-        cntlPanel.add(selectLogButton, gbc_selectLogButton);
-
-        JLabel xAxisLabel = new JLabel("X-Axis");
-        xAxisLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_xAxisLabel = new GridBagConstraints();
-        gbc_xAxisLabel.anchor = GridBagConstraints.EAST;
-        gbc_xAxisLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_xAxisLabel.gridx = 1;
-        gbc_xAxisLabel.gridy = 0;
-        cntlPanel.add(xAxisLabel, gbc_xAxisLabel);
-        
-        xAxisColumn = new JComboBox<String>();
-        GridBagConstraints gbc_xAxisColumn = new GridBagConstraints();
-        gbc_xAxisColumn.anchor = GridBagConstraints.PAGE_START;
-        gbc_xAxisColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_xAxisColumn.gridx = 2;
-        gbc_xAxisColumn.gridy = 0;
-        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(xAxisColumn, gbc_xAxisColumn);
-
-        JLabel xAxisScalingLabel = new JLabel("X-Step");
-        xAxisScalingLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_xAxisScalingLabel = new GridBagConstraints();
-        gbc_xAxisScalingLabel.anchor = GridBagConstraints.EAST;
-        gbc_xAxisScalingLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_xAxisScalingLabel.gridx = 3;
-        gbc_xAxisScalingLabel.gridy = 0;
-        cntlPanel.add(xAxisScalingLabel, gbc_xAxisScalingLabel);
-        
-        xAxisRoundTextBox = new JFormattedTextField(doubleFmt);
-        xAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
-        GridBagConstraints gbc_xAxisRoundTextBox = new GridBagConstraints();
-        gbc_xAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
-        gbc_xAxisRoundTextBox.fill = GridBagConstraints.HORIZONTAL;
-        gbc_xAxisRoundTextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_xAxisRoundTextBox.gridx = 4;
-        gbc_xAxisRoundTextBox.gridy = 0;
-        cntlPanel.add(xAxisRoundTextBox, gbc_xAxisRoundTextBox);
-
-        JLabel yAxisLabel = new JLabel("Y-Axis");
-        yAxisLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_yAxisLabel = new GridBagConstraints();
-        gbc_yAxisLabel.anchor = GridBagConstraints.EAST;
-        gbc_yAxisLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_yAxisLabel.gridx = 1;
-        gbc_yAxisLabel.gridy = 1;
-        cntlPanel.add(yAxisLabel, gbc_yAxisLabel);
-        
-        yAxisColumn = new JComboBox<String>();
-        GridBagConstraints gbc_yAxisColumn = new GridBagConstraints();
-        gbc_yAxisColumn.anchor = GridBagConstraints.PAGE_START;
-        gbc_yAxisColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_yAxisColumn.gridx = 2;
-        gbc_yAxisColumn.gridy = 1;
-        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(yAxisColumn, gbc_yAxisColumn);
-
-        JLabel yAxisScalingLabel = new JLabel("Y-Step");
-        yAxisScalingLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_yAxisScalingLabel = new GridBagConstraints();
-        gbc_yAxisScalingLabel.anchor = GridBagConstraints.EAST;
-        gbc_yAxisScalingLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_yAxisScalingLabel.gridx = 3;
-        gbc_yAxisScalingLabel.gridy = 1;
-        cntlPanel.add(yAxisScalingLabel, gbc_yAxisScalingLabel);
-        
-        yAxisRoundTextBox = new JFormattedTextField(doubleFmt);
-        yAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
-        GridBagConstraints gbc_yAxisRoundTextBox = new GridBagConstraints();
-        gbc_yAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
-        gbc_yAxisRoundTextBox.fill = GridBagConstraints.HORIZONTAL;
-        gbc_yAxisRoundTextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_yAxisRoundTextBox.gridx = 4;
-        gbc_yAxisRoundTextBox.gridy = 1;
-        cntlPanel.add(yAxisRoundTextBox, gbc_yAxisRoundTextBox);
-
-        JLabel datasLabel = new JLabel("Data");
-        datasLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_datasLabel = new GridBagConstraints();
-        gbc_datasLabel.anchor = GridBagConstraints.EAST;
-        gbc_datasLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_datasLabel.gridx = 1;
-        gbc_datasLabel.gridy = 2;
-        cntlPanel.add(datasLabel, gbc_datasLabel);
-        
-        dataColumn = new JComboBox<String>();
-        GridBagConstraints gbc_dataColumn = new GridBagConstraints();
-        gbc_dataColumn.anchor = GridBagConstraints.PAGE_START;
-        gbc_dataColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_dataColumn.gridx = 2;
-        gbc_dataColumn.gridy = 2;
-        dataColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(dataColumn, gbc_dataColumn);
-
-        JLabel statisticsLabel = new JLabel("Stats");
-        statisticsLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_statisticsLabel = new GridBagConstraints();
-        gbc_statisticsLabel.anchor = GridBagConstraints.EAST;
-        gbc_statisticsLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_statisticsLabel.gridx = 3;
-        gbc_statisticsLabel.gridy = 2;
-        cntlPanel.add(statisticsLabel, gbc_statisticsLabel);
-        
-        statistics = new JComboBox<String>(new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Std Devn"});
-        GridBagConstraints gbc_statistics = new GridBagConstraints();
-        gbc_statistics.anchor = GridBagConstraints.PAGE_START;
-        gbc_statistics.insets = new Insets(3, 3, 3, 3);
-        gbc_statistics.gridx = 4;
-        gbc_statistics.gridy = 2;
-        cntlPanel.add(statistics, gbc_statistics);
-
-        JLabel orLabel = new JLabel("or");
-        statisticsLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_orLabel = new GridBagConstraints();
-        gbc_orLabel.anchor = GridBagConstraints.CENTER;
-        gbc_orLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_orLabel.gridx = 5;
-        gbc_orLabel.gridy = 0;
-        gbc_orLabel.gridheight = 2;
-        cntlPanel.add(orLabel, gbc_orLabel);
-
-        JButton btnSetAxisButton = new JButton("<html><center>Set<br>Axis</center></html>");
-        GridBagConstraints gbc_btnSetAxisButton = new GridBagConstraints();
-        gbc_btnSetAxisButton.anchor = GridBagConstraints.WEST;
-        gbc_btnSetAxisButton.insets = new Insets(3, 3, 3, 3);
-        gbc_btnSetAxisButton.gridx = 6;
-        gbc_btnSetAxisButton.gridy = 0;
-        gbc_btnSetAxisButton.gridheight = 2;
-        btnSetAxisButton.setActionCommand("setaxis");
-        btnSetAxisButton.addActionListener(this);
-        cntlPanel.add(btnSetAxisButton, gbc_btnSetAxisButton);
-
-        JLabel filter1Label = new JLabel("Filter1");
-        filter1Label.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_filter1Label = new GridBagConstraints();
-        gbc_filter1Label.anchor = GridBagConstraints.WEST;
-        gbc_filter1Label.insets = new Insets(3, 3, 3, 0);
-        gbc_filter1Label.gridx = 7;
-        gbc_filter1Label.gridy = 0;
-        cntlPanel.add(filter1Label, gbc_filter1Label);
-
-        JLabel filter2Label = new JLabel("Filter2");
-        filter2Label.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_filter2Label = new GridBagConstraints();
-        gbc_filter2Label.anchor = GridBagConstraints.WEST;
-        gbc_filter2Label.insets = new Insets(3, 3, 3, 0);
-        gbc_filter2Label.gridx = 7;
-        gbc_filter2Label.gridy = 1;
-        cntlPanel.add(filter2Label, gbc_filter2Label);
-
-        JLabel filter3Label = new JLabel("Filter3");
-        filter3Label.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_filter3Label = new GridBagConstraints();
-        gbc_filter3Label.anchor = GridBagConstraints.WEST;
-        gbc_filter3Label.insets = new Insets(3, 3, 3, 0);
-        gbc_filter3Label.gridx = 7;
-        gbc_filter3Label.gridy = 2;
-        cntlPanel.add(filter3Label, gbc_filter3Label);
-        
-        filter1Column = new JComboBox<String>();
-        GridBagConstraints gbc_filter1Column = new GridBagConstraints();
-        gbc_filter1Column.anchor = GridBagConstraints.WEST;
-        gbc_filter1Column.insets = new Insets(3, 3, 3, 3);
-        gbc_filter1Column.gridx = 8;
-        gbc_filter1Column.gridy = 0;
-        filter1Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(filter1Column, gbc_filter1Column);
-        
-        filter2Column = new JComboBox<String>();
-        GridBagConstraints gbc_filter2Column = new GridBagConstraints();
-        gbc_filter2Column.anchor = GridBagConstraints.WEST;
-        gbc_filter2Column.insets = new Insets(3, 3, 3, 3);
-        gbc_filter2Column.gridx = 8;
-        gbc_filter2Column.gridy = 1;
-        filter2Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(filter2Column, gbc_filter2Column);
-        
-        filter3Column = new JComboBox<String>();
-        GridBagConstraints gbc_filter3Column = new GridBagConstraints();
-        gbc_filter3Column.anchor = GridBagConstraints.WEST;
-        gbc_filter3Column.insets = new Insets(3, 3, 3, 3);
-        gbc_filter3Column.gridx = 8;
-        gbc_filter3Column.gridy = 2;
-        filter3Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(filter3Column, gbc_filter3Column);
-        
-        filter1ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
-        GridBagConstraints gbc_filter1ComboBox = new GridBagConstraints();
-        gbc_filter1ComboBox.anchor = GridBagConstraints.WEST;
-        gbc_filter1ComboBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter1ComboBox.gridx = 9;
-        gbc_filter1ComboBox.gridy = 0;
-        cntlPanel.add(filter1ComboBox, gbc_filter1ComboBox);
-        
-        filter2ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
-        GridBagConstraints gbc_filter2ComboBox = new GridBagConstraints();
-        gbc_filter2ComboBox.anchor = GridBagConstraints.WEST;
-        gbc_filter2ComboBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter2ComboBox.gridx = 9;
-        gbc_filter2ComboBox.gridy = 1;
-        cntlPanel.add(filter2ComboBox, gbc_filter2ComboBox);
-        
-        filter3ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
-        GridBagConstraints gbc_filter3ComboBox = new GridBagConstraints();
-        gbc_filter3ComboBox.anchor = GridBagConstraints.WEST;
-        gbc_filter3ComboBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter3ComboBox.gridx = 9;
-        gbc_filter3ComboBox.gridy = 2;
-        cntlPanel.add(filter3ComboBox, gbc_filter3ComboBox);
-        
-        filter1TextBox = new JFormattedTextField(doubleFmtFilters);
-        filter1TextBox.setPreferredSize(new Dimension(60, 20));
-        GridBagConstraints gbc_filter1TextBox = new GridBagConstraints();
-        gbc_filter1TextBox.anchor = GridBagConstraints.WEST;
-        gbc_filter1TextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter1TextBox.gridx = 10;
-        gbc_filter1TextBox.gridy = 0;
-        cntlPanel.add(filter1TextBox, gbc_filter1TextBox);
-        
-        filter2TextBox = new JFormattedTextField(doubleFmtFilters);
-        filter2TextBox.setPreferredSize(new Dimension(60, 20));
-        GridBagConstraints gbc_filter2TextBox = new GridBagConstraints();
-        gbc_filter2TextBox.anchor = GridBagConstraints.WEST;
-        gbc_filter2TextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter2TextBox.gridx = 10;
-        gbc_filter2TextBox.gridy = 1;
-        cntlPanel.add(filter2TextBox, gbc_filter2TextBox);
-        
-        filter3TextBox = new JFormattedTextField(doubleFmtFilters);
-        filter3TextBox.setPreferredSize(new Dimension(60, 20));
-        GridBagConstraints gbc_filter3TextBox = new GridBagConstraints();
-        gbc_filter3TextBox.anchor = GridBagConstraints.WEST;
-        gbc_filter3TextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_filter3TextBox.gridx = 10;
-        gbc_filter3TextBox.gridy = 2;
-        cntlPanel.add(filter3TextBox, gbc_filter3TextBox);
-        
-        JButton clearFiltersButton = new JButton("<html><center>Clear<br>Filters</center></html>");
-        GridBagConstraints gbc_clearFiltersButton = new GridBagConstraints();
-        gbc_clearFiltersButton.anchor = GridBagConstraints.PAGE_START;
-        gbc_clearFiltersButton.insets = new Insets(3, 0, 3, 3);
-        gbc_clearFiltersButton.gridx = 11;
-        gbc_clearFiltersButton.gridy = 0;
-        gbc_clearFiltersButton.gridheight = 3;
-        clearFiltersButton.setActionCommand("clearfilters");
-        clearFiltersButton.addActionListener(this);
-        cntlPanel.add(clearFiltersButton, gbc_clearFiltersButton);
-        
-        JButton btnGoButton = new JButton("GO");
-        GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
-        gbc_btnGoButton.anchor = GridBagConstraints.EAST;
-        gbc_btnGoButton.insets = new Insets(3, 3, 3, 3);
-        gbc_btnGoButton.weightx = 1.0;
-        gbc_btnGoButton.gridx = 12;
-        gbc_btnGoButton.gridy = 0;
-        gbc_btnGoButton.gridheight = 3;
-        btnGoButton.setActionCommand("go");
-        btnGoButton.addActionListener(this);
-        cntlPanel.add(btnGoButton, gbc_btnGoButton);
+    	try {
+	        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+	        doubleFmt.setGroupingUsed(false);
+	        doubleFmt.setMaximumFractionDigits(2);
+	        doubleFmt.setMinimumFractionDigits(1);
+	        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+	        
+	        NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
+	        doubleFmt.setGroupingUsed(false);
+	        doubleFmt.setMaximumFractionDigits(6);
+	        doubleFmt.setMinimumFractionDigits(0);
+	        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+	        
+	        JPanel cntlPanel = new JPanel();
+	        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
+	        gbc_ctrlPanel.insets = new Insets(3, 3, 3, 3);
+	        gbc_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
+	        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+	        gbc_ctrlPanel.weightx = 1.0;
+	        gbc_ctrlPanel.gridx = 0;
+	        gbc_ctrlPanel.gridy = 0;
+	        dataPanel.add(cntlPanel, gbc_ctrlPanel);
+	        
+	        GridBagLayout gbl_cntlPanel = new GridBagLayout();
+	        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+	        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
+	        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+	        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
+	        cntlPanel.setLayout(gbl_cntlPanel);
+	        
+	        JButton selectLogButton = new JButton("<html><center>Select<br>Log</center></html>");
+	        GridBagConstraints gbc_selectLogButton = new GridBagConstraints();
+	        gbc_selectLogButton.anchor = GridBagConstraints.PAGE_START;
+	        gbc_selectLogButton.insets = new Insets(3, 0, 3, 3);
+	        gbc_selectLogButton.gridx = 0;
+	        gbc_selectLogButton.gridy = 0;
+	        gbc_selectLogButton.gridheight = 3;
+	        selectLogButton.setActionCommand("selectlog");
+	        selectLogButton.addActionListener(this);
+	        cntlPanel.add(selectLogButton, gbc_selectLogButton);
+	
+	        JLabel xAxisLabel = new JLabel("X-Axis");
+	        xAxisLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_xAxisLabel = new GridBagConstraints();
+	        gbc_xAxisLabel.anchor = GridBagConstraints.EAST;
+	        gbc_xAxisLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_xAxisLabel.gridx = 1;
+	        gbc_xAxisLabel.gridy = 0;
+	        cntlPanel.add(xAxisLabel, gbc_xAxisLabel);
+	        
+	        xAxisColumn = new JComboBox<String>();
+	        GridBagConstraints gbc_xAxisColumn = new GridBagConstraints();
+	        gbc_xAxisColumn.anchor = GridBagConstraints.PAGE_START;
+	        gbc_xAxisColumn.insets = new Insets(3, 3, 3, 3);
+	        gbc_xAxisColumn.gridx = 2;
+	        gbc_xAxisColumn.gridy = 0;
+	        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	        cntlPanel.add(xAxisColumn, gbc_xAxisColumn);
+	
+	        JLabel xAxisScalingLabel = new JLabel("X-Step");
+	        xAxisScalingLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_xAxisScalingLabel = new GridBagConstraints();
+	        gbc_xAxisScalingLabel.anchor = GridBagConstraints.EAST;
+	        gbc_xAxisScalingLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_xAxisScalingLabel.gridx = 3;
+	        gbc_xAxisScalingLabel.gridy = 0;
+	        cntlPanel.add(xAxisScalingLabel, gbc_xAxisScalingLabel);
+	        
+	        xAxisRoundTextBox = new JFormattedTextField(doubleFmt);
+	        xAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
+	        GridBagConstraints gbc_xAxisRoundTextBox = new GridBagConstraints();
+	        gbc_xAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
+	        gbc_xAxisRoundTextBox.fill = GridBagConstraints.HORIZONTAL;
+	        gbc_xAxisRoundTextBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_xAxisRoundTextBox.gridx = 4;
+	        gbc_xAxisRoundTextBox.gridy = 0;
+	        cntlPanel.add(xAxisRoundTextBox, gbc_xAxisRoundTextBox);
+	
+	        JLabel yAxisLabel = new JLabel("Y-Axis");
+	        yAxisLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_yAxisLabel = new GridBagConstraints();
+	        gbc_yAxisLabel.anchor = GridBagConstraints.EAST;
+	        gbc_yAxisLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_yAxisLabel.gridx = 1;
+	        gbc_yAxisLabel.gridy = 1;
+	        cntlPanel.add(yAxisLabel, gbc_yAxisLabel);
+	        
+	        yAxisColumn = new JComboBox<String>();
+	        GridBagConstraints gbc_yAxisColumn = new GridBagConstraints();
+	        gbc_yAxisColumn.anchor = GridBagConstraints.PAGE_START;
+	        gbc_yAxisColumn.insets = new Insets(3, 3, 3, 3);
+	        gbc_yAxisColumn.gridx = 2;
+	        gbc_yAxisColumn.gridy = 1;
+	        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	        cntlPanel.add(yAxisColumn, gbc_yAxisColumn);
+	
+	        JLabel yAxisScalingLabel = new JLabel("Y-Step");
+	        yAxisScalingLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_yAxisScalingLabel = new GridBagConstraints();
+	        gbc_yAxisScalingLabel.anchor = GridBagConstraints.EAST;
+	        gbc_yAxisScalingLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_yAxisScalingLabel.gridx = 3;
+	        gbc_yAxisScalingLabel.gridy = 1;
+	        cntlPanel.add(yAxisScalingLabel, gbc_yAxisScalingLabel);
+	        
+	        yAxisRoundTextBox = new JFormattedTextField(doubleFmt);
+	        yAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
+	        GridBagConstraints gbc_yAxisRoundTextBox = new GridBagConstraints();
+	        gbc_yAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
+	        gbc_yAxisRoundTextBox.fill = GridBagConstraints.HORIZONTAL;
+	        gbc_yAxisRoundTextBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_yAxisRoundTextBox.gridx = 4;
+	        gbc_yAxisRoundTextBox.gridy = 1;
+	        cntlPanel.add(yAxisRoundTextBox, gbc_yAxisRoundTextBox);
+	
+	        JLabel datasLabel = new JLabel("Data");
+	        datasLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_datasLabel = new GridBagConstraints();
+	        gbc_datasLabel.anchor = GridBagConstraints.EAST;
+	        gbc_datasLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_datasLabel.gridx = 1;
+	        gbc_datasLabel.gridy = 2;
+	        cntlPanel.add(datasLabel, gbc_datasLabel);
+	        
+	        dataColumn = new JMultiSelectionBox(" ");
+	        dataColumn.setIcon(new ImageIcon(getClass().getResource("/down.gif")));
+	        dataColumn.setMargin(new Insets(3, 3, 3, 3));
+	        dataColumn.setVerticalTextPosition(SwingConstants.CENTER);
+	        dataColumn.setHorizontalAlignment(SwingConstants.RIGHT);
+	        dataColumn.setHorizontalTextPosition(SwingConstants.LEFT);
+	        dataColumn.setIconTextGap(3);
+	        dataColumn.setPreferredSize(new Dimension(190, 22));
+	        dataColumn.setMaximumSize(new Dimension(190, 22));
+	        GridBagConstraints gbc_dataColumn = new GridBagConstraints();
+	        gbc_dataColumn.anchor = GridBagConstraints.PAGE_START;
+	        gbc_dataColumn.insets = new Insets(3, 3, 3, 3);
+	        gbc_dataColumn.gridx = 2;
+	        gbc_dataColumn.gridy = 2;
+	        cntlPanel.add(dataColumn, gbc_dataColumn);
+	
+	        JLabel statisticsLabel = new JLabel("Stats");
+	        statisticsLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_statisticsLabel = new GridBagConstraints();
+	        gbc_statisticsLabel.anchor = GridBagConstraints.EAST;
+	        gbc_statisticsLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_statisticsLabel.gridx = 3;
+	        gbc_statisticsLabel.gridy = 2;
+	        cntlPanel.add(statisticsLabel, gbc_statisticsLabel);
+	        
+	        statistics = new JComboBox<String>(new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Std Devn"});
+	        GridBagConstraints gbc_statistics = new GridBagConstraints();
+	        gbc_statistics.anchor = GridBagConstraints.PAGE_START;
+	        gbc_statistics.insets = new Insets(3, 3, 3, 3);
+	        gbc_statistics.gridx = 4;
+	        gbc_statistics.gridy = 2;
+	        cntlPanel.add(statistics, gbc_statistics);
+	
+	        JLabel orLabel = new JLabel("or");
+	        statisticsLabel.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_orLabel = new GridBagConstraints();
+	        gbc_orLabel.anchor = GridBagConstraints.CENTER;
+	        gbc_orLabel.insets = new Insets(3, 3, 3, 0);
+	        gbc_orLabel.gridx = 5;
+	        gbc_orLabel.gridy = 0;
+	        gbc_orLabel.gridheight = 2;
+	        cntlPanel.add(orLabel, gbc_orLabel);
+	
+	        JButton btnSetAxisButton = new JButton("<html><center>Set<br>Axis</center></html>");
+	        GridBagConstraints gbc_btnSetAxisButton = new GridBagConstraints();
+	        gbc_btnSetAxisButton.anchor = GridBagConstraints.WEST;
+	        gbc_btnSetAxisButton.insets = new Insets(3, 3, 3, 3);
+	        gbc_btnSetAxisButton.gridx = 6;
+	        gbc_btnSetAxisButton.gridy = 0;
+	        gbc_btnSetAxisButton.gridheight = 2;
+	        btnSetAxisButton.setActionCommand("setaxis");
+	        btnSetAxisButton.addActionListener(this);
+	        cntlPanel.add(btnSetAxisButton, gbc_btnSetAxisButton);
+	
+	        JLabel filter1Label = new JLabel("Filters");
+	        filter1Label.setHorizontalAlignment(LEFT);
+	        GridBagConstraints gbc_filter1Label = new GridBagConstraints();
+	        gbc_filter1Label.anchor = GridBagConstraints.WEST;
+	        gbc_filter1Label.insets = new Insets(3, 3, 3, 0);
+	        gbc_filter1Label.gridx = 7;
+	        gbc_filter1Label.gridy = 0;
+	        cntlPanel.add(filter1Label, gbc_filter1Label);
+	
+	        filter2Button = new JButton("and");
+	        filter2Button.setMargin(new Insets(1, 4, 1, 4));
+	        filter2Button.setPreferredSize(new Dimension(30, 20));
+	        GridBagConstraints gbc_filter2Button = new GridBagConstraints();
+	        gbc_filter2Button.anchor = GridBagConstraints.WEST;
+	        gbc_filter2Button.insets = new Insets(3, 3, 3, 0);
+	        gbc_filter2Button.gridx = 7;
+	        gbc_filter2Button.gridy = 1;
+	        filter2Button.setActionCommand("f2and");
+	        filter2Button.addActionListener(this);
+	        cntlPanel.add(filter2Button, gbc_filter2Button);
+	
+	        filter3Button = new JButton("and");
+	        filter3Button.setMargin(new Insets(1, 4, 1, 4));
+	        filter3Button.setPreferredSize(new Dimension(30, 20));
+	        GridBagConstraints gbc_filter3Button = new GridBagConstraints();
+	        gbc_filter3Button.anchor = GridBagConstraints.WEST;
+	        gbc_filter3Button.insets = new Insets(3, 3, 3, 0);
+	        gbc_filter3Button.gridx = 7;
+	        gbc_filter3Button.gridy = 2;
+	        filter3Button.setActionCommand("f3and");
+	        filter3Button.addActionListener(this);
+	        cntlPanel.add(filter3Button, gbc_filter3Button);
+	        
+	        filter1Column = new JComboBox<String>();
+	        GridBagConstraints gbc_filter1Column = new GridBagConstraints();
+	        gbc_filter1Column.anchor = GridBagConstraints.WEST;
+	        gbc_filter1Column.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter1Column.gridx = 8;
+	        gbc_filter1Column.gridy = 0;
+	        filter1Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	        cntlPanel.add(filter1Column, gbc_filter1Column);
+	        
+	        filter2Column = new JComboBox<String>();
+	        GridBagConstraints gbc_filter2Column = new GridBagConstraints();
+	        gbc_filter2Column.anchor = GridBagConstraints.WEST;
+	        gbc_filter2Column.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter2Column.gridx = 8;
+	        gbc_filter2Column.gridy = 1;
+	        filter2Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	        cntlPanel.add(filter2Column, gbc_filter2Column);
+	        
+	        filter3Column = new JComboBox<String>();
+	        GridBagConstraints gbc_filter3Column = new GridBagConstraints();
+	        gbc_filter3Column.anchor = GridBagConstraints.WEST;
+	        gbc_filter3Column.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter3Column.gridx = 8;
+	        gbc_filter3Column.gridy = 2;
+	        filter3Column.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+	        cntlPanel.add(filter3Column, gbc_filter3Column);
+	        
+	        filter1ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+	        GridBagConstraints gbc_filter1ComboBox = new GridBagConstraints();
+	        gbc_filter1ComboBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter1ComboBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter1ComboBox.gridx = 9;
+	        gbc_filter1ComboBox.gridy = 0;
+	        cntlPanel.add(filter1ComboBox, gbc_filter1ComboBox);
+	        
+	        filter2ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+	        GridBagConstraints gbc_filter2ComboBox = new GridBagConstraints();
+	        gbc_filter2ComboBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter2ComboBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter2ComboBox.gridx = 9;
+	        gbc_filter2ComboBox.gridy = 1;
+	        cntlPanel.add(filter2ComboBox, gbc_filter2ComboBox);
+	        
+	        filter3ComboBox = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+	        GridBagConstraints gbc_filter3ComboBox = new GridBagConstraints();
+	        gbc_filter3ComboBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter3ComboBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter3ComboBox.gridx = 9;
+	        gbc_filter3ComboBox.gridy = 2;
+	        cntlPanel.add(filter3ComboBox, gbc_filter3ComboBox);
+	        
+	        filter1TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter1TextBox.setPreferredSize(new Dimension(60, 20));
+	        GridBagConstraints gbc_filter1TextBox = new GridBagConstraints();
+	        gbc_filter1TextBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter1TextBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter1TextBox.gridx = 10;
+	        gbc_filter1TextBox.gridy = 0;
+	        cntlPanel.add(filter1TextBox, gbc_filter1TextBox);
+	        
+	        filter2TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter2TextBox.setPreferredSize(new Dimension(60, 20));
+	        GridBagConstraints gbc_filter2TextBox = new GridBagConstraints();
+	        gbc_filter2TextBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter2TextBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter2TextBox.gridx = 10;
+	        gbc_filter2TextBox.gridy = 1;
+	        cntlPanel.add(filter2TextBox, gbc_filter2TextBox);
+	        
+	        filter3TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter3TextBox.setPreferredSize(new Dimension(60, 20));
+	        GridBagConstraints gbc_filter3TextBox = new GridBagConstraints();
+	        gbc_filter3TextBox.anchor = GridBagConstraints.WEST;
+	        gbc_filter3TextBox.insets = new Insets(3, 3, 3, 3);
+	        gbc_filter3TextBox.gridx = 10;
+	        gbc_filter3TextBox.gridy = 2;
+	        cntlPanel.add(filter3TextBox, gbc_filter3TextBox);
+	        
+	        JButton clearFiltersButton = new JButton("<html><center>Clear<br>Filters</center></html>");
+	        GridBagConstraints gbc_clearFiltersButton = new GridBagConstraints();
+	        gbc_clearFiltersButton.anchor = GridBagConstraints.PAGE_START;
+	        gbc_clearFiltersButton.insets = new Insets(3, 0, 3, 3);
+	        gbc_clearFiltersButton.gridx = 11;
+	        gbc_clearFiltersButton.gridy = 0;
+	        gbc_clearFiltersButton.gridheight = 3;
+	        clearFiltersButton.setActionCommand("clearfilters");
+	        clearFiltersButton.addActionListener(this);
+	        cntlPanel.add(clearFiltersButton, gbc_clearFiltersButton);
+	        
+	        JButton btnGoButton = new JButton("GO");
+	        GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
+	        gbc_btnGoButton.anchor = GridBagConstraints.EAST;
+	        gbc_btnGoButton.insets = new Insets(3, 3, 3, 3);
+	        gbc_btnGoButton.weightx = 1.0;
+	        gbc_btnGoButton.gridx = 12;
+	        gbc_btnGoButton.gridy = 0;
+	        gbc_btnGoButton.gridheight = 3;
+	        btnGoButton.setActionCommand("go");
+	        btnGoButton.addActionListener(this);
+	        cntlPanel.add(btnGoButton, gbc_btnGoButton);
+    	}
+    	catch (Exception e) {
+            logger.error(e);
+            e.printStackTrace();
+    	}
     }
     
     private void createDataPanel(JPanel dataPanel) {
@@ -720,46 +744,44 @@ public class LogStats extends JTabbedPane implements ActionListener {
 		return rounding;
     }
     
-    private boolean checkAgainstFilter(boolean useFIlter, double value, DataFilter type, double filter, int rounding) {
+    private boolean checkAgainstFilter(double value, DataFilter type, double filter, int rounding) {
     	boolean ret = true;
-        if (useFIlter) {
-        	switch (type) {
-        	case LESS:
-        		if (value >= filter)
-        			ret = false;
-        		break;
-        	case LESS_EQUAL:
-        		if (value > filter)
-        			ret = false;
-        		break;
-        	case EQUAL:
-            	double rndVal = value;
-            	if (rounding > 0)
-            		rndVal = Math.round(value * rounding * 10.0) / (rounding * 10.0);
-            	else
-            		rndVal = Math.round(value);
-        		if (rndVal != filter)
-        			ret = false;
-        		break;
-        	case GREATER_EQUAL:
-        		if (value < filter)
-        			ret = false;
-        		break;
-        	case GREATER:
-        		if (value <= filter)
-        			ret = false;
-        		break;
-        	default:
-        		break;
-        	}
-        }
+    	switch (type) {
+    	case LESS:
+    		if (value >= filter)
+    			ret = false;
+    		break;
+    	case LESS_EQUAL:
+    		if (value > filter)
+    			ret = false;
+    		break;
+    	case EQUAL:
+        	double rndVal = value;
+        	if (rounding > 0)
+        		rndVal = Math.round(value * rounding * 10.0) / (rounding * 10.0);
+        	else
+        		rndVal = Math.round(value);
+    		if (rndVal != filter)
+    			ret = false;
+    		break;
+    	case GREATER_EQUAL:
+    		if (value < filter)
+    			ret = false;
+    		break;
+    	case GREATER:
+    		if (value <= filter)
+    			ret = false;
+    		break;
+    	default:
+    		break;
+    	}
         return ret;
     }
 
     private void processLog() {
     	// Get and validate required fields
     	Utils.clearTable(dataTable);
-    	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItem() == null)
+    	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItems() == null)
     		return;
     	if (xAxisRoundTextBox.getValue() == null && xAxisArray.size() == 0) {
     		JOptionPane.showMessageDialog(null, "X-Axis scaling is not set. Please set 'Step' or X-Axis values.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -789,7 +811,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     	Statistics statid = getStatId();
     	String xAxisColName = (String)xAxisColumn.getSelectedItem();
     	String yAxisColName = (String)yAxisColumn.getSelectedItem();
-    	String dataColName = (String)dataColumn.getSelectedItem();
+    	List<String> dataColNames = dataColumn.getSelectedItems();
     	
     	// Get filters
     	String filter1ColName = null;
@@ -823,12 +845,21 @@ public class LogStats extends JTabbedPane implements ActionListener {
     	boolean useFilter1 = false;
     	boolean useFilter2 = false;
     	boolean useFilter3 = false;
+    	boolean isFilter2And = true;
+    	boolean isFilter3And = true;
+    	boolean passFilters;
     	if (filter1ColName != null && !filter1ColName.isEmpty() && filter1Type != DataFilter.NONE && !Double.isNaN(filter1))
     		useFilter1 = true;
-    	if (filter2ColName != null && !filter2ColName.isEmpty() && filter2Type != DataFilter.NONE && !Double.isNaN(filter2))
+    	if (filter2ColName != null && !filter2ColName.isEmpty() && filter2Type != DataFilter.NONE && !Double.isNaN(filter2)) {
     		useFilter2 = true;
-    	if (filter3ColName != null && !filter3ColName.isEmpty() && filter3Type != DataFilter.NONE && !Double.isNaN(filter3))
+    		if ("or".equals(filter2Button.getText()))
+    			isFilter2And = false;
+    	}
+    	if (filter3ColName != null && !filter3ColName.isEmpty() && filter3Type != DataFilter.NONE && !Double.isNaN(filter3)) {
     		useFilter3 = true;
+    		if ("or".equals(filter3Button.getText()))
+    			isFilter3And = false;
+    	}
 
     	// Process log file
         BufferedReader br = null;
@@ -841,7 +872,9 @@ public class LogStats extends JTabbedPane implements ActionListener {
                 ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
                 int xColIdx = columns.indexOf(xAxisColName);
                 int yColIdx = columns.indexOf(yAxisColName);
-                int vColIdx = columns.indexOf(dataColName);
+                ArrayList<Integer> vColIdxArray = new ArrayList<Integer>();
+                for (String dataColName : dataColNames)
+                	vColIdxArray.add(columns.indexOf(dataColName));
                 int fltr1ColIdx = -1;
                 if (useFilter1)
                 	fltr1ColIdx = columns.indexOf(filter1ColName);
@@ -885,19 +918,24 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	                        }
 	                        f3 = Double.valueOf(elements[fltr3ColIdx]);
 	                	}
-                    	if (checkAgainstFilter(useFilter1, f1, filter1Type, filter1, filter1Rounding) &&
-                    		checkAgainstFilter(useFilter2, f2, filter2Type, filter2, filter2Rounding) &&
-                    		checkAgainstFilter(useFilter3, f3, filter3Type, filter3, filter3Rounding)) {
+
+	                	passFilters = (!useFilter1 || checkAgainstFilter(f1, filter1Type, filter1, filter1Rounding));
+	                	if (isFilter2And)
+	                		passFilters = (passFilters && (!useFilter2 || checkAgainstFilter(f2, filter2Type, filter2, filter2Rounding)));
+	                	else
+	                		passFilters = (passFilters || (!useFilter2 || checkAgainstFilter(f2, filter2Type, filter2, filter2Rounding)));
+	                	if (isFilter3And)
+	                		passFilters = (passFilters && (!useFilter3 || checkAgainstFilter(f3, filter3Type, filter3, filter3Rounding)));
+	                	else
+	                		passFilters = (passFilters || (!useFilter3 || checkAgainstFilter(f3, filter3Type, filter3, filter3Rounding)));
+
+                    	if (passFilters) {
                             if (!Pattern.matches(Utils.fpRegex, elements[xColIdx])) {
                                 JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
                             if (!Pattern.matches(Utils.fpRegex, elements[yColIdx])) {
                                 JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                                return;
-                            }
-                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx])) {
-                                JOptionPane.showMessageDialog(null, "Invalid value for Data, column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
 	                    	if (Double.isNaN(xRound))
@@ -908,7 +946,14 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	                    		y = yAxisArray.get(Utils.closestValueIndex(Double.valueOf(elements[yColIdx]), yAxisArray));
 	                    	else
 	                    		y = Utils.round(Double.valueOf(elements[yColIdx]), yRound);
-	                        val = Double.valueOf(elements[vColIdx]);
+	                    	val = 0;
+	                    	for (Integer vColIdx : vColIdxArray) {
+	                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx])) {
+	                                JOptionPane.showMessageDialog(null, "Invalid value for Data, column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+	                                return;
+	                            }
+	                    		val += Double.valueOf(elements[vColIdx]);
+	                    	}
 
 	                        yData = xData.get(x);
 	                        if (yData == null) {
@@ -1078,7 +1123,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
         	y[i++] = key;
         double[][] z = doubleZArray(x, y);
         Color[][] colors = doubleColorArray(x, y);
-        plot.addGridPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, x, y, z);
+        plot.addGridPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, x, y, z);
     }
     
     private void addHistogramPlot(Color[] colors, double[][] xyzArray) {
@@ -1095,7 +1140,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     		if (diff < minYDiff || Double.isNaN(minYDiff))
     			minYDiff = diff;
     	}
-        plot.addPlot(new HistogramPlot3D(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray, minXDiff, minYDiff));
+        plot.addPlot(new HistogramPlot3D(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray, minXDiff, minYDiff));
     }
 
     private void addBarLineScatterPlot(Plot3D type) {
@@ -1132,16 +1177,16 @@ public class LogStats extends JTabbedPane implements ActionListener {
     		System.arraycopy(array[k], 0, xyzArray[k], 0, 3);
         switch (type) {
         case BAR:
-            plot.addBarPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addBarPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
             break;
         case HIST:
         	addHistogramPlot(colors, xyzArray);
             break;
         case LINE:
-            plot.addLinePlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addLinePlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
             break;
         case SCATTER:
-            plot.addScatterPlot(dataColumn.getSelectedItem().toString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addScatterPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
 		default:
 			break;
         }
@@ -1170,7 +1215,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
         }
         plot.setAxisLabel(0, xAxisColumn.getSelectedItem().toString());
         plot.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
-        plot.setAxisLabel(2, dataColumn.getSelectedItem().toString());
+        plot.setAxisLabel(2, dataColumn.getSelectedItemsString());
     }
     
     private void clearFilters() {
@@ -1215,6 +1260,18 @@ public class LogStats extends JTabbedPane implements ActionListener {
 		}
 		else if ("clearfilters".equals(e.getActionCommand())) {
 	    	clearFilters();
+		}
+		else if ("f2and".equals(e.getActionCommand())) {
+			if ("and".equals(filter2Button.getText()))
+				filter2Button.setText("or");
+			else
+				filter2Button.setText("and");
+		}
+		else if ("f3and".equals(e.getActionCommand())) {
+			if ("and".equals(filter3Button.getText()))
+				filter3Button.setText("or");
+			else
+				filter3Button.setText("and");
 		}
 	}
 }

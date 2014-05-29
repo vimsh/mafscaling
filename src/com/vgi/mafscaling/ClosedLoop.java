@@ -63,13 +63,14 @@ import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
@@ -412,14 +413,14 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
         gbc_aprScrollPane.gridx = 1;
         gbc_aprScrollPane.gridy = 3;
         dataPanel.add(aprScrollPane, gbc_aprScrollPane);
-        
+
         JPanel aprRunPanel = new JPanel();
         aprScrollPane.setViewportView(aprRunPanel);
         GridBagLayout gbl_aprRunPanel = new GridBagLayout();
-        gbl_aprRunPanel.columnWidths = new int[]{0};
-        gbl_aprRunPanel.rowHeights = new int[] {0, 0, 0, 0};
-        gbl_aprRunPanel.columnWeights = new double[]{0.0};
-        gbl_aprRunPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0};
+        gbl_aprRunPanel.columnWidths = new int[]{0, 0};
+        gbl_aprRunPanel.rowHeights = new int[] {0, 0, 0, 0, 0};
+        gbl_aprRunPanel.columnWeights = new double[]{0.0, 1.0};
+        gbl_aprRunPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0};
         aprRunPanel.setLayout(gbl_aprRunPanel);
 
         createLogDataTable(dataRunPanel);
@@ -469,16 +470,18 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     }
     
     private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
-        TableColumnModel afrModel = new DefaultTableColumnModel();
+    	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
         final TableColumn afrColumn = new TableColumn(0, 250);
         afrColumn.setHeaderValue(tableName);
         afrModel.addColumn(afrColumn);
         JTableHeader lblAfrTableName = new JTableHeader();
         lblAfrTableName.setColumnModel(afrModel);
         lblAfrTableName.setReorderingAllowed(false);
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) lblAfrTableName.getDefaultRenderer();
+        headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         
         GridBagConstraints gbc_lblAfrTableName = new GridBagConstraints();
-        gbc_lblAfrTableName.insets = new Insets(0,0,0,0);
+        gbc_lblAfrTableName.insets = new Insets((gridy == 0 ? 0 : 5),0,0,0);
         gbc_lblAfrTableName.anchor = GridBagConstraints.PAGE_START;
         gbc_lblAfrTableName.fill = GridBagConstraints.HORIZONTAL;
         gbc_lblAfrTableName.gridx = 0;
@@ -1934,7 +1937,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
 
                 if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
                 	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.Loop.CLOSED_LOOP, polfTable.isSet());
+                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.CLOSED_LOOP, polfTable.isSet());
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

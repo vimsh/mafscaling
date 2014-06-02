@@ -724,11 +724,11 @@ public class LogStats extends JTabbedPane implements ActionListener {
     	if ("<".equals(name))
     		return DataFilter.LESS;
     	if ("<=".equals(name))
-    		return DataFilter.LESS;
+    		return DataFilter.LESS_EQUAL;
     	if ("=".equals(name))
     		return DataFilter.EQUAL;
     	if (">=".equals(name))
-    		return DataFilter.GREATER;
+    		return DataFilter.GREATER_EQUAL;
     	if (">".equals(name))
     		return DataFilter.GREATER;
     	return DataFilter.NONE;
@@ -757,8 +757,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
     		break;
     	case EQUAL:
         	double rndVal = value;
-        	if (rounding > 0)
-        		rndVal = Math.round(value * rounding * 10.0) / (rounding * 10.0);
+        	if (rounding > 0) {
+        		double multiplier = Math.pow(10.0, rounding);
+        		rndVal = Math.round(value * multiplier) / multiplier;
+        	}
         	else
         		rndVal = Math.round(value);
     		if (rndVal != filter)

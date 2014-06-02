@@ -19,6 +19,7 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,8 +31,10 @@ import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 public final class Utils {
     /**
@@ -151,6 +154,17 @@ public final class Utils {
     }
     
     /**
+     * Method clears the table cells color
+     * @param table
+     */
+    public static void clearTableColors(JTable table) {
+        TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
+        if (renderer != null && renderer instanceof BgColorFormatRenderer)
+        	((BgColorFormatRenderer)renderer).setColors(null);
+        ((DefaultTableModel)table.getModel()).fireTableDataChanged();
+    }
+    
+    /**
      * Method sets gradient background color for first row and first column assuming those are headers.
      * The table must have default renderer set as BgColorFormatRenderer
      * @param table
@@ -168,6 +182,31 @@ public final class Utils {
         }
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
+
+    /**
+     * Method sets columns width to the widest value
+     * @param table
+     * @param column
+     * @param margin
+     */
+    public static void adjustColumnSizes(JTable table, int column, int margin) {
+    	DefaultTableColumnModel colModel = (DefaultTableColumnModel) table.getColumnModel();
+    	TableColumn col = colModel.getColumn(column);
+    	int width;
+    	TableCellRenderer renderer = col.getHeaderRenderer();
+    	if (renderer == null)
+    		renderer = table.getTableHeader().getDefaultRenderer();
+    	Component comp = renderer.getTableCellRendererComponent(table, col.getHeaderValue(), false, false, 0, 0);
+    	width = comp.getPreferredSize().width;
+    	for (int r = 0; r < table.getRowCount(); ++r) {
+    		renderer = table.getCellRenderer(r, column);
+    		comp = renderer.getTableCellRendererComponent(table, table.getValueAt(r, column), false, false, r, column);
+    		int currentWidth = comp.getPreferredSize().width;
+    		width = Math.max(width, currentWidth);
+    	}
+    	width += 2 * margin;
+    	col.setPreferredWidth(width);
+    }
     
     /**
      * Method clears the table cells and sets default value - an empty string
@@ -180,10 +219,7 @@ public final class Utils {
             for (int j = 0; j < table.getRowCount(); ++j)
                 table.setValueAt("", j, i);
         }
-        TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
-        if (renderer != null && renderer instanceof BgColorFormatRenderer)
-        	((BgColorFormatRenderer)renderer).setColors(null);
-        ((DefaultTableModel)table.getModel()).fireTableDataChanged();
+        clearTableColors(table);
     }
 
     /**
@@ -467,4 +503,13 @@ public final class Utils {
 		return Math.sqrt(variance(data));
     }
 
+    /**
+     * Method returns random number within min/max range, inclusive
+     * @param min
+     * @param max
+     * @return
+     */
+    public static int getRandomInRange(int min, int max) {
+    	return (min + (int)(Math.random() * ((max - min) + 1)));
+    }
 }

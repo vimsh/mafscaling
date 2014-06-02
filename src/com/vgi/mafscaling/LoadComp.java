@@ -110,7 +110,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     private int logMpColIdx = -1;
     private int logMafvColIdx = -1;
 
-    private JTable MpTable = null;
+    private JTable mpTable = null;
     private JTable newMpTable = null;
     private JTable logDataTable = null;
     private ButtonGroup rbGroup = null;
@@ -127,8 +127,9 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     private final JFileChooser fileChooser = new JFileChooser();
     private final XYSeries runData = new XYSeries(dvdtAxisName);
     private final XYSeries trendData = new XYSeries("Trend");
-    private ArrayList<Double> xAxisArray;
-    private ArrayList<Double> yAxisArray;
+    private ArrayList<Double> xAxisArray = null;
+    private ArrayList<Double> yAxisArray = null;
+    private ArrayList<ArrayList<Double>> savedNewMpTable = new ArrayList<ArrayList<Double>>();
 
     public LoadComp(int tabPlacement) {
         super(tabPlacement);
@@ -176,9 +177,9 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         dataPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
         
@@ -228,11 +229,20 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         hideLogTableCheckBox.addActionListener(this);
         cntlPanel.add(hideLogTableCheckBox, gbc_hideLogTableCheckBox);
         
+        JCheckBox compareTableCheckBox = new JCheckBox("Compare Tables");
+        GridBagConstraints gbc_compareTableCheckBox = new GridBagConstraints();
+        gbc_compareTableCheckBox.insets = new Insets(0, 0, 3, 3);
+        gbc_compareTableCheckBox.gridx = 5;
+        gbc_compareTableCheckBox.gridy = 0;
+        compareTableCheckBox.setActionCommand("comparetables");
+        compareTableCheckBox.addActionListener(this);
+        cntlPanel.add(compareTableCheckBox, gbc_compareTableCheckBox);
+        
         JButton btnGoButton = new JButton("GO");
         GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
         gbc_btnGoButton.anchor = GridBagConstraints.EAST;
         gbc_btnGoButton.insets = new Insets(0, 0, 5, 0);
-        gbc_btnGoButton.gridx = 5;
+        gbc_btnGoButton.gridx = 6;
         gbc_btnGoButton.gridy = 0;
         btnGoButton.setActionCommand("go");
         btnGoButton.addActionListener(this);
@@ -318,7 +328,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     }
     
     private void createMpDataTables(JPanel panel) {
-        MpTable = createMpDataTable(panel, MpTableName, 0);
+        mpTable = createMpDataTable(panel, MpTableName, 0);
         newMpTable = createMpDataTable(panel, NewMpTableName, 2);
     }
     
@@ -564,7 +574,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         if (table.getName().equals(MpTableName))
         	table.setModel(new DefaultTableModel(newMpTable.getRowCount(), newMpTable.getColumnCount()));
         else
-        	table.setModel(new DefaultTableModel(MpTable.getRowCount(), MpTable.getColumnCount()));
+        	table.setModel(new DefaultTableModel(mpTable.getRowCount(), mpTable.getColumnCount()));
         Utils.initializeTable(table, ColumnWidth);
     }
     
@@ -802,16 +812,16 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     
     private boolean getAxisData() {
     	try {
-    		if (Utils.isTableEmpty(MpTable)) {
+    		if (Utils.isTableEmpty(mpTable)) {
                 JOptionPane.showMessageDialog(null, "PLease paste current Engine Load Compensation table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
                 return false;
     		}
     		xAxisArray = new ArrayList<Double>();
     		yAxisArray = new ArrayList<Double>();
-	        for (int i = 1; i < MpTable.getColumnCount(); ++i)
-	        	xAxisArray.add(Double.valueOf(MpTable.getValueAt(0, i).toString()));
-	        for (int i = 1; i < MpTable.getRowCount(); ++i)
-	        	yAxisArray.add(Double.valueOf(MpTable.getValueAt(i, 0).toString()));
+	        for (int i = 1; i < mpTable.getColumnCount(); ++i)
+	        	xAxisArray.add(Double.valueOf(mpTable.getValueAt(0, i).toString()));
+	        for (int i = 1; i < mpTable.getRowCount(); ++i)
+	        	yAxisArray.add(Double.valueOf(mpTable.getValueAt(i, 0).toString()));
 	        if (xAxisArray.size() > 0 && yAxisArray.size() > 0)
 	        	return true;
     	}
@@ -863,27 +873,27 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
             }
 
 	        for (int i = 1; i < xAxisArray.size() + 1; ++i) {
-	        	newMpTable.setValueAt(MpTable.getValueAt(0, i), 0, i);
+	        	newMpTable.setValueAt(mpTable.getValueAt(0, i), 0, i);
 	        	for (int j = 1; j < yAxisArray.size() + 1; ++j) {
 	        		if (i == 1)
-	        			newMpTable.setValueAt(MpTable.getValueAt(j, 0), j, 0);
+	        			newMpTable.setValueAt(mpTable.getValueAt(j, 0), j, 0);
         			x = xAxisArray.get(i - 1);
         			y = yAxisArray.get(j - 1);
                     yData = xData.get(x);
                     if (yData == null)
-                    	newMpTable.setValueAt(MpTable.getValueAt(j, i), j, i);
+                    	newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
                     else {
                     	data = yData.get(y);
 	                    if (data == null)
-	                    	newMpTable.setValueAt(MpTable.getValueAt(j, i), j, i);
+	                    	newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
 	                    else {
 	    	        		val = data.size();
 	    	        		if (val > SampleCount) {
 	    		        		val = (Utils.mean(data) + Utils.mode(data)) / 200.0;
-	    		            	newMpTable.setValueAt(val + Double.valueOf(MpTable.getValueAt(j, i).toString()), j, i);
+	    		            	newMpTable.setValueAt(val + Double.valueOf(mpTable.getValueAt(j, i).toString()), j, i);
 	    	        		}
 	    	        		else
-	    	        			newMpTable.setValueAt(MpTable.getValueAt(j, i), j, i);
+	    	        			newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
 	                    }
                     }
 	        	}
@@ -990,18 +1000,61 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         series.fireSeriesChanged();
         return true;
     }
+    
+    private boolean setCompareTables() {
+    	if (mpTable.getColumnCount() != newMpTable.getColumnCount() || mpTable.getRowCount() != newMpTable.getRowCount())
+    		return false;
+    	ArrayList<Double> row;
+    	double v1, v2;
+    	Utils.clearTableColors(newMpTable);
+    	savedNewMpTable.clear();
+    	for (int i = 1; i < mpTable.getRowCount(); ++i) {
+    		row = new ArrayList<Double>();
+    		savedNewMpTable.add(row);
+    		for (int j = 1; j < mpTable.getColumnCount(); ++j) {
+    			try {
+    				v1 = Double.valueOf(mpTable.getValueAt(i, j).toString());
+    				v2 = Double.valueOf(newMpTable.getValueAt(i, j).toString());
+    				row.add(v2);
+    				v2 = Math.abs(v2) - Math.abs(v1);
+    				if (v2 == 0)
+        				newMpTable.setValueAt("", i, j);
+    				else
+    					newMpTable.setValueAt(v2, i, j);
+    			}
+    			catch (Exception e) {
+    				unsetCompareTables();
+    				return false;
+    			}
+    		}
+    	}
+    	Utils.colorTable(newMpTable);
+    	return true;
+    }
+    
+    private void unsetCompareTables() {
+    	Utils.clearTableColors(newMpTable);
+    	ArrayList<Double> row;
+    	for (int i = 0; i < savedNewMpTable.size(); ++i) {
+    		row = savedNewMpTable.get(i);
+    		for (int j = 0; j < row.size(); ++j)
+    			newMpTable.setValueAt(row.get(j), i + 1, j + 1);
+    	}
+    	Utils.colorTable(newMpTable);
+    	savedNewMpTable.clear();
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if ("clearmp".equals(e.getActionCommand())) {
-            clearMpTable(MpTable);
+            clearMpTable(mpTable);
         }
         else if ("clearlog".equals(e.getActionCommand())) {
             clearLogDataTables();
             clearMpTable(newMpTable);
         }
         else if ("clearall".equals(e.getActionCommand())) {
-            clearMpTable(MpTable);
+            clearMpTable(mpTable);
             clearLogDataTables();
             clearMpTable(newMpTable);
         }
@@ -1017,6 +1070,16 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         		dataScrollPane.setVisible(false);
         	else
         		dataScrollPane.setVisible(true);
+        	fireStateChanged();
+        }
+        else if ("comparetables".equals(e.getActionCommand())) {
+        	JCheckBox checkBox = (JCheckBox)e.getSource();
+        	if (checkBox.isSelected()) {
+        		if (!setCompareTables())
+        			checkBox.setSelected(false);
+        	}
+        	else
+        		unsetCompareTables();
         	fireStateChanged();
         }
         else if ("dvdt".equals(e.getActionCommand())) {

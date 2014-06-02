@@ -451,28 +451,6 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
         gbc_newMafTable.gridheight = 2;
         newDataMafPanel.add(newMafTable, gbc_newMafTable);
         newMafExcelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
-/*
-        TableModelListener newTableListener = new TableModelListener() {
-            public void tableChanged(TableModelEvent tme) {
-                if (tme.getType() == TableModelEvent.UPDATE) {
-                	int colCount = newMafTable.getColumnCount();
-                	corrMafData.clear();
-                	for (int i = 0; i < colCount; ++i) {
-                		if (Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(0, i).toString()) &&
-                			Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(1, i).toString())) {
-                			corrMafData.add(Double.valueOf(newMafTable.getValueAt(0, i).toString()), Double.valueOf(newMafTable.getValueAt(1, i).toString()));
-                		}
-                		else
-                			break;
-                	}
-                	if (colCount != corrMafData.getItemCount())
-                    	corrMafData.clear();
-                	corrMafData.fireSeriesChanged();
-                }
-            }
-        };
-        newMafTable.getModel().addTableModelListener(newTableListener);
-*/
 
         Action action = new AbstractAction() {
 			private static final long serialVersionUID = 1L;

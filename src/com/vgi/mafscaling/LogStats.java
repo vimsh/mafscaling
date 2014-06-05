@@ -653,6 +653,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
         xAxisColumn.removeAllItems();
         yAxisColumn.removeAllItems();
         dataColumn.removeAllItems();
+        dataColumn.setText("");
         filter1Column.removeAllItems();
         filter2Column.removeAllItems();
         filter3Column.removeAllItems();

@@ -47,8 +47,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -104,6 +106,39 @@ public class LogView extends JTabbedPane implements ActionListener {
 			put(Skin.ROW_HEIGTH, new Integer(16));
 			put(Skin.FOCUS_CELL_HIGHLIGHT_BORDER,new javax.swing.border.MatteBorder(2, 2, 2, 2, Color.BLACK));
       	}
+    }
+    
+    public class SortingPopUp extends JPopupMenu implements ActionListener {
+		private static final long serialVersionUID = -8399244173709551368L;
+		JMenuItem sortAscending;
+        JMenuItem sortDescending;
+        int columnIndex;
+        public SortingPopUp(int column) {
+        	columnIndex = column;
+        	sortAscending = new JMenuItem("Sort Ascending");
+        	sortAscending.setActionCommand("sortascending");
+        	sortAscending.addActionListener(this);
+            add(sortAscending);
+            sortDescending = new JMenuItem("Sort Descending");
+            sortDescending.setActionCommand("sortdescending");
+            sortDescending.addActionListener(this);
+            add(sortDescending);
+        }
+		@Override
+		public void actionPerformed(ActionEvent e) {
+	        if ("sortascending".equals(e.getActionCommand()))
+				sortAscending(columnIndex);
+	        else if ("sortdescending".equals(e.getActionCommand()))
+				sortDescending(columnIndex);
+		}
+    }
+    
+    class DoubleComparator implements quick.dbtable.Comparator {
+    	public int compare(int column, Object currentData, Object nextData) {
+    		Double v1 = Double.valueOf(currentData.toString());
+    		Double v2 = Double.valueOf(nextData.toString());
+    		return Double.compare(v1, v2);
+    	}
     }
     
     public static class CompareFilter implements Filter {
@@ -217,18 +252,24 @@ public class LogView extends JTabbedPane implements ActionListener {
     				int modelColumn = table.convertColumnIndexToModel(viewColumn);
     				if (colId != modelColumn)
     					return;
-    				check.setSelected(!check.isSelected());
-    				if (check.isSelected()) {
-    					defaultColor = check.getBackground();
-    					check.setBackground(selectedColor);
-    					TableModel model = table.getModel();
-    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), selectedColor);
+    				if (SwingUtilities.isLeftMouseButton(e)) {
+	    				check.setSelected(!check.isSelected());
+	    				if (check.isSelected()) {
+	    					defaultColor = check.getBackground();
+	    					check.setBackground(selectedColor);
+	    					TableModel model = table.getModel();
+	    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), selectedColor);
+	    				}
+	    				else {
+	    					check.setBackground(defaultColor);
+	    					removeXYSeries(colId);
+	    				}
+						((JTableHeader) e.getSource()).repaint();
     				}
-    				else {
-    					check.setBackground(defaultColor);
-    					removeXYSeries(colId);
+    				else if (SwingUtilities.isRightMouseButton(e)) {
+    					SortingPopUp menu = new SortingPopUp(colId);
+    					menu.show(e.getComponent(), e.getX(), e.getY());
     				}
-					((JTableHeader) e.getSource()).repaint();
     			}
     		});
     	}
@@ -310,6 +351,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	logDataTable.setSortEnabled(false); 
 	    	logDataTable.setSkin(new TableSkin());
 			logDataTable.refresh(new String[1][25]);
+			logDataTable.setComparator(new DoubleComparator());
 			logDataTable.getTable().setCellSelectionEnabled(true);
 			logDataTable.getTable().setColumnSelectionAllowed(true);
 			logDataTable.getTable().setRowSelectionAllowed(true);
@@ -546,7 +588,36 @@ public class LogView extends JTabbedPane implements ActionListener {
 				}
         	}
         );
+    }    
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CREATE USAGE TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    private void createUsageTab() {
+        JTextPane  usageTextArea = new JTextPane();
+        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
+        usageTextArea.setContentType("text/html");
+        usageTextArea.setText(usage());
+        usageTextArea.setEditable(false);
+        usageTextArea.setCaretPosition(0);
+
+        JScrollPane textScrollPane = new JScrollPane(usageTextArea);
+        textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        add(textScrollPane, "<html><div style='text-align: center;'>U<br>s<br>a<br>g<br>e</div></html>");
     }
+    
+    private String usage() {
+        ResourceBundle bundle;
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.logview");
+        return bundle.getString("usage"); 
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // WORK FUNCTIONS
+    //////////////////////////////////////////////////////////////////////////////////////
     
     private void addXYSeries(TableModel model, int column, String name, Color color) {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -584,35 +655,13 @@ public class LogView extends JTabbedPane implements ActionListener {
 		}
     }
     
-
-    //////////////////////////////////////////////////////////////////////////////////////
-    // CREATE USAGE TAB
-    //////////////////////////////////////////////////////////////////////////////////////
-    
-    private void createUsageTab() {
-        JTextPane  usageTextArea = new JTextPane();
-        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
-        usageTextArea.setContentType("text/html");
-        usageTextArea.setText(usage());
-        usageTextArea.setEditable(false);
-        usageTextArea.setCaretPosition(0);
-
-        JScrollPane textScrollPane = new JScrollPane(usageTextArea);
-        textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        add(textScrollPane, "<html><div style='text-align: center;'>U<br>s<br>a<br>g<br>e</div></html>");
+    private void sortAscending(int column) {
+    	logDataTable.sortByColumn(column, true) ;
     }
     
-    private String usage() {
-        ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.logview");
-        return bundle.getString("usage"); 
+    private void sortDescending(int column) {
+    	logDataTable.sortByColumn(column, false) ;
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////
-    // WORK FUNCTIONS
-    //////////////////////////////////////////////////////////////////////////////////////
 
 	private void loadLogFile() {
 		JFileChooser fileChooser = new JFileChooser();
@@ -702,7 +751,6 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	logDataTable.doFind();
 	    else if (e.getSource() == replaceButton)
 	    	logDataTable.doFindAndReplace();
-		
 	    else if (e.getSource() == filterButton ) {
 	    	String filterString = filterText.getText();
 	    	if (filterString != null && !"".equals(filterString)) {

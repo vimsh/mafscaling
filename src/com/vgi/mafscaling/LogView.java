@@ -246,29 +246,34 @@ public class LogView extends JTabbedPane implements ActionListener {
     		header.addMouseListener(new MouseAdapter() {
     			@Override
     			public void mouseClicked(MouseEvent e) {
-    				JTable table = ((JTableHeader) e.getSource()).getTable();
-    				TableColumnModel columnModel = table.getColumnModel();
-    				int viewColumn = columnModel.getColumnIndexAtX(e.getX());
-    				int modelColumn = table.convertColumnIndexToModel(viewColumn);
-    				if (colId != modelColumn)
-    					return;
-    				if (SwingUtilities.isLeftMouseButton(e)) {
-	    				check.setSelected(!check.isSelected());
-	    				if (check.isSelected()) {
-	    					defaultColor = check.getBackground();
-	    					check.setBackground(selectedColor);
-	    					TableModel model = table.getModel();
-	    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), selectedColor);
+    				try {
+	    				JTable table = ((JTableHeader) e.getSource()).getTable();
+	    				TableColumnModel columnModel = table.getColumnModel();
+	    				int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+	    				int modelColumn = table.convertColumnIndexToModel(viewColumn);
+	    				if (colId != modelColumn)
+	    					return;
+	    				if (SwingUtilities.isLeftMouseButton(e)) {
+		    				check.setSelected(!check.isSelected());
+		    				if (check.isSelected()) {
+		    					defaultColor = check.getBackground();
+		    					check.setBackground(selectedColor);
+		    					TableModel model = table.getModel();
+		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), selectedColor);
+		    				}
+		    				else {
+		    					check.setBackground(defaultColor);
+		    					removeXYSeries(colId);
+		    				}
+							((JTableHeader) e.getSource()).repaint();
 	    				}
-	    				else {
-	    					check.setBackground(defaultColor);
-	    					removeXYSeries(colId);
+	    				else if (SwingUtilities.isRightMouseButton(e)) {
+	    					SortingPopUp menu = new SortingPopUp(colId);
+	    					menu.show(e.getComponent(), e.getX(), e.getY());
 	    				}
-						((JTableHeader) e.getSource()).repaint();
     				}
-    				else if (SwingUtilities.isRightMouseButton(e)) {
-    					SortingPopUp menu = new SortingPopUp(colId);
-    					menu.show(e.getComponent(), e.getX(), e.getY());
+    				catch (Exception ex) {
+    		    		ex.printStackTrace();
     				}
     			}
     		});
@@ -300,7 +305,8 @@ public class LogView extends JTabbedPane implements ActionListener {
     private JComboBox<String> selectionCombo;
     private JComboBox<String> compareCombo;
     private JTextField  filterText;
-    private JButton filterButton ;
+    private JButton filterButton;
+    private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
 
 	public LogView(int tabPlacement) {
         super(tabPlacement);
@@ -527,7 +533,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         				int col = -1;
         				RectangleAnchor rectangleAnchor = null;
         				TextAnchor textAnchor = null;
-        		        if (rpmPlotRenderer.isSeriesVisible(0)) {
+        		        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0) && x >= 0 && rpmDataset.getSeries(0).getItemCount() > (int)x) {
         		        	if (x < (rpmDataset.getSeries(0).getItemCount() / 2)) {
 	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
 	        		        	textAnchor = TextAnchor.TOP_LEFT;
@@ -541,7 +547,7 @@ public class LogView extends JTabbedPane implements ActionListener {
             				xMarker.setLabelAnchor(rectangleAnchor);
             				xMarker.setLabelTextAnchor(textAnchor);
             				xMarker.setPaint(Color.WHITE);
-            				xMarker.setLabelFont(new Font("Arial", Font.BOLD, 11));
+            				xMarker.setLabelFont(curveLabelFont);
             				xMarker.setLabelPaint(rpmPlotRenderer.getSeriesPaint(0));
             				xMarker.setLabel(rpmDataset.getSeries(0).getDescription() + ": " + rpmDataset.getSeries(0).getY((int)x));
             				xMarker.setLabelOffset(new RectangleInsets(2, 5, 2, 5));
@@ -550,7 +556,8 @@ public class LogView extends JTabbedPane implements ActionListener {
         		        }
         		        for (int i = 0; i < dataset.getSeriesCount(); ++i) {
         		        	if (rectangleAnchor == null) {
-            		        	if (x < (rpmDataset.getSeries(i).getItemCount() / 2)) {
+            		        	if ((rpmDataset.getSeriesCount() > 0 && x < (rpmDataset.getSeries(0).getItemCount() / 2)) ||
+            		        		x < (dataset.getSeries(0).getItemCount() / 2)) {
     	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
     	        		        	textAnchor = TextAnchor.TOP_LEFT;
             		        	}
@@ -559,17 +566,17 @@ public class LogView extends JTabbedPane implements ActionListener {
     	        		        	textAnchor = TextAnchor.TOP_RIGHT;
             		        	}
         		        	}
-	        		        if (plotRenderer.isSeriesVisible(i)) {
+	        		        if (plotRenderer.isSeriesVisible(i) && x >= 0 && dataset.getSeries(i).getItemCount() > (int)x) {
 	        		        	if (col == -1)
 	        		        		col = i;
 	            		        Marker xMarker = new ValueMarker(x);
 	            				xMarker.setLabelAnchor(rectangleAnchor);
 	            				xMarker.setLabelTextAnchor(textAnchor);
 	            				xMarker.setPaint(Color.WHITE);
-	            				xMarker.setLabelFont(new Font("Arial", Font.BOLD, 11));
+	            				xMarker.setLabelFont(curveLabelFont);
 		        				xMarker.setLabelPaint(plotRenderer.getSeriesPaint(i));
 		        				xMarker.setLabel(dataset.getSeries(i).getDescription() + ": " + dataset.getSeries(i).getY((int)x));
-	            				xMarker.setLabelOffset(new RectangleInsets(2 + offset, 5, 2, 5));
+	            				xMarker.setLabelOffset(new RectangleInsets(2 + offset, 5, 2, 5));	            				
 	            				offset += 20;
 		        				plot.addDomainMarker(xMarker);
 	        		        }
@@ -581,6 +588,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         		        }
         			}
         			catch (Exception e) {
+        	    		e.printStackTrace();
         			}
     			}
 				@Override
@@ -709,7 +717,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 				plotRenderer.setSeriesShapesVisible(i, false);
 				plotRenderer.setSeriesVisible(i, false);
 				selectionCombo.addItem(colName);
-				if (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*")) {
+				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))) {
 					rpmDataset.addSeries(series);
 //					rpmPlotRenderer.setSeriesStroke(0, lineStroke);
 					rpmPlotRenderer.setSeriesShapesVisible(0, false);

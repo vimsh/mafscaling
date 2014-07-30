@@ -67,7 +67,7 @@ public class Config {
 	}
 	
 	public static Dimension getCompWindowSize() {
-		return new Dimension(Integer.parseInt(props.getProperty("CompareWindowWidth", "300")), Integer.parseInt(props.getProperty("WindowHeight", "140")));
+		return new Dimension(Integer.parseInt(props.getProperty("CompareWindowWidth", "300")), Integer.parseInt(props.getProperty("CompareWindowHeight", "300")));
 	}
 	
 	public static void setCompWindowSize(Dimension d) {

@@ -941,7 +941,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
             TreeMap<Integer, ArrayList<Double>> result = new TreeMap<Integer, ArrayList<Double>>();
             if (!getMafTableData(voltArray, gsArray))
                 return;
-            if (!sortRunData(result))
+            if (!sortRunData(result) || result.isEmpty())
                 return;
             calculateCorrectedGS(result);
             setCorrectedMafData();
@@ -1461,7 +1461,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         }
     }
     
-    private boolean getColumnsFilters(String[] elements) {
+    private boolean getColumnsFilters(String[] elements, boolean isPolSet) {
     	boolean ret = true;
         ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
         String logThtlAngleColName = Config.getThrottleAngleColumnName();
@@ -1487,7 +1487,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         if (logAfrColIdx == -1)          { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
         if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
         if (logLoadColIdx == -1)         { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
-        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME);  ret = false; }
+        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME);  if (!isPolSet) ret = false; }
         wotPoint = Config.getWotStationaryPointValue();
         minMafV = Config.getMafVMinimumValue();
         afrErrPrct = Config.getWidebandAfrErrorPercentValue();
@@ -1504,7 +1504,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
             String line = br.readLine();
             if (line != null) {
                 String [] elements = line.split(",", -1);
-                getColumnsFilters(elements);
+                getColumnsFilters(elements, false);
 
                 boolean resetColumns = false;
                 if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
@@ -1516,7 +1516,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
                 if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
                     	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !polfTable.isSet())) {
                 	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.OPEN_LOOP, polfTable.isSet());
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, polfTable.isSet()))
                 		return;
                 }
                 

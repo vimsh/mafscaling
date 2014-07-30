@@ -18,13 +18,16 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -46,15 +49,37 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import org.apache.log4j.Logger;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.labels.StandardXYSeriesLabelGenerator;
+import org.jfree.chart.labels.StandardXYToolTipGenerator;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYSplineRenderer;
+import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleEdge;
+import org.jfree.util.ShapeUtilities;
 
 public class MafCompare extends JFrame {
 	private static final long serialVersionUID = 3380903505904186441L;
 	private static final Logger logger = Logger.getLogger(MafCompare.class);
     private static final String Title = "MAF Compare / Modify";
-    private static final int WindowHeight = 145;
+    private static final String XAxisName = "MAF Sensor (Voltage)";
+    private static final String YAxisName = "Mass Airflow (g/s)";
+    private static final String origMaf = "Original";
+    private static final String newMaf = "New";
     private static final int RowHeight = 17;
     private static final int ColumnWidth = 50;
     private static final int MafTableColumnCount = 50;
+
+    private ChartPanel chartPanel = null;
+    private final XYSeries origMafData = new XYSeries(origMaf);
+    private final XYSeries newMafData = new XYSeries(newMaf);
     private ExcelAdapter excelAdapter = new ExcelAdapter();
     private ExcelAdapter compExcelAdapter = null;
     private TableCellListener compMafCellListener = null;
@@ -102,8 +127,6 @@ public class MafCompare extends JFrame {
 	        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 	        setSize(Config.getCompWindowSize());
 	        setLocation(Config.getCompWindowLocation());
-	        setMaximumSize(new Dimension(1600, WindowHeight));
-	        setMinimumSize(new Dimension(300, WindowHeight));
 	        setLocationRelativeTo(null);
 	        setVisible(false);
 	        addWindowListener(new WindowAdapter() {
@@ -113,19 +136,21 @@ public class MafCompare extends JFrame {
 	        		Utils.clearTable(compMafTable);
 	                Config.setCompWindowSize(getSize());
 	                Config.setCompWindowLocation(getLocation());
+	                origMafData.clear();
+	                newMafData.clear();
 	        	}
 	        });
 	
 	        JPanel dataPanel = new JPanel();
 	        GridBagLayout gbl_dataPanel = new GridBagLayout();
 	        gbl_dataPanel.columnWidths = new int[] {0, 0, 0};
-	        gbl_dataPanel.rowHeights = new int[] {RowHeight, RowHeight, RowHeight, RowHeight, RowHeight};
+	        gbl_dataPanel.rowHeights = new int[] {RowHeight, RowHeight, RowHeight, RowHeight, RowHeight, 0};
 	        gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 0.0};
-	        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0};
+	        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
 	        dataPanel.setLayout(gbl_dataPanel);
 	        getContentPane().add(dataPanel);
 	
-	        JLabel origLabel = new JLabel("Original");
+	        JLabel origLabel = new JLabel(origMaf);
 	        GridBagConstraints gbc_origLabel = new GridBagConstraints();
 	        gbc_origLabel.anchor = GridBagConstraints.PAGE_START;
 	        gbc_origLabel.insets = new Insets(1, 1, 1, 5);
@@ -136,7 +161,7 @@ public class MafCompare extends JFrame {
 	        gbc_origLabel.gridheight = 2;
 	        dataPanel.add(origLabel, gbc_origLabel);
 	        
-	        JLabel newLabel = new JLabel("New");
+	        JLabel newLabel = new JLabel(newMaf);
 	        GridBagConstraints gbc_newLabel = new GridBagConstraints();
 	        gbc_newLabel.anchor = GridBagConstraints.PAGE_START;
 	        gbc_newLabel.insets = new Insets(1, 1, 1, 5);
@@ -222,7 +247,6 @@ public class MafCompare extends JFrame {
 	        mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 	        GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
 	        gbc_mafScrollPane.weightx = 1.0;
-	        gbc_mafScrollPane.weighty = 1.0;
 	        gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
 	        gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
 	        gbc_mafScrollPane.gridx = 2;
@@ -302,14 +326,22 @@ public class MafCompare extends JFrame {
 	                	int colCount = origMafTable.getColumnCount();
 	                	Utils.ensureColumnCount(colCount, newMafTable);
 	                	Utils.ensureColumnCount(colCount, compMafTable);
+	                	origMafData.clear();
+	                	String origY, origX, newY;
 	                	for (int i = 0; i < colCount; ++i) {
-	                		if (Pattern.matches(Utils.fpRegex, origMafTable.getValueAt(1, i).toString()) &&
-	                			Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(1, i).toString())) {
-	                			compMafTable.setValueAt(((Double.valueOf(newMafTable.getValueAt(1, i).toString()) / Double.valueOf(origMafTable.getValueAt(1, i).toString())) - 1.0) * 100.0, 0, i);
+	                		origY = origMafTable.getValueAt(1, i).toString();
+	                		if (Pattern.matches(Utils.fpRegex, origY)) {
+	                			origX = origMafTable.getValueAt(0, i).toString();
+	                			if (Pattern.matches(Utils.fpRegex, origX))
+	                				origMafData.add(Double.valueOf(origX), Double.valueOf(origY), false);
+	                			newY = newMafTable.getValueAt(1, i).toString();
+	                			if (Pattern.matches(Utils.fpRegex, newY))
+	                				compMafTable.setValueAt(((Double.valueOf(newY) / Double.valueOf(origY)) - 1.0) * 100.0, 0, i);
 	                		}
 	                		else
 	                			break;
 	                	}
+            			origMafData.fireSeriesChanged();
 	                }
 	            }
 	        };
@@ -320,14 +352,22 @@ public class MafCompare extends JFrame {
 	                	int colCount = newMafTable.getColumnCount();
 	                	Utils.ensureColumnCount(colCount, origMafTable);
 	                	Utils.ensureColumnCount(colCount, compMafTable);
+	                	newMafData.clear();
+	                	String newY, newX, origY;
 	                	for (int i = 0; i < colCount; ++i) {
-	                		if (Pattern.matches(Utils.fpRegex, newMafTable.getValueAt(1, i).toString()) &&
-	                			Pattern.matches(Utils.fpRegex, origMafTable.getValueAt(1, i).toString())) {
-	                			compMafTable.setValueAt(((Double.valueOf(newMafTable.getValueAt(1, i).toString()) / Double.valueOf(origMafTable.getValueAt(1, i).toString())) - 1.0) * 100.0, 0, i);
+	                		newY = newMafTable.getValueAt(1, i).toString();
+	                		if (Pattern.matches(Utils.fpRegex, newY)) {
+	                			newX = newMafTable.getValueAt(0, i).toString();
+	                			if (Pattern.matches(Utils.fpRegex, newX))
+	                				newMafData.add(Double.valueOf(newX), Double.valueOf(newY), false);
+	                			origY = origMafTable.getValueAt(1, i).toString();
+	                			if (Pattern.matches(Utils.fpRegex, origY))
+	                				compMafTable.setValueAt(((Double.valueOf(newY) / Double.valueOf(origY)) - 1.0) * 100.0, 0, i);
 	                		}
 	                		else
 	                			break;
 	                	}
+	                	newMafData.fireSeriesChanged();
 	                }
 	            }
 	        };
@@ -351,6 +391,82 @@ public class MafCompare extends JFrame {
 	        };
 	        
 	        setCompMafCellListener(new TableCellListener(compMafTable, action));
+	        
+	        // CHART
+	        
+	        JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
+	        chart.setBorderVisible(true);
+			chartPanel = new ChartPanel(chart, true, true, true, true, true);
+			chartPanel.setAutoscrolls(true);
+	        
+	        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
+	        gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
+	        gbl_chartPanel.fill = GridBagConstraints.BOTH;
+	        gbl_chartPanel.insets = new Insets(1, 1, 1, 1);
+	        gbl_chartPanel.weightx = 1.0;
+	        gbl_chartPanel.weighty = 1.0;
+	        gbl_chartPanel.gridx = 0;
+	        gbl_chartPanel.gridy = 5;
+	        gbl_chartPanel.gridheight = 1;
+	        gbl_chartPanel.gridwidth = 3;
+	        dataPanel.add(chartPanel, gbl_chartPanel);
+
+	        XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
+	        lineRenderer.setUseFillPaint(true);
+	        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+	                StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new DecimalFormat("0.00"), new DecimalFormat("0.00"))); 
+
+	        Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
+	        lineRenderer.setSeriesStroke(0, stroke);
+	        lineRenderer.setSeriesStroke(1, stroke);
+	        lineRenderer.setSeriesPaint(0, new Color(201, 0, 0));
+	        lineRenderer.setSeriesPaint(1, new Color(0, 0, 255));
+	        lineRenderer.setSeriesShape(0, ShapeUtilities.createDiamond((float) 2.5));
+	        lineRenderer.setSeriesShape(1, ShapeUtilities.createDownTriangle((float) 2.5));
+	        lineRenderer.setLegendItemLabelGenerator(
+	        		new StandardXYSeriesLabelGenerator() {
+						private static final long serialVersionUID = -4045338273187150888L;
+						public String generateLabel(XYDataset dataset, int series) {
+							XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
+							return xys.getDescription();
+						}
+	        		}
+	        );
+
+	        NumberAxis mafvDomain = new NumberAxis(XAxisName);
+	        mafvDomain.setAutoRangeIncludesZero(false);
+	        mafvDomain.setAutoRange(true);
+	        mafvDomain.setAutoRangeStickyZero(false);
+	        NumberAxis mafgsRange = new NumberAxis(YAxisName);
+	        mafgsRange.setAutoRangeIncludesZero(false);
+	        mafgsRange.setAutoRange(true);
+	        mafgsRange.setAutoRangeStickyZero(false);
+	        
+	        XYSeriesCollection lineDataset = new XYSeriesCollection();
+	        origMafData.setDescription(origMaf);
+	        newMafData.setDescription(newMaf);	        
+	        lineDataset.addSeries(origMafData);
+	        lineDataset.addSeries(newMafData);
+	        
+	        XYPlot plot = chart.getXYPlot();
+	        plot.setRangePannable(true);
+	        plot.setDomainPannable(true);
+	        plot.setDomainGridlinePaint(Color.DARK_GRAY);
+	        plot.setRangeGridlinePaint(Color.DARK_GRAY);
+	        plot.setBackgroundPaint(new Color(224, 224, 224));
+
+	        plot.setDataset(0, lineDataset);
+	        plot.setRenderer(0, lineRenderer);
+	        plot.setDomainAxis(0, mafvDomain);
+	        plot.setRangeAxis(0, mafgsRange);
+	        plot.mapDatasetToDomainAxis(0, 0);
+	        plot.mapDatasetToRangeAxis(0, 0);
+	        
+	        LegendTitle legend = new LegendTitle(plot.getRenderer()); 
+	        legend.setItemFont(new Font("Arial", 0, 10));
+	        legend.setPosition(RectangleEdge.TOP);
+	        chart.addLegend(legend);
+
     	}
     	catch (Exception e) {
             logger.error(e);

@@ -529,12 +529,13 @@ public class LogView extends JTabbedPane implements ActionListener {
                         Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
         		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
                         double x = plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
+                        double midX = (dataArea.getMaxX() - dataArea.getMinX()) / 2;
         				int offset = 0;
         				int col = -1;
         				RectangleAnchor rectangleAnchor = null;
         				TextAnchor textAnchor = null;
         		        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0) && x >= 0 && rpmDataset.getSeries(0).getItemCount() > (int)x) {
-        		        	if (x < (rpmDataset.getSeries(0).getItemCount() / 2)) {
+        		        	if (p.getX() < midX) {
 	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
 	        		        	textAnchor = TextAnchor.TOP_LEFT;
         		        	}
@@ -556,8 +557,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         		        }
         		        for (int i = 0; i < dataset.getSeriesCount(); ++i) {
         		        	if (rectangleAnchor == null) {
-            		        	if ((rpmDataset.getSeriesCount() > 0 && x < (rpmDataset.getSeries(0).getItemCount() / 2)) ||
-            		        		x < (dataset.getSeries(0).getItemCount() / 2)) {
+            		        	if (p.getX() < midX) {
     	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
     	        		        	textAnchor = TextAnchor.TOP_LEFT;
             		        	}
@@ -736,6 +736,9 @@ public class LogView extends JTabbedPane implements ActionListener {
 				}
 				series.fireSeriesChanged();
 			}
+			if (logDataTable.getControlPanel().getComponentCount() > 7)
+				logDataTable.getControlPanel().remove(7);
+			logDataTable.getControlPanel().add(new JLabel("   [" + file.getName() + "]"));
         }
         catch (Exception ex) {
     		ex.printStackTrace();

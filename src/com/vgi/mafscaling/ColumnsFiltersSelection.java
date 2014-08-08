@@ -69,10 +69,13 @@ public class ColumnsFiltersSelection implements ActionListener {
     private static final String minAfrLabelText = "AFR Minimum";
     private static final String maxDvdtLabelText = "dV/dt Maximum";
     private static final String minEngineLoadLabelText = "Engine Load Minimum";
-    private static final String wotStationaryLabelText = "WOT stationary point (Angle %)";
-    private static final String afrErrorLabelText = "AFR Error +/- % value";
-    private static final String iatOffsetLabelText = "IAT variance from lowest";
-    private static final String trimsVarianceLabelText = "Fuel Trims +/- variance";
+    private static final String wotStationaryLabelText = "WOT Stationary Point (Angle %)";
+    private static final String afrErrorLabelText = "AFR Error +/- % Value";
+    private static final String iatOffsetLabelText = "IAT Variance from Lowest";
+    private static final String trimsVarianceLabelText = "Fuel Trims +/- Variance";
+    private static final String minWOTEnrichmentLabelText = "Min WOT Enrichment";
+    private static final String wbo2RowOffsetLabelText = "Wideband AFR Row Offset";
+    private static final String olClTransitionSkipRowsLabelText = "OL/CL Transition - Number of Rows to Skip";
 	private TaskTab taskTab;
 	private boolean isPolfTableSet;
 	private JTable columnsTable = null;
@@ -93,6 +96,9 @@ public class ColumnsFiltersSelection implements ActionListener {
 	private JFormattedTextField maxMafVFilter = null;
 	private JFormattedTextField minEngineLoadFilter = null;
 	private JFormattedTextField afrErrorFilter = null;
+	private JFormattedTextField wotEnrichmentField = null;
+	private JFormattedTextField wbo2RowOffsetField = null;
+	private JFormattedTextField olClTransitionSkipRowsField = null;
 	private JFormattedTextField maxAfrFilter = null;
 	private JFormattedTextField minAfrFilter = null;
 	private JFormattedTextField trimsVarianceFilter = null;
@@ -112,7 +118,7 @@ public class ColumnsFiltersSelection implements ActionListener {
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0};
         gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         selectionPanel.setLayout(gbl_dataPanel);
         
         Dimension minTextDimension = new Dimension(200, 16);
@@ -122,6 +128,8 @@ public class ColumnsFiltersSelection implements ActionListener {
         Insets insets3 = new Insets(3, 3, 3, 3);
         NumberFormat doubleFmt = NumberFormat.getNumberInstance();
         doubleFmt.setMaximumFractionDigits(2);
+        NumberFormat intFmt = NumberFormat.getNumberInstance();
+        intFmt.setMaximumFractionDigits(0);
         ImageIcon arrowImage = new ImageIcon(getClass().getResource("/arrow.jpg"));
         
         int row = 0;
@@ -797,6 +805,102 @@ public class ColumnsFiltersSelection implements ActionListener {
 	        gbc_afrErrorFilter.gridx = 1;
 	        gbc_afrErrorFilter.gridy = row;
 	        selectionPanel.add(afrErrorFilter, gbc_afrErrorFilter);
+	        
+            row += 1;
+            // Minimum WOT Enrichment Note
+            JLabel wotEnrichmentNoteLabel = new JLabel("Minimum Primary Open Loop Enrichment (Throttle) - WOT override for POL Fueling table. Set above 16 if you don't have this table.");
+            wotEnrichmentNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_wotEnrichmentNoteLabel = new GridBagConstraints();
+            gbc_wotEnrichmentNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_wotEnrichmentNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_wotEnrichmentNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_wotEnrichmentNoteLabel.gridx = 0;
+            gbc_wotEnrichmentNoteLabel.gridy = row;
+            gbc_wotEnrichmentNoteLabel.gridwidth = 4;
+            selectionPanel.add(wotEnrichmentNoteLabel, gbc_wotEnrichmentNoteLabel);
+	        
+	        row += 1;
+	        JLabel wotEnrichmentLabel = new JLabel(minWOTEnrichmentLabelText);
+	        GridBagConstraints gbc_wotEnrichmentLabel = new GridBagConstraints();
+	        gbc_wotEnrichmentLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_wotEnrichmentLabel.insets = insets3;
+	        gbc_wotEnrichmentLabel.gridx = 0;
+	        gbc_wotEnrichmentLabel.gridy = row;
+	        selectionPanel.add(wotEnrichmentLabel, gbc_wotEnrichmentLabel);
+	        
+	        wotEnrichmentField = new JFormattedTextField(doubleFmt);
+	        wotEnrichmentField.setText(String.valueOf(Config.getWOTEnrichmentValue()));
+	        wotEnrichmentField.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_wotEnrichmentField = new GridBagConstraints();
+	        gbc_wotEnrichmentField.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_wotEnrichmentField.insets = insets3;
+	        gbc_wotEnrichmentField.gridx = 1;
+	        gbc_wotEnrichmentField.gridy = row;
+	        selectionPanel.add(wotEnrichmentField, gbc_wotEnrichmentField);
+	        
+            row += 1;
+            // Wide Band AFR row offset
+            JLabel wbo2RowOffsetNoteLabel = new JLabel("Delay between the ECU readings and the wideband O2 reading. Eg if correct WBO2 for row 1 is on row 2 then offset is 1.");
+            wbo2RowOffsetNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_wbo2RowOffsetNoteLabel = new GridBagConstraints();
+            gbc_wbo2RowOffsetNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_wbo2RowOffsetNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_wbo2RowOffsetNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_wbo2RowOffsetNoteLabel.gridx = 0;
+            gbc_wbo2RowOffsetNoteLabel.gridy = row;
+            gbc_wbo2RowOffsetNoteLabel.gridwidth = 4;
+            selectionPanel.add(wbo2RowOffsetNoteLabel, gbc_wbo2RowOffsetNoteLabel);
+	        
+	        row += 1;
+	        JLabel wbo2RowOffsetLabel = new JLabel(wbo2RowOffsetLabelText);
+	        GridBagConstraints gbc_wbo2RowOffsetLabel = new GridBagConstraints();
+	        gbc_wbo2RowOffsetLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_wbo2RowOffsetLabel.insets = insets3;
+	        gbc_wbo2RowOffsetLabel.gridx = 0;
+	        gbc_wbo2RowOffsetLabel.gridy = row;
+	        selectionPanel.add(wbo2RowOffsetLabel, gbc_wbo2RowOffsetLabel);
+	        
+	        wbo2RowOffsetField = new JFormattedTextField(intFmt);
+	        wbo2RowOffsetField.setText(String.valueOf(Config.getWBO2RowOffset()));
+	        wbo2RowOffsetField.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_wbo2RowOffsetField = new GridBagConstraints();
+	        gbc_wbo2RowOffsetField.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_wbo2RowOffsetField.insets = insets3;
+	        gbc_wbo2RowOffsetField.gridx = 1;
+	        gbc_wbo2RowOffsetField.gridy = row;
+	        selectionPanel.add(wbo2RowOffsetField, gbc_wbo2RowOffsetField);
+	        
+            row += 1;
+            // OL/CL Transition skip rows
+            JLabel olClTransitionSkipRowsNoteLabel = new JLabel("Skip the first and last N rows on Open Loop / Closed Loop transition.");
+            olClTransitionSkipRowsNoteLabel.setForeground(Color.BLUE);
+            GridBagConstraints gbc_olClTransitionSkipRowsNoteLabel = new GridBagConstraints();
+            gbc_olClTransitionSkipRowsNoteLabel.anchor = GridBagConstraints.WEST;
+            gbc_olClTransitionSkipRowsNoteLabel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_olClTransitionSkipRowsNoteLabel.insets = new Insets(5, 10, 5, 5);
+            gbc_olClTransitionSkipRowsNoteLabel.gridx = 0;
+            gbc_olClTransitionSkipRowsNoteLabel.gridy = row;
+            gbc_olClTransitionSkipRowsNoteLabel.gridwidth = 4;
+            selectionPanel.add(olClTransitionSkipRowsNoteLabel, gbc_olClTransitionSkipRowsNoteLabel);
+	        
+	        row += 1;
+	        JLabel olClTransitionSkipRowsLabel = new JLabel(olClTransitionSkipRowsLabelText);
+	        GridBagConstraints gbc_olClTransitionSkipRowsLabel = new GridBagConstraints();
+	        gbc_olClTransitionSkipRowsLabel.anchor = GridBagConstraints.NORTHEAST;
+	        gbc_olClTransitionSkipRowsLabel.insets = insets3;
+	        gbc_olClTransitionSkipRowsLabel.gridx = 0;
+	        gbc_olClTransitionSkipRowsLabel.gridy = row;
+	        selectionPanel.add(olClTransitionSkipRowsLabel, gbc_olClTransitionSkipRowsLabel);
+	        
+	        olClTransitionSkipRowsField = new JFormattedTextField(intFmt);
+	        olClTransitionSkipRowsField.setText(String.valueOf(Config.getOLCLTransitionSkipRows()));
+	        olClTransitionSkipRowsField.setMinimumSize(minFilterDimension);
+	        GridBagConstraints gbc_olClTransitionSkipRowsField = new GridBagConstraints();
+	        gbc_olClTransitionSkipRowsField.anchor = GridBagConstraints.NORTHWEST;
+	        gbc_olClTransitionSkipRowsField.insets = insets3;
+	        gbc_olClTransitionSkipRowsField.gridx = 1;
+	        gbc_olClTransitionSkipRowsField.gridy = row;
+	        selectionPanel.add(olClTransitionSkipRowsField, gbc_olClTransitionSkipRowsField);
         }
         else if (taskTab == TaskTab.CLOSED_LOOP) {
             row += 1;
@@ -1121,9 +1225,9 @@ public class ColumnsFiltersSelection implements ActionListener {
         }
         
         // Set window params
-        selectionPanel.setPreferredSize(new Dimension(650, (taskTab == TaskTab.CLOSED_LOOP ? 600 : 400)));
+        selectionPanel.setPreferredSize(new Dimension(650, (taskTab == TaskTab.CLOSED_LOOP? 600 : (taskTab == TaskTab.OPEN_LOOP? 500 : 400))));
         JScrollPane pane = new JScrollPane(selectionPanel);
-        pane.setPreferredSize(new Dimension(670, 420));
+        pane.setPreferredSize(new Dimension(670, 540));
         pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         pane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         JComponent[] inputs = new JComponent[] { pane };
@@ -1247,6 +1351,12 @@ public class ColumnsFiltersSelection implements ActionListener {
 	    	Config.setWotStationaryPointValue(Integer.valueOf(wotStationaryPointFilter.getValue().toString()));
 	    	// Afr Error filter
 	    	Config.setWidebandAfrErrorPercentValue(Double.valueOf(afrErrorFilter.getText()));
+	    	// WOT Enrichment
+	    	Config.setWOTEnrichmentValue(Double.valueOf(wotEnrichmentField.getText()));
+	    	// WBO2 Row Offset
+	    	Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
+	    	// OL/CL Transition Skip Rows
+	    	Config.setOLCLTransitionSkipRows(Integer.valueOf(olClTransitionSkipRowsField.getText()));
     	}
     	else if (taskTab == TaskTab.CLOSED_LOOP) {
 	    	// Stock AFR

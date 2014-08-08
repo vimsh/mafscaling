@@ -212,6 +212,22 @@ public class Config {
 		props.setProperty("WotStationaryPoint", Integer.toString(v));
 	}
 
+	public static int getWBO2RowOffset() {
+		return Integer.parseInt(props.getProperty("WBO2RowOffset", "0"));
+	}
+
+	public static void setWBO2RowOffset(int v) {
+		props.setProperty("WBO2RowOffset", Integer.toString(v));
+	}
+
+	public static int getOLCLTransitionSkipRows() {
+		return Integer.parseInt(props.getProperty("OLCLTransitionSkipRows", "0"));
+	}
+
+	public static void setOLCLTransitionSkipRows(int v) {
+		props.setProperty("OLCLTransitionSkipRows", Integer.toString(v));
+	}
+
 	public static double getMafVMaximumValue() {
 		return Double.parseDouble(props.getProperty("MafVMaximum", "5"));
 	}
@@ -238,6 +254,14 @@ public class Config {
 
 	public static double getWidebandAfrErrorPercentValue() {
 		return Double.parseDouble(props.getProperty("WidebandAfrErrorPercent", "200"));
+	}
+	
+	public static void setWOTEnrichmentValue(double v) {
+		props.setProperty("WOTEnrichment", Double.toString(v));
+	}
+	
+	public static double getWOTEnrichmentValue() {
+		return Double.parseDouble(props.getProperty("WOTEnrichment", "16"));
 	}
 
 	public static void setMafVMinimumValue(double v) {

@@ -94,6 +94,7 @@ import quick.dbtable.Filter;
 public class LogView extends JTabbedPane implements ActionListener {
 	private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(LogView.class);
+    private final JFileChooser fileChooser = new JFileChooser();
     
     public class TableSkin extends Skin {
 		private static final long serialVersionUID = 8263328522848779295L;
@@ -323,6 +324,8 @@ public class LogView extends JTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
+        fileChooser.setCurrentDirectory(new File("."));
+        
         JPanel dataPanel = new JPanel(new BorderLayout());
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
         
@@ -672,8 +675,6 @@ public class LogView extends JTabbedPane implements ActionListener {
     }
 
 	private void loadLogFile() {
-		JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(new File("."));
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();

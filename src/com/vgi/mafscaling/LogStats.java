@@ -79,7 +79,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private static final int DataTableRowCount = 50;
     private static final int DataTableColumnCount = 25;
 
-    private JFileChooser fileChooser = new JFileChooser();
+    private final JFileChooser fileChooser = new JFileChooser();
     private File logFile = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
@@ -112,7 +112,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
     }
 
     private void initialize() {
-        fileChooser.setCurrentDirectory(new File("."));
         excelAdapter = new ExcelAdapter();
         xAxisArray = new ArrayList<Double>();
         yAxisArray = new ArrayList<Double>();
@@ -126,6 +125,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
+        fileChooser.setCurrentDirectory(new File("."));
+        
         JPanel dataPanel = new JPanel();
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
         GridBagLayout gbl_dataPanel = new GridBagLayout();

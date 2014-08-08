@@ -206,6 +206,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
+    	fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setCurrentDirectory(new File("."));
         
         JPanel dataPanel = new JPanel();
@@ -1918,46 +1919,48 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     
     private void loadLogFile() {
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;        
-        File file = fileChooser.getSelectedFile();
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            String line = br.readLine();
-            if (line != null) {
-                String [] elements = line.split(",", -1);
-                getColumnsFilters(elements);
+            return;
+        boolean isPolSet = polfTable.isSet();
+        File[] files = fileChooser.getSelectedFiles();
+        for (File file : files) {
+	        BufferedReader br = null;
+	        try {
+	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+	            String line = br.readLine();
+	            if (line != null) {
+	                String [] elements = line.split(",", -1);
+	                getColumnsFilters(elements);
+	
+	                boolean resetColumns = false;
+	                if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
+	                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
+	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	                    	resetColumns = true;
+	                }
+	
+	                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
+	                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
+	                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.CLOSED_LOOP, isPolSet);
+	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+	                		return;
+	                }
+	                
+	                String[] flds;
+	                line = br.readLine();
+	                int clol;
+	                int i = 2;
+	                int row = getLogTableEmptyRow();
+	                double afr = 0;
+	                double dVdt = 0;
+	                double prevTime = 0;
+	                double time = 0;
+	                double timeMultiplier = 1.0;
+	                double pmafv = 0;
+	                double mafv = 0;
+	                double load;
+	                double iat;
+	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
-                boolean resetColumns = false;
-                if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
-                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
-                    	resetColumns = true;
-                }
-
-                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.CLOSED_LOOP, polfTable.isSet());
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-                		return;
-                }
-                
-                String[] flds;
-                line = br.readLine();
-                int clol;
-                int i = 2;
-                int row = getLogTableEmptyRow();
-                double afr = 0;
-                double dVdt = 0;
-                double prevTime = 0;
-                double time = 0;
-                double timeMultiplier = 1.0;
-                double pmafv = 0;
-                double mafv = 0;
-                double load;
-                double iat;
-                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-                try {
 	                while (line != null) {
 	                    flds = line.split(",", -1);
 	                    try {
@@ -2004,25 +2007,23 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
 	                    line = br.readLine();
 	                    i += 1;
 	                }
-                }
-                finally {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                }
-            }
-        }
-        catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-        }
-        finally {
-        	if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {
-                    logger.error(e);
-                }
-        	}
+	            }
+	        }
+	        catch (Exception e) {
+	            logger.error(e);
+	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+	        }
+	        finally {
+	        	setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+	        	if (br != null) {
+	                try {
+	                    br.close();
+	                }
+	                catch (IOException e) {
+	                    logger.error(e);
+	                }
+	        	}
+	        }
         }
     }
     

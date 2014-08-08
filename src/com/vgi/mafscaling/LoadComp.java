@@ -154,6 +154,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
+    	fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setCurrentDirectory(new File("."));
         
         JPanel dataPanel = new JPanel();
@@ -634,132 +635,134 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     
     private void loadLogFile() {
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;        
-        File file = fileChooser.getSelectedFile();
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            String line = br.readLine();
-            if (line != null) {
-                String [] elements = line.split(",", -1);
-                getColumnsFilters(elements);
-
-                boolean resetColumns = false;
-                if (logTimeColIdx >=0 || logRpmColIdx >= 0 || logIatColIdx >= 0 || logAfLearningColIdx >= 0 || 
-                	logAfCorrectionColIdx >= 0 || logMpColIdx >= 0 || logMafvColIdx >= 0 ) {
-                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
-                    	resetColumns = true;
-                }
-
-                if (resetColumns || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMpColIdx < 0 ||
-                	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.LOAD_COMP, false);
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-                		return;
-                }
-                
-                String[] flds;
-                line = br.readLine();
-                int i = 2;
-                int row = getLogTableEmptyRow();
-                double trims;
-                double stft;
-                double ltft;
-                double dVdt = 0;
-                double prevTime = 0;
-                double time = 0;
-                double timeMultiplier = 1.0;
-                double pmafv = 0;
-                double mafv = 0;
-                double iat;
-                double rpm;
-                double minIat = Double.NaN;
-                clearChartData();
-                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-                try {
-	                while (line != null) {
-	                    flds = line.split(",", -1);
-	                    try {
-                        	iat = Double.valueOf(flds[logIatColIdx]);
-                        	if (Double.isNaN(minIat) || minIat > iat)
-                        		minIat = iat;
-                        	if ((minIat + iatMinOffset) >= iat) {
-		                        ltft = Double.valueOf(flds[logAfLearningColIdx]);
-		                        stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-		                        trims = ltft + stft;
-		                        if (trims >= -trimsVariance && trims <= trimsVariance) {
-		                        	// Calculate dV/dt
-	                            	prevTime = time;
-	                            	time = Double.valueOf(flds[logTimeColIdx]);
-	                            	if (timeMultiplier == 1.0 && (int)time - time < 0) {
-	                            		timeMultiplier = 1000.0;
-	                            		prevTime *= timeMultiplier;
-	                            	}
-	                        		time *= timeMultiplier;
-	                            	pmafv = mafv;
-	                            	mafv = Double.valueOf(flds[logMafvColIdx]);
-	                            	if ((time - prevTime) == 0.0)
-	                            		dVdt = 100.0;
-	                            	else
-	                            		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
-	                            	if (dVdt <= maxDvDt) {
-		                                Utils.ensureRowCount(row + 1, logDataTable);
-		                                rpm = Double.valueOf(flds[logRpmColIdx]);
-		                                logDataTable.setValueAt(time, row, 0);
-		                                logDataTable.setValueAt(rpm, row, 1);
-		                                logDataTable.setValueAt(iat, row, 2);
-		                                logDataTable.setValueAt(stft, row, 3);
-		                                logDataTable.setValueAt(ltft, row, 4);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 5);
-		                                logDataTable.setValueAt(mafv, row, 6);
-		                                logDataTable.setValueAt(trims, row, 7);
-		                                logDataTable.setValueAt(dVdt, row, 8);
-		                                trimArray.add(trims);
-		                                rpmArray.add(rpm);
-		                                timeArray.add(time);
-		                                iatArray.add(iat);
-		                                dvdtArray.add(dVdt);
-		                                row += 1;
-	                            	}
-		                        }
-                        	}
-	                    }
-	                    catch (NumberFormatException e) {
-	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
-	                    line = br.readLine();
-	                    i += 1;
+            return;
+        File[] files = fileChooser.getSelectedFiles();
+        for (File file : files) {
+	        BufferedReader br = null;
+	        try {
+	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+	            String line = br.readLine();
+	            if (line != null) {
+	                String [] elements = line.split(",", -1);
+	                getColumnsFilters(elements);
+	
+	                boolean resetColumns = false;
+	                if (logTimeColIdx >=0 || logRpmColIdx >= 0 || logIatColIdx >= 0 || logAfLearningColIdx >= 0 || 
+	                	logAfCorrectionColIdx >= 0 || logMpColIdx >= 0 || logMafvColIdx >= 0 ) {
+	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	                    	resetColumns = true;
 	                }
-	                String val;
-	                for (i = logDataTable.getRowCount() - 1; i >= 0; --i) {
-	                	val = logDataTable.getValueAt(i, 2).toString();
-	                	if (val.isEmpty() || (minIat + iatMinOffset) < Double.valueOf(val))
-	                		Utils.removeRow(i, logDataTable);
+	
+	                if (resetColumns || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMpColIdx < 0 ||
+	                	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
+	                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.LOAD_COMP, false);
+	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+	                		return;
 	                }
-	    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
-	    	        button.setSelected(true);
-	    	        plotDvdtData();
-                }
-                finally {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                }
-            }
-        }
-        catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-        }
-        finally {
-        	if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {
-                    logger.error(e);
-                }
-        	}
+	                
+	                String[] flds;
+	                line = br.readLine();
+	                int i = 2;
+	                int row = getLogTableEmptyRow();
+	                double trims;
+	                double stft;
+	                double ltft;
+	                double dVdt = 0;
+	                double prevTime = 0;
+	                double time = 0;
+	                double timeMultiplier = 1.0;
+	                double pmafv = 0;
+	                double mafv = 0;
+	                double iat;
+	                double rpm;
+	                double minIat = Double.NaN;
+	                clearChartData();
+	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+	                try {
+		                while (line != null) {
+		                    flds = line.split(",", -1);
+		                    try {
+	                        	iat = Double.valueOf(flds[logIatColIdx]);
+	                        	if (Double.isNaN(minIat) || minIat > iat)
+	                        		minIat = iat;
+	                        	if ((minIat + iatMinOffset) >= iat) {
+			                        ltft = Double.valueOf(flds[logAfLearningColIdx]);
+			                        stft = Double.valueOf(flds[logAfCorrectionColIdx]);
+			                        trims = ltft + stft;
+			                        if (trims >= -trimsVariance && trims <= trimsVariance) {
+			                        	// Calculate dV/dt
+		                            	prevTime = time;
+		                            	time = Double.valueOf(flds[logTimeColIdx]);
+		                            	if (timeMultiplier == 1.0 && (int)time - time < 0) {
+		                            		timeMultiplier = 1000.0;
+		                            		prevTime *= timeMultiplier;
+		                            	}
+		                        		time *= timeMultiplier;
+		                            	pmafv = mafv;
+		                            	mafv = Double.valueOf(flds[logMafvColIdx]);
+		                            	if ((time - prevTime) == 0.0)
+		                            		dVdt = 100.0;
+		                            	else
+		                            		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+		                            	if (dVdt <= maxDvDt) {
+			                                Utils.ensureRowCount(row + 1, logDataTable);
+			                                rpm = Double.valueOf(flds[logRpmColIdx]);
+			                                logDataTable.setValueAt(time, row, 0);
+			                                logDataTable.setValueAt(rpm, row, 1);
+			                                logDataTable.setValueAt(iat, row, 2);
+			                                logDataTable.setValueAt(stft, row, 3);
+			                                logDataTable.setValueAt(ltft, row, 4);
+			                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 5);
+			                                logDataTable.setValueAt(mafv, row, 6);
+			                                logDataTable.setValueAt(trims, row, 7);
+			                                logDataTable.setValueAt(dVdt, row, 8);
+			                                trimArray.add(trims);
+			                                rpmArray.add(rpm);
+			                                timeArray.add(time);
+			                                iatArray.add(iat);
+			                                dvdtArray.add(dVdt);
+			                                row += 1;
+		                            	}
+			                        }
+	                        	}
+		                    }
+		                    catch (NumberFormatException e) {
+		                        logger.error(e);
+		                        JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+		                        return;
+		                    }
+		                    line = br.readLine();
+		                    i += 1;
+		                }
+		                String val;
+		                for (i = logDataTable.getRowCount() - 1; i >= 0; --i) {
+		                	val = logDataTable.getValueAt(i, 2).toString();
+		                	if (val.isEmpty() || (minIat + iatMinOffset) < Double.valueOf(val))
+		                		Utils.removeRow(i, logDataTable);
+		                }
+		    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
+		    	        button.setSelected(true);
+		    	        plotDvdtData();
+	                }
+	                finally {
+	                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+	                }
+	            }
+	        }
+	        catch (Exception e) {
+	            logger.error(e);
+	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+	        }
+	        finally {
+	        	if (br != null) {
+	                try {
+	                    br.close();
+	                }
+	                catch (IOException e) {
+	                    logger.error(e);
+	                }
+	        	}
+	        }
         }
     }
     

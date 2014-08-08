@@ -38,6 +38,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -105,7 +106,10 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     private static final int RunRowsCount = 200;
     private double minMafV = Config.getMafVMinimumValue();
     private double afrErrPrct = Config.getWidebandAfrErrorPercentValue();
+    private double minWotEnrichment = Config.getWOTEnrichmentValue();
     private int wotPoint = Config.getWotStationaryPointValue();
+    private int afrRowOffset = Config.getWBO2RowOffset();
+    private int skipRowsOnTransition = Config.getOLCLTransitionSkipRows();
     private int logThtlAngleColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
@@ -169,6 +173,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
+    	fileChooser.setMultiSelectionEnabled(true);
         fileChooser.setCurrentDirectory(new File("."));
         
         JPanel dataPanel = new JPanel();
@@ -1491,71 +1496,99 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         wotPoint = Config.getWotStationaryPointValue();
         minMafV = Config.getMafVMinimumValue();
         afrErrPrct = Config.getWidebandAfrErrorPercentValue();
+        minWotEnrichment = Config.getWOTEnrichmentValue();
+        afrRowOffset = Config.getWBO2RowOffset();
+        skipRowsOnTransition = Config.getOLCLTransitionSkipRows();
         return ret;
     }
     
     private void loadLogFile() {
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
-        File file = fileChooser.getSelectedFile();
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-            String line = br.readLine();
-            if (line != null) {
-                String [] elements = line.split(",", -1);
-                getColumnsFilters(elements, false);
-
-                boolean resetColumns = false;
-                if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
-                	logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
-                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
-                    	resetColumns = true;
-                }
-                
-                if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
-                    	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !polfTable.isSet())) {
-                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.OPEN_LOOP, polfTable.isSet());
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, polfTable.isSet()))
-                		return;
-                }
-                
-                String[] flds;
-                int row = 0;
-                boolean wotFlag = true;
-                line = br.readLine();
-                double throttle;
-                double stft;
-                double ltft;
-                double afr;
-                double cmdafr;
-                double rpm;
-                double load;
-                double mafv;
-                double afrErr = 0;
-                int i = 0;
-                for (; i < runTables.length; ++i) {
-                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
-                        break;
-                }
-                if (i == runTables.length)
-                    return;
-                int j = 0;
-                boolean foundWot = false;
-                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-                try {
-	                while (line != null) {
-	                    flds = line.split(",", -1);
+        boolean isPolSet = polfTable.isSet();
+        File[] files = fileChooser.getSelectedFiles();
+        for (File file : files) {
+	        BufferedReader br = null;
+	        ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
+	        try {
+	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+	            String line = br.readLine();
+	            if (line != null) {
+	                String [] elements = line.split(",", -1);
+	                getColumnsFilters(elements, false);
+	
+	                boolean resetColumns = false;
+	                if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
+	                	logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
+	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	                    	resetColumns = true;
+	                }
+	                
+	                if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
+	                    	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
+	                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.OPEN_LOOP, isPolSet);
+	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
+	                		return;
+	                }
+	                
+	                String[] flds;
+	                String[] afrflds;
+	                boolean wotFlag = true;
+	                boolean foundWot = false;
+	                double throttle;
+	                double stft;
+	                double ltft;
+	                double afr;
+	                double cmdafr;
+	                double rpm;
+	                double load;
+	                double mafv;
+	                double afrErr = 0;
+	                int skipRowCount = 0;
+	                int row = 0;
+	                int i = 0;
+	                int j = 0;
+	                for (; i < runTables.length; ++i) {
+	                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
+	                        break;
+	                }
+	                if (i == runTables.length)
+	                    return;
+	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
+	                	line = br.readLine();
+	                	if (line != null)
+	                		buffer.addFirst(line.split(",", -1));
+	                }
+	                while (line != null && buffer.size() > afrRowOffset) {
+	                    afrflds = buffer.getFirst();
+	                    flds = buffer.removeLast();
+	                    line = br.readLine();
+	                	if (line != null)
+	                		buffer.addFirst(line.split(",", -1));
+	                    
 	                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
 	                    if (row == 0 && throttle < 99)
 	                        wotFlag = false;
 	                    if (throttle < wotPoint) {
-	                        if (wotFlag == true)
+	                        if (wotFlag == true) {
 	                            wotFlag = false;
+	                            skipRowCount = 0;
+	                            j -= 1;
+	                            while (j > 0 && skipRowCount < skipRowsOnTransition) {
+		                            runTables[i].setValueAt("", j, 0);
+		                            runTables[i].setValueAt("", j, 1);
+		                            runTables[i].setValueAt("", j, 2);
+		                            skipRowCount += 1;
+		                            j -= 1;
+	                            }
+	                            skipRowCount = 0;
+	                        }
 	                    }
 	                    else {
 	                        if (wotFlag == false) {
 	                            wotFlag = true;
+	                            skipRowCount = 0;
 	                            if (foundWot) {
 	                                i += 1;
 	                                if (i == runTables.length)
@@ -1564,58 +1597,62 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
 	                            if (row > 0)
 	                                j = 0;
 	                        }
-	                        mafv = Double.valueOf(flds[logMafvColIdx]);
-	                        if (minMafV <= mafv) {
-	                            foundWot = true;
-	                            stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-	                            ltft = Double.valueOf(flds[logAfLearningColIdx]);
-	                            afr = Double.valueOf(flds[logAfrColIdx]);
-	                            rpm = Double.valueOf(flds[logRpmColIdx]);
-	                            load = Double.valueOf(flds[logLoadColIdx]);
-	
-	                            afr = afr / ((100.0 - (ltft + stft)) / 100.0);
-	                            
-	                            if (logCommandedAfrCol >= 0) {
-	                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-	                            	afrErr = (afr - cmdafr) / cmdafr * 100.0;
-	                            }
-	                            else if (polfTable.isSet())
-	                            	afrErr = calculateAfrError(rpm, load, afr);
-	                            else
-	                            	JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
-	                            
-	                            if (Math.abs(afrErr) <= afrErrPrct) {
-		                            runTables[i].setValueAt(rpm, j, 0);
-		                            runTables[i].setValueAt(mafv, j, 1);
-		                            runTables[i].setValueAt(afrErr, j, 2);
-		                            j += 1;
-	                            }
+	                        if (skipRowCount >= skipRowsOnTransition) {
+		                        mafv = Double.valueOf(flds[logMafvColIdx]);
+		                        if (minMafV <= mafv) {
+		                            foundWot = true;
+		                            stft = Double.valueOf(flds[logAfCorrectionColIdx]);
+		                            ltft = Double.valueOf(flds[logAfLearningColIdx]);
+		                            afr = Double.valueOf(afrflds[logAfrColIdx]);
+		                            rpm = Double.valueOf(flds[logRpmColIdx]);
+		                            load = Double.valueOf(flds[logLoadColIdx]);
+		
+		                            afr = afr / ((100.0 - (ltft + stft)) / 100.0);
+		                            
+		                            if (logCommandedAfrCol >= 0) {
+		                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
+		                            	afrErr = (afr - cmdafr) / cmdafr * 100.0;
+		                            }
+		                            else if (isPolSet)
+		                            	afrErr = calculateAfrError(rpm, load, afr);
+		                            else
+		                            	JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
+		                            
+		                            if (Math.abs(afrErr) <= afrErrPrct) {
+		                            	Utils.ensureRowCount(j + 1, runTables[i]);
+			                            runTables[i].setValueAt(rpm, j, 0);
+			                            runTables[i].setValueAt(mafv, j, 1);
+			                            runTables[i].setValueAt(afrErr, j, 2);
+			                            j += 1;
+		                            }
+		                        }
 	                        }
+	                        skipRowCount += 1;
 	                    }
 	                    row += 1;
-	                    line = br.readLine();
 	                }
-                }
-                finally {
-                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-                }
-                if (!foundWot)
-                    JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
-            }
-        }
-        catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-        }
-        finally {
-        	if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {
-                    logger.error(e);
-                }
-        	}
+
+	                if (!foundWot) {
+	                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+	                    JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
+	                }
+	            }
+	        }
+	        catch (Exception e) {
+	            logger.error(e);
+	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+	        }
+	        finally {
+                setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+	        	if (br != null) {
+	                try {
+	                    br.close();
+	                }
+	                catch (IOException e) {
+	                    logger.error(e);
+	                }
+	        	}
+	        }
         }
     }
     
@@ -1680,9 +1717,17 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
             loadColHigh = index - 1;
         }
         timingLowLow = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColLow).toString());
+        if (timingLowLow > minWotEnrichment)
+        	timingLowLow = minWotEnrichment;
         timingLowHigh = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColHigh).toString());
+        if (timingLowHigh > minWotEnrichment)
+        	timingLowHigh = minWotEnrichment;
         timingHighLow = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColLow).toString());
+        if (timingHighLow > minWotEnrichment)
+        	timingHighLow = minWotEnrichment;
         timingHighHigh = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColHigh).toString());
+        if (timingHighHigh > minWotEnrichment)
+        	timingHighHigh = minWotEnrichment;
 
         double temp1;
         double temp2;

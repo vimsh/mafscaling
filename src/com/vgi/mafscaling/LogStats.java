@@ -330,7 +330,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	
 	        filter2Button = new JButton("and");
 	        filter2Button.setMargin(new Insets(1, 4, 1, 4));
-	        filter2Button.setPreferredSize(new Dimension(30, 20));
+	        filter2Button.setPreferredSize(new Dimension(35, 20));
 	        GridBagConstraints gbc_filter2Button = new GridBagConstraints();
 	        gbc_filter2Button.anchor = GridBagConstraints.WEST;
 	        gbc_filter2Button.insets = new Insets(3, 3, 3, 0);
@@ -342,7 +342,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	
 	        filter3Button = new JButton("and");
 	        filter3Button.setMargin(new Insets(1, 4, 1, 4));
-	        filter3Button.setPreferredSize(new Dimension(30, 20));
+	        filter3Button.setPreferredSize(new Dimension(35, 20));
 	        GridBagConstraints gbc_filter3Button = new GridBagConstraints();
 	        gbc_filter3Button.anchor = GridBagConstraints.WEST;
 	        gbc_filter3Button.insets = new Insets(3, 3, 3, 0);

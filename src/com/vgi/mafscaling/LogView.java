@@ -38,8 +38,12 @@ import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -59,6 +63,7 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
@@ -84,7 +89,7 @@ import org.jfree.ui.RectangleAnchor;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.RectangleInsets;
 import org.jfree.ui.TextAnchor;
-
+import org.math.plot.Plot3DPanel;
 import quick.dbtable.Column;
 import quick.dbtable.DBTable;
 import quick.dbtable.PrintProperties;
@@ -95,6 +100,53 @@ public class LogView extends JTabbedPane implements ActionListener {
 	private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(LogView.class);
     private final JFileChooser fileChooser = new JFileChooser();
+    
+    public class XYZ {
+        @Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + getOuterType().hashCode();
+			long temp;
+			temp = Double.doubleToLongBits(x);
+			result = prime * result + (int) (temp ^ (temp >>> 32));
+			temp = Double.doubleToLongBits(y);
+			result = prime * result + (int) (temp ^ (temp >>> 32));
+			temp = Double.doubleToLongBits(z);
+			result = prime * result + (int) (temp ^ (temp >>> 32));
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			XYZ other = (XYZ) obj;
+			if (!getOuterType().equals(other.getOuterType()))
+				return false;
+			if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x))
+				return false;
+			if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
+				return false;
+			if (Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z))
+				return false;
+			return true;
+		}
+		private double x;
+        private double y;
+        private double z;
+        XYZ(double x, double y, double z) {
+        	this.x = x;
+        	this.y = y;
+        	this.z = z;
+        }
+		private LogView getOuterType() {
+			return LogView.this;
+		}
+    }
     
     public class TableSkin extends Skin {
 		private static final long serialVersionUID = 8263328522848779295L;
@@ -307,6 +359,10 @@ public class LogView extends JTabbedPane implements ActionListener {
     private JComboBox<String> compareCombo;
     private JTextField  filterText;
     private JButton filterButton;
+    private Plot3DPanel plot3d = null;
+    private JComboBox<String> xAxisColumn = null;
+    private JComboBox<String> yAxisColumn = null;
+    private JMultiSelectionBox plotsColumn = null;
     private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
 
 	public LogView(int tabPlacement) {
@@ -316,6 +372,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 
     private void initialize() {
         createDataTab();
+        createChartTab();
         createUsageTab();
     }
 
@@ -599,7 +656,138 @@ public class LogView extends JTabbedPane implements ActionListener {
 				}
         	}
         );
-    }    
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CREATE 3D CHART TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    private void createChartTab() {
+        JPanel plotPanel = new JPanel();
+        add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br><br>C<br>h<br>a<br>r<br>t</div></html>");
+        GridBagLayout gbl_plotPanel = new GridBagLayout();
+        gbl_plotPanel.columnWidths = new int[] {0};
+        gbl_plotPanel.rowHeights = new int[] {0, 0};
+        gbl_plotPanel.columnWeights = new double[]{1.0};
+        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0};
+        plotPanel.setLayout(gbl_plotPanel);
+
+        JPanel cntlPanel = new JPanel();
+        GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
+        gbl_ctrlPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
+        gbl_ctrlPanel.weightx = 1.0;
+        gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbl_ctrlPanel.gridx = 0;
+        gbl_ctrlPanel.gridy = 0;
+        plotPanel.add(cntlPanel, gbl_ctrlPanel);
+        
+        GridBagLayout gbl_cntlPanel = new GridBagLayout();
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.rowHeights = new int[]{0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+        gbl_cntlPanel.rowWeights = new double[]{0};
+        cntlPanel.setLayout(gbl_cntlPanel);
+
+        JLabel xAxisLabel = new JLabel("X-Axis");
+        xAxisLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_xAxisLabel = new GridBagConstraints();
+        gbc_xAxisLabel.anchor = GridBagConstraints.EAST;
+        gbc_xAxisLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_xAxisLabel.gridx = 0;
+        gbc_xAxisLabel.gridy = 0;
+        cntlPanel.add(xAxisLabel, gbc_xAxisLabel);
+        
+        xAxisColumn = new JComboBox<String>();
+        GridBagConstraints gbc_xAxisColumn = new GridBagConstraints();
+        gbc_xAxisColumn.anchor = GridBagConstraints.WEST;
+        gbc_xAxisColumn.insets = new Insets(3, 3, 3, 3);
+        gbc_xAxisColumn.gridx = 1;
+        gbc_xAxisColumn.gridy = 0;
+        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(xAxisColumn, gbc_xAxisColumn);
+    	
+        JLabel yAxisLabel = new JLabel("Y-Axis");
+        yAxisLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_yAxisLabel = new GridBagConstraints();
+        gbc_yAxisLabel.anchor = GridBagConstraints.EAST;
+        gbc_yAxisLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_yAxisLabel.gridx = 2;
+        gbc_yAxisLabel.gridy = 0;
+        cntlPanel.add(yAxisLabel, gbc_yAxisLabel);
+        
+        yAxisColumn = new JComboBox<String>();
+        GridBagConstraints gbc_yAxisColumn = new GridBagConstraints();
+        gbc_yAxisColumn.anchor = GridBagConstraints.WEST;
+        gbc_yAxisColumn.insets = new Insets(3, 3, 3, 3);
+        gbc_yAxisColumn.gridx = 3;
+        gbc_yAxisColumn.gridy = 0;
+        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(yAxisColumn, gbc_yAxisColumn);
+    	
+        JLabel datasLabel = new JLabel("Plots");
+        datasLabel.setHorizontalAlignment(LEFT);
+        GridBagConstraints gbc_datasLabel = new GridBagConstraints();
+        gbc_datasLabel.anchor = GridBagConstraints.EAST;
+        gbc_datasLabel.insets = new Insets(3, 3, 3, 0);
+        gbc_datasLabel.gridx = 4;
+        gbc_datasLabel.gridy = 0;
+        cntlPanel.add(datasLabel, gbc_datasLabel);
+        
+        plotsColumn = new JMultiSelectionBox(" ");
+        plotsColumn.setIcon(new ImageIcon(getClass().getResource("/down.gif")));
+        plotsColumn.setMargin(new Insets(3, 3, 3, 3));
+        plotsColumn.setVerticalTextPosition(SwingConstants.CENTER);
+        plotsColumn.setHorizontalAlignment(SwingConstants.RIGHT);
+        plotsColumn.setHorizontalTextPosition(SwingConstants.LEFT);
+        plotsColumn.setIconTextGap(3);
+        plotsColumn.setPreferredSize(new Dimension(190, 22));
+        plotsColumn.setMaximumSize(new Dimension(190, 22));
+        GridBagConstraints gbc_plotsColumn = new GridBagConstraints();
+        gbc_plotsColumn.anchor = GridBagConstraints.PAGE_START;
+        gbc_plotsColumn.insets = new Insets(3, 3, 3, 3);
+        gbc_plotsColumn.gridx = 5;
+        gbc_plotsColumn.gridy = 0;
+        cntlPanel.add(plotsColumn, gbc_plotsColumn);
+        
+        JButton btnGoButton = new JButton("View");
+        GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
+        gbc_btnGoButton.anchor = GridBagConstraints.EAST;
+        gbc_btnGoButton.insets = new Insets(3, 3, 3, 3);
+        gbc_btnGoButton.gridx = 7;
+        gbc_btnGoButton.gridy = 0;
+        btnGoButton.setActionCommand("view");
+        btnGoButton.addActionListener(this);
+        cntlPanel.add(btnGoButton, gbc_btnGoButton);
+        
+        plot3d = new Plot3DPanel("SOUTH") {
+			private static final long serialVersionUID = 7914951068593204419L;
+			public void addPlotToolBar(String location) {
+				super.addPlotToolBar(location);
+        		super.plotToolBar.remove(7);
+        		super.plotToolBar.remove(5);
+        		super.plotToolBar.remove(4);
+        	}        	
+        };
+        plot3d.setAutoBounds();
+        plot3d.setAutoscrolls(true);
+        plot3d.setEditable(false);
+        plot3d.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        plot3d.setForeground(Color.BLACK);
+        plot3d.getAxis(0).setColor(Color.BLACK);
+        plot3d.getAxis(1).setColor(Color.BLACK);
+        plot3d.getAxis(2).setColor(Color.BLACK);
+        
+        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
+        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
+        gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_chartPanel.weightx = 1.0;
+        gbl_chartPanel.weighty = 1.0;
+        gbl_chartPanel.fill = GridBagConstraints.BOTH;
+        gbl_chartPanel.gridx = 0;
+        gbl_chartPanel.gridy = 1;
+        plotPanel.add(plot3d, gbl_chartPanel);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////
     // CREATE USAGE TAB
@@ -696,6 +884,13 @@ public class LogView extends JTabbedPane implements ActionListener {
         	TableCellRenderer renderer;
         	Component comp;
         	XYSeries series;
+            xAxisColumn.removeAllItems();
+            yAxisColumn.removeAllItems();
+            plotsColumn.removeAllItems();
+            xAxisColumn.addItem("");
+            yAxisColumn.addItem("");
+            plotsColumn.setText("");
+            plot3d.removeAllPlots();
         	rpmDataset.removeAllSeries();
         	dataset.removeAllSeries();
         	rpmCol = -1;
@@ -708,6 +903,9 @@ public class LogView extends JTabbedPane implements ActionListener {
 				renderer = new CheckboxHeaderRenderer(i + 1, color, logDataTable.getTableHeader());
 				col.setHeaderRenderer(renderer);
 				colName = col.getHeaderValue().toString();
+                xAxisColumn.addItem(colName);
+                yAxisColumn.addItem(colName);
+                plotsColumn.addItem(colName);
 		    	comp = renderer.getTableCellRendererComponent(logDataTable.getTable(), colName, false, false, 0, 0);
 		    	col.setPreferredWidth(comp.getPreferredSize().width + 4);
 		    	series = new XYSeries(colName);
@@ -749,8 +947,60 @@ public class LogView extends JTabbedPane implements ActionListener {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     	}
 	}
-	
-	
+
+    private void view3dPlots() {
+    	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || plotsColumn.getSelectedItems() == null)
+    		return;
+        plot3d.removeAllPlots();
+        String val;
+    	String xAxisColName = (String)xAxisColumn.getSelectedItem();
+    	String yAxisColName = (String)yAxisColumn.getSelectedItem();
+    	List<String> dataColNames = plotsColumn.getSelectedItems();
+    	if (dataColNames.size() > 5) {
+            JOptionPane.showMessageDialog(null, "Sorry, only 5 plots are supported. More plots will make the graph too slow.", "Too many parameters", JOptionPane.ERROR_MESSAGE);
+            return;
+    	}
+
+        int xColIdx = logDataTable.getColumnByHeaderName(xAxisColName).getModelIndex() - 1;
+        int yColIdx = logDataTable.getColumnByHeaderName(yAxisColName).getModelIndex() - 1;
+    	ArrayList<Color> colors = new ArrayList<Color>();
+    	colors.add(Color.BLUE);
+    	colors.add(Color.RED);
+    	colors.add(Color.GREEN);
+    	colors.add(Color.ORANGE);
+    	colors.add(Color.GRAY);
+    	double x, y, z;
+    	XYZ xyz;
+    	for (int j = 0; j < dataColNames.size(); ++j) {
+    		HashSet<XYZ> uniqueXYZ = new HashSet<XYZ>();
+	        int zColIdx = logDataTable.getColumnByHeaderName(dataColNames.get(j)).getModelIndex() - 1;
+	        int count = 0;
+	        double[][] xyzArrayTemp = new double[logDataTable.getRowCount()][3];
+	        for (int i = 0; i < logDataTable.getRowCount(); ++i) {
+	            val = (String)logDataTable.getValueAt(i, xColIdx);
+	            x = Double.valueOf(val);
+	            val = (String)logDataTable.getValueAt(i, yColIdx);
+	            y = Double.valueOf(val);
+	            val = (String)logDataTable.getValueAt(i, zColIdx);
+	            z = Double.valueOf(val);
+	            xyz = new XYZ(x, y, z);
+	            if (uniqueXYZ.contains(xyz))
+	            	continue;
+	            uniqueXYZ.add(xyz);
+	            xyzArrayTemp[count][0] = x;
+	            xyzArrayTemp[count][1] = y;
+	            xyzArrayTemp[count][2] = z;
+	            count += 1;
+	        }
+	    	double[][] xyzArray = new double[uniqueXYZ.size()][3];
+	    	for (int k = 0; k < xyzArray.length; ++k)
+	    		System.arraycopy(xyzArrayTemp[k], 0, xyzArray[k], 0, 3);
+	        plot3d.addScatterPlot(dataColNames.get(j), colors.get(j), xyzArray);
+    	}
+        plot3d.setAxisLabel(0, xAxisColumn.getSelectedItem().toString());
+        plot3d.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
+    }
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == loadButton)
@@ -788,6 +1038,8 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	else
 	    		logDataTable.filter(null);
 	    }
+		else if ("view".equals(e.getActionCommand()))
+			view3dPlots();
 	}
 
 

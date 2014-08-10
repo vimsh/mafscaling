@@ -33,15 +33,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -289,11 +290,9 @@ public class LogView extends JTabbedPane implements ActionListener {
     	}
     	private final JCheckBox check = new JCheckBox();
     	private int colId;
-    	private Color selectedColor;
     	private Color defaultColor;
-    	public CheckboxHeaderRenderer(int col, Color c, JTableHeader header) {
+    	public CheckboxHeaderRenderer(int col, JTableHeader header) {
     		colId = col;
-    		selectedColor = c;
     		check.setOpaque(false);
     		check.setFont(header.getFont());
     		header.addMouseListener(new MouseAdapter() {
@@ -310,11 +309,12 @@ public class LogView extends JTabbedPane implements ActionListener {
 		    				check.setSelected(!check.isSelected());
 		    				if (check.isSelected()) {
 		    					defaultColor = check.getBackground();
-		    					check.setBackground(selectedColor);
+		    					check.setBackground(colors.pop());
 		    					TableModel model = table.getModel();
-		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), selectedColor);
+		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), check.getBackground());
 		    				}
 		    				else {
+		    					colors.push(check.getBackground());
 		    					check.setBackground(defaultColor);
 		    					removeXYSeries(colId);
 		    				}
@@ -364,6 +364,7 @@ public class LogView extends JTabbedPane implements ActionListener {
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox plotsColumn = null;
     private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
+    private Stack<Color> colors = new Stack<Color>();
 
 	public LogView(int tabPlacement) {
         super(tabPlacement);
@@ -643,8 +644,11 @@ public class LogView extends JTabbedPane implements ActionListener {
         		        }
         		        if (col >= 0) {
 	        				chartPanel.repaint();
-	        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
-	        				logDataTable.getTable().changeSelection((int)x, col, false, false);
+	        				try {
+		        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
+		        				logDataTable.getTable().changeSelection((int)x, col, false, false);
+	        				}
+	        				catch (Exception e) { /* ignore */ }
         		        }
         			}
         			catch (Exception e) {
@@ -818,6 +822,92 @@ public class LogView extends JTabbedPane implements ActionListener {
     // WORK FUNCTIONS
     //////////////////////////////////////////////////////////////////////////////////////
     
+    private void initColors() {
+    	colors.clear();
+    	colors.push(new Color(255,101,0));
+    	colors.push(new Color(255,154,0));
+    	colors.push(new Color(255,207,0));
+    	colors.push(new Color(156,207,0));
+    	colors.push(new Color(49,207,206));
+    	colors.push(new Color(49,101,255));
+    	colors.push(new Color(255,207,156));
+    	colors.push(new Color(206,154,255));
+    	colors.push(new Color(255,154,206));
+    	colors.push(new Color(156,207,255));
+    	colors.push(new Color(255,255,156));
+    	colors.push(new Color(206,255,206));
+    	colors.push(new Color(206,255,255));
+    	colors.push(new Color(0,207,255));
+    	colors.push(new Color(0,0,255));
+    	colors.push(new Color(0,130,132));
+    	colors.push(new Color(132,0,0));
+    	colors.push(new Color(132,0,132));
+    	colors.push(new Color(0,255,255));
+    	colors.push(new Color(255,255,0));
+    	colors.push(new Color(255,0,255));
+    	colors.push(new Color(0,0,132));
+    	colors.push(new Color(206,207,255));
+    	colors.push(new Color(0,101,206));
+    	colors.push(new Color(255,130,132));
+    	colors.push(new Color(99,0,99));
+    	colors.push(new Color(206,255,255));
+    	colors.push(new Color(255,255,206));
+    	colors.push(new Color(156,48,99));
+    	colors.push(new Color(156,154,255));
+    	colors.push(new Color(221,160,221));
+    	colors.push(new Color(176,196,222));
+    	colors.push(new Color(32,178,170));
+    	colors.push(new Color(250,240,230));
+    	colors.push(new Color(210,180,140));
+    	colors.push(new Color(143,188,139));
+    	colors.push(new Color(219,220,37));
+    	colors.push(new Color(42,214,42));
+    	colors.push(new Color(241,104,60));
+    	colors.push(new Color(29,139,209));
+    	/*
+        colors.push(Color.decode("#FF6500"));
+        colors.push(Color.decode("#FF9A00"));
+        colors.push(Color.decode("#FFCF00"));
+        colors.push(Color.decode("#9CCF00"));
+        colors.push(Color.decode("#31CFCE"));
+        colors.push(Color.decode("#3165FF"));
+        colors.push(Color.decode("#FFCF9C"));
+        colors.push(Color.decode("#CE9AFF"));
+        colors.push(Color.decode("#FF9ACE"));
+        colors.push(Color.decode("#9CCFFF"));
+        colors.push(Color.decode("#FFFF9C"));
+        colors.push(Color.decode("#CEFFCE"));
+        colors.push(Color.decode("#CEFFFF"));
+        colors.push(Color.decode("#00CFFF"));
+        colors.push(Color.decode("#0000FF"));
+        colors.push(Color.decode("#008284"));
+        colors.push(Color.decode("#840000"));
+        colors.push(Color.decode("#840084"));
+        colors.push(Color.decode("#00FFFF"));
+        colors.push(Color.decode("#FFFF00"));
+        colors.push(Color.decode("#FF00FF"));
+        colors.push(Color.decode("#000084"));
+        colors.push(Color.decode("#CECFFF"));
+        colors.push(Color.decode("#0065CE"));
+        colors.push(Color.decode("#FF8284"));
+        colors.push(Color.decode("#630063"));
+        colors.push(Color.decode("#CEFFFF"));
+        colors.push(Color.decode("#FFFFCE"));
+        colors.push(Color.decode("#9C3063"));
+        colors.push(Color.decode("#9C9AFF"));
+        colors.push(Color.decode("#DDA0DD"));
+        colors.push(Color.decode("#B0C4DE"));
+        colors.push(Color.decode("#20B2AA"));
+        colors.push(Color.decode("#FAF0E6"));
+        colors.push(Color.decode("#D2B48C"));
+        colors.push(Color.decode("#8FBC8B"));
+        colors.push(Color.decode("#DBDC25"));
+        colors.push(Color.decode("#2AD62A"));
+        colors.push(Color.decode("#F1683C"));
+        colors.push(Color.decode("#1D8BD1"));
+        */
+    }
+    
     private void addXYSeries(TableModel model, int column, String name, Color color) {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
     	try {
@@ -873,14 +963,14 @@ public class LogView extends JTabbedPane implements ActionListener {
 		logDataTable.filter(null);
 		filterText.setText("");
         try {
+        	JTableHeader header = logDataTable.getTableHeader();
+        	for (MouseListener listener : header.getMouseListeners())
+        		header.removeMouseListener(listener);
         	logDataTable.refresh(file.toURI().toURL(), prop);
-        	ArrayList<Color> colors = new ArrayList<Color>(Arrays.asList(Utils.getColorArray(new Color(0xFF0000), new Color(0xFF0080), logDataTable.getColumnCount())));
         	Column col;
-        	Color color;
         	String colName;
         	String lcColName;
 	        String val;
-        	int colorIndex;
         	TableCellRenderer renderer;
         	Component comp;
         	XYSeries series;
@@ -898,9 +988,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         	selectionCombo.removeAllItems();
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
 				col = logDataTable.getColumn(i);
-				colorIndex = Utils.getRandomInRange(0, colors.size() - 1);
-				color = colors.remove(colorIndex);
-				renderer = new CheckboxHeaderRenderer(i + 1, color, logDataTable.getTableHeader());
+				renderer = new CheckboxHeaderRenderer(i + 1, logDataTable.getTableHeader());
 				col.setHeaderRenderer(renderer);
 				colName = col.getHeaderValue().toString();
                 xAxisColumn.addItem(colName);
@@ -938,6 +1026,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 			if (logDataTable.getControlPanel().getComponentCount() > 7)
 				logDataTable.getControlPanel().remove(7);
 			logDataTable.getControlPanel().add(new JLabel("   [" + file.getName() + "]"));
+			initColors();
         }
         catch (Exception ex) {
     		ex.printStackTrace();
@@ -946,6 +1035,36 @@ public class LogView extends JTabbedPane implements ActionListener {
     	finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     	}
+	}
+	
+	private void updateChart() {
+    	Column col;
+    	String colName;
+        String val;
+    	XYSeries series;
+		int seriesIdx = 0;
+		for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
+			col = logDataTable.getColumn(i);
+			colName = col.getHeaderValue().toString();
+	    	series = dataset.getSeries(seriesIdx++);
+			if (!series.getDescription().equals(colName)) {
+	            JOptionPane.showMessageDialog(null, "Invalid series found for the column index " + i + ": series name " + series.getDescription() + " doesn't match column name " + colName, "Invalid value", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+			series.clear();
+			for (int j = 0; j < logDataTable.getRowCount(); ++j) {
+				try {
+					val = (String)logDataTable.getValueAt(j, i);
+					series.add(j, Double.valueOf(val), false);
+				}
+				catch (Exception e) {
+					JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + colName + ", row " + (j + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+			}
+			series.fireSeriesChanged();
+		}
+		chartPanel.repaint();
 	}
 
     private void view3dPlots() {
@@ -963,12 +1082,12 @@ public class LogView extends JTabbedPane implements ActionListener {
 
         int xColIdx = logDataTable.getColumnByHeaderName(xAxisColName).getModelIndex() - 1;
         int yColIdx = logDataTable.getColumnByHeaderName(yAxisColName).getModelIndex() - 1;
-    	ArrayList<Color> colors = new ArrayList<Color>();
-    	colors.add(Color.BLUE);
-    	colors.add(Color.RED);
-    	colors.add(Color.GREEN);
-    	colors.add(Color.ORANGE);
-    	colors.add(Color.GRAY);
+    	ArrayList<Color> colorsArray = new ArrayList<Color>();
+    	colorsArray.add(Color.BLUE);
+    	colorsArray.add(Color.RED);
+    	colorsArray.add(Color.GREEN);
+    	colorsArray.add(Color.ORANGE);
+    	colorsArray.add(Color.GRAY);
     	double x, y, z;
     	XYZ xyz;
     	for (int j = 0; j < dataColNames.size(); ++j) {
@@ -995,7 +1114,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	double[][] xyzArray = new double[uniqueXYZ.size()][3];
 	    	for (int k = 0; k < xyzArray.length; ++k)
 	    		System.arraycopy(xyzArrayTemp[k], 0, xyzArray[k], 0, 3);
-	        plot3d.addScatterPlot(dataColNames.get(j), colors.get(j), xyzArray);
+	        plot3d.addScatterPlot(dataColNames.get(j), colorsArray.get(j), xyzArray);
     	}
         plot3d.setAxisLabel(0, xAxisColumn.getSelectedItem().toString());
         plot3d.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
@@ -1030,18 +1149,19 @@ public class LogView extends JTabbedPane implements ActionListener {
 		    		filter.setFilter(filterText.getText());
 		    		filter.setColumn(selectionCombo.getSelectedIndex());
 		    		logDataTable.filter(filter);
+			    	updateChart();
 	    		}
 	    		catch (NumberFormatException ex) {
 		            JOptionPane.showMessageDialog(null, "Invalid numeric value: " + filterText.getText(), "Invalid value", JOptionPane.ERROR_MESSAGE);
 	    		}
 	    	}
-	    	else
+	    	else {
 	    		logDataTable.filter(null);
+		    	updateChart();
+	    	}
 	    }
 		else if ("view".equals(e.getActionCommand()))
 			view3dPlots();
 	}
-
-
 
 }

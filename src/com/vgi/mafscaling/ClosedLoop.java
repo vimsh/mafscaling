@@ -22,6 +22,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.NumberFormat;
@@ -66,6 +68,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -118,7 +122,6 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     private static final String mafCurveDataName = "Smoothed Maf Curve";
     private static final String currentSlopeDataName = "Current Maf Slope";
     private static final String smoothedSlopeDataName = "Smoothed Maf Slope";
-    private static final int MinimumDataSampleCount = 30;
     private static final int ColumnWidth = 50;
     private static final int ColumnCount = 9;
     private static final int MafTableColumnCount = 50;
@@ -126,6 +129,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     private static final int AfrTableRowCount = 25;
     private static final int LogDataRowCount = 200;
     private int clValue = Config.getClOlStatusValue();
+    private int minCellHitCount = Config.getCLMinCellHitCount();
     private double afrMin = Config.getAfrMinimumValue();
     private double afrMax = Config.getAfrMaximumValue();
     private double minLoad = Config.getLoadMinimumValue();
@@ -884,12 +888,25 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createUsageTab() {
-        JTextPane  usageTextArea = new JTextPane();
+    	final Desktop desktop = Desktop.getDesktop();
+        JTextPane usageTextArea = new JTextPane();
         usageTextArea.setMargin(new Insets(10, 10, 10, 10));
         usageTextArea.setContentType("text/html");
         usageTextArea.setText(usage());
         usageTextArea.setEditable(false);
         usageTextArea.setCaretPosition(0);
+        usageTextArea.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
+                    try {
+                    	desktop.browse(new URI(e.getURL().toString()));
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
 
         JScrollPane textScrollPane = new JScrollPane(usageTextArea);
         textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -1341,7 +1358,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
         double firstCorr = 1;
         for (i = 0; i < correctionMeanArray.size(); ++i) {
             corr = 1;
-            if (temp.get(i) > MinimumDataSampleCount) {
+            if (temp.get(i) > minCellHitCount) {
                 corr = 1.0 + (correctionMeanArray.get(i) + correctionModeArray.get(i)) / 200.00;
                 if (firstCorrIndex == 0) {
                 	firstCorrIndex = i;
@@ -1908,6 +1925,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
         if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
         if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
         clValue = Config.getClOlStatusValue();
+        minCellHitCount = Config.getCLMinCellHitCount();
         afrMin = Config.getAfrMinimumValue();
         afrMax = Config.getAfrMaximumValue();
         minLoad = Config.getLoadMinimumValue();

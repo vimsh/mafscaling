@@ -489,6 +489,8 @@ public class LogStatsFixedAxis implements ActionListener {
 	    		axisTable = yAxisTable;
 	    		axisList = yAxisList;
 	    	}
+	    	if (axisTable.isEditing())
+	    		axisTable.getCellEditor().stopCellEditing();
 	        if (Utils.isTableEmpty(axisTable)) {
 	        	JOptionPane.showMessageDialog(null, "Table is empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
 	        	return;
@@ -523,14 +525,18 @@ public class LogStatsFixedAxis implements ActionListener {
 	        while (axisName.isEmpty());
 	        
 	        String axisValues = "";
+	        String valStr;
 	    	for (int i = 0; i < axisTable.getColumnCount(); ++i) {
-		        if (!Pattern.matches(Utils.fpRegex, axisTable.getValueAt(0, i).toString())) {
+	    		valStr = axisTable.getValueAt(0, i).toString();
+	    		if (valStr.isEmpty())
+	    			continue;
+		        if (!Pattern.matches(Utils.fpRegex, valStr)) {
 		        	JOptionPane.showMessageDialog(null, "Invalid data in table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 		            return;
 		        }
 		        if (i > 0)
 		        	axisValues += ",";
-		        axisValues += axisTable.getValueAt(0, i).toString();
+		        axisValues += valStr;
 	    	}
         	if (type == Axis.XAXIS) {
         		String s = Config.getXAxisTemplates();
@@ -636,18 +642,26 @@ public class LogStatsFixedAxis implements ActionListener {
      */
     private boolean validateAxisData() {
     	try {
+	    	if (xAxisTable.isEditing())
+	    		xAxisTable.getCellEditor().stopCellEditing();
+	    	if (yAxisTable.isEditing())
+	    		yAxisTable.getCellEditor().stopCellEditing();
 	        if (Utils.isTableEmpty(xAxisTable) && Utils.isTableEmpty(yAxisTable)) {
 	        	JOptionPane.showMessageDialog(null, "Both axis tables are either empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
 	        	return false;
 	        }
+	        String valStr;
 	        ArrayList<Double> tempArray = new ArrayList<Double>();
 	        if (!Utils.isTableEmpty(xAxisTable)) {
 		    	for (int i = 0; i < xAxisTable.getColumnCount(); ++i) {
-			        if (!Pattern.matches(Utils.fpRegex, xAxisTable.getValueAt(0, i).toString())) {
+		    		valStr = xAxisTable.getValueAt(0, i).toString();
+		    		if (valStr.isEmpty())
+		    			continue;
+			        if (!Pattern.matches(Utils.fpRegex, valStr)) {
 			        	JOptionPane.showMessageDialog(null, "Invalid data in X-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 			            return false;
 			        }
-			        tempArray.add(Double.valueOf(xAxisTable.getValueAt(0, i).toString()));
+			        tempArray.add(Double.valueOf(valStr));
 		    	}
 		    	xAxisArray.clear();
 		    	for (Double d : tempArray)
@@ -657,11 +671,14 @@ public class LogStatsFixedAxis implements ActionListener {
 	        tempArray.clear();
 	        if (!Utils.isTableEmpty(yAxisTable)) {
 		    	for (int i = 0; i < yAxisTable.getColumnCount(); ++i) {
-			        if (!Pattern.matches(Utils.fpRegex, yAxisTable.getValueAt(0, i).toString())) {
+		    		valStr = yAxisTable.getValueAt(0, i).toString();
+		    		if (valStr.isEmpty())
+		    			continue;
+			        if (!Pattern.matches(Utils.fpRegex, valStr)) {
 			        	JOptionPane.showMessageDialog(null, "Invalid data in Y-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 			            return false;
 			        }
-			        tempArray.add(Double.valueOf(yAxisTable.getValueAt(0, i).toString()));
+			        tempArray.add(Double.valueOf(valStr));
 		    	}
 		    	yAxisArray.clear();
 		    	for (Double d : tempArray)

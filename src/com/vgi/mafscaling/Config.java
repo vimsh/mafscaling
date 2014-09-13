@@ -32,6 +32,37 @@ import org.apache.log4j.Logger;
 
 public class Config {
     private static final Logger logger = Logger.getLogger(Config.class);
+	public static final String DefaultWindowWidth = "300";
+	public static final String DefaultWindowHeight = "200";
+	public static final String DefaultWindowPositionX = "50";
+	public static final String DefaultWindowPositionY = "50";
+	public static final String DefaultCompareWindowWidth = "300";
+	public static final String DefaultCompareWindowHeight = "300";
+	public static final String DefaultCompareWindowPositionX = "50";
+	public static final String DefaultCompareWindowPositionY = "50";
+	public static final String DefaultClOlStatusValue = "-1";
+	public static final String DefaultThrottleChangeMax = "2";
+	public static final String DefaultIsLoadCompInRatio = "false";
+	public static final String DefaultCLMinCellHitCount = "30";
+	public static final String DefaultLCMinCellHitCount = "15";
+	public static final String DefaultWOTStationaryPoint = "80";
+	public static final String DefaultWBO2RowOffset = "0";
+	public static final String DefaultOLCLTransitionSkipRows = "3";
+	public static final String DefaultMafVMaximum = "5.0";
+	public static final String DefaultMafVMinimum = "0.0";
+	public static final String DefaultRPMMaximum = "5000";
+	public static final String DefaultRPMMinimum = "0";
+	public static final String DefaultIATMaximum = "110.0";
+	public static final String DefaultLCIATMaximum = "110.0";
+	public static final String DefaultWidebandAfrErrorPercent = "15.0";
+	public static final String DefaultWOTEnrichment = "16.0";
+	public static final String DefaultAfrMinimum = "13.7";
+	public static final String DefaultAfrMaximum = "15.0";
+	public static final String DefaultLCAfrMinimum = "14.2";
+	public static final String DefaultLCAfrMaximum = "15.0";
+	public static final String DefaultLoadMinimum = "0.2";
+	public static final String DefaultDvDtMaximum = "0.7";
+	public static final String DefaultLCDvDtMaximum = "0.7";
 	private static final String CFG_FILE = "config.xml";
 	public static final String NO_NAME = "#$#";
 	private static Properties props = new Properties();
@@ -49,7 +80,7 @@ public class Config {
 	}
 	
 	public static Dimension getWindowSize() {
-		return new Dimension(Integer.parseInt(props.getProperty("WindowWidth", "300")), Integer.parseInt(props.getProperty("WindowHeight", "200")));
+		return new Dimension(Integer.parseInt(props.getProperty("WindowWidth", DefaultWindowWidth)), Integer.parseInt(props.getProperty("WindowHeight", DefaultWindowHeight)));
 	}
 	
 	public static void setWindowSize(Dimension d) {
@@ -58,7 +89,7 @@ public class Config {
 	}
 
 	public static Point getWindowLocation() {
-		return new Point(Integer.parseInt(props.getProperty("WindowPositionX", "50")), Integer.parseInt(props.getProperty("WindowPositionY", "50")));
+		return new Point(Integer.parseInt(props.getProperty("WindowPositionX", DefaultWindowPositionX)), Integer.parseInt(props.getProperty("WindowPositionY", DefaultWindowPositionY)));
 	}
 
 	public static void setWindowLocation(Point p) {
@@ -67,7 +98,7 @@ public class Config {
 	}
 	
 	public static Dimension getCompWindowSize() {
-		return new Dimension(Integer.parseInt(props.getProperty("CompareWindowWidth", "300")), Integer.parseInt(props.getProperty("CompareWindowHeight", "300")));
+		return new Dimension(Integer.parseInt(props.getProperty("CompareWindowWidth", DefaultCompareWindowWidth)), Integer.parseInt(props.getProperty("CompareWindowHeight", DefaultCompareWindowHeight)));
 	}
 	
 	public static void setCompWindowSize(Dimension d) {
@@ -76,7 +107,7 @@ public class Config {
 	}
 
 	public static Point getCompWindowLocation() {
-		return new Point(Integer.parseInt(props.getProperty("CompareWindowPositionX", "50")), Integer.parseInt(props.getProperty("WindowPositionY", "50")));
+		return new Point(Integer.parseInt(props.getProperty("CompareWindowPositionX", DefaultCompareWindowPositionX)), Integer.parseInt(props.getProperty("CompareWindowPositionY", DefaultCompareWindowPositionY)));
 	}
 
 	public static void setCompWindowLocation(Point p) {
@@ -189,31 +220,55 @@ public class Config {
 	}
 
 	public static int getClOlStatusValue() {
-		return Integer.parseInt(props.getProperty("ClOlStatusValue", "-1"));
+		return Integer.parseInt(props.getProperty("ClOlStatusValue", DefaultClOlStatusValue));
 	}
 
 	public static void setClOlStatusValue(int v) {
 		props.setProperty("ClOlStatusValue", Integer.toString(v));
 	}
 
-	public static int getThrottleChangeValue() {
-		return Integer.parseInt(props.getProperty("ThrottleChangeValue", "2"));
+	public static int getThrottleChangeMaxValue() {
+		return Integer.parseInt(props.getProperty("ThrottleChangeMax", DefaultThrottleChangeMax));
 	}
 
-	public static void setThrottleChangeValue(int v) {
-		props.setProperty("ThrottleChangeValue", Integer.toString(v));
+	public static void setThrottleChangeMaxValue(int v) {
+		props.setProperty("ThrottleChangeMax", Integer.toString(v));
+	}
+	
+	public static boolean getIsLoadCompInRatio() {
+		return Boolean.parseBoolean(props.getProperty("IsLoadCompInRatio", DefaultIsLoadCompInRatio));
+	}
+	
+	public static void setIsLoadCompInRatio(boolean v) {
+		props.setProperty("IsLoadCompInRatio", Boolean.toString(v));
 	}
 
-	public static int getWotStationaryPointValue() {
-		return Integer.parseInt(props.getProperty("WotStationaryPoint", "85"));
+	public static int getCLMinCellHitCount() {
+		return Integer.parseInt(props.getProperty("CLMinCellHitCount", DefaultCLMinCellHitCount));
 	}
 
-	public static void setWotStationaryPointValue(int v) {
-		props.setProperty("WotStationaryPoint", Integer.toString(v));
+	public static void setCLMinCellHitCount(int v) {
+		props.setProperty("CLMinCellHitCount", Integer.toString(v));
+	}
+
+	public static int getLCMinCellHitCount() {
+		return Integer.parseInt(props.getProperty("LCMinCellHitCount", DefaultLCMinCellHitCount));
+	}
+
+	public static void setLCMinCellHitCount(int v) {
+		props.setProperty("LCMinCellHitCount", Integer.toString(v));
+	}
+
+	public static int getWOTStationaryPointValue() {
+		return Integer.parseInt(props.getProperty("WOTStationaryPoint", DefaultWOTStationaryPoint));
+	}
+
+	public static void setWOTStationaryPointValue(int v) {
+		props.setProperty("WOTStationaryPoint", Integer.toString(v));
 	}
 
 	public static int getWBO2RowOffset() {
-		return Integer.parseInt(props.getProperty("WBO2RowOffset", "0"));
+		return Integer.parseInt(props.getProperty("WBO2RowOffset", DefaultWBO2RowOffset));
 	}
 
 	public static void setWBO2RowOffset(int v) {
@@ -221,7 +276,7 @@ public class Config {
 	}
 
 	public static int getOLCLTransitionSkipRows() {
-		return Integer.parseInt(props.getProperty("OLCLTransitionSkipRows", "0"));
+		return Integer.parseInt(props.getProperty("OLCLTransitionSkipRows", DefaultOLCLTransitionSkipRows));
 	}
 
 	public static void setOLCLTransitionSkipRows(int v) {
@@ -229,47 +284,71 @@ public class Config {
 	}
 
 	public static double getMafVMaximumValue() {
-		return Double.parseDouble(props.getProperty("MafVMaximum", "5"));
+		return Double.parseDouble(props.getProperty("MafVMaximum", DefaultMafVMaximum));
 	}
 
 	public static void setMafVMaximumValue(double v) {
 		props.setProperty("MafVMaximum", Double.toString(v));
 	}
 
-	public static double getIatMaximumValue() {
-		return Double.parseDouble(props.getProperty("IATMaximum", "300"));
-	}
-
-	public static void setIatMaximumValue(double v) {
-		props.setProperty("IATMaximum", Double.toString(v));
-	}
-
 	public static double getMafVMinimumValue() {
-		return Double.parseDouble(props.getProperty("MafVMinimum", "0"));
-	}
-	
-	public static void setWidebandAfrErrorPercentValue(double v) {
-		props.setProperty("WidebandAfrErrorPercent", Double.toString(v));
-	}
-
-	public static double getWidebandAfrErrorPercentValue() {
-		return Double.parseDouble(props.getProperty("WidebandAfrErrorPercent", "200"));
-	}
-	
-	public static void setWOTEnrichmentValue(double v) {
-		props.setProperty("WOTEnrichment", Double.toString(v));
-	}
-	
-	public static double getWOTEnrichmentValue() {
-		return Double.parseDouble(props.getProperty("WOTEnrichment", "16"));
+		return Double.parseDouble(props.getProperty("MafVMinimum", DefaultMafVMinimum));
 	}
 
 	public static void setMafVMinimumValue(double v) {
 		props.setProperty("MafVMinimum", Double.toString(v));
 	}
 
+	public static int getRPMMaximumValue() {
+		return Integer.parseInt(props.getProperty("RPMMaximum", DefaultRPMMaximum));
+	}
+
+	public static void setRPMMaximumValue(int v) {
+		props.setProperty("RPMMaximum", Integer.toString(v));
+	}
+
+	public static int getRPMMinimumValue() {
+		return Integer.parseInt(props.getProperty("RPMMinimum", DefaultRPMMinimum));
+	}
+
+	public static void setRPMMinimumValue(int v) {
+		props.setProperty("RPMMinimum", Integer.toString(v));
+	}
+
+	public static double getIatMaximumValue() {
+		return Double.parseDouble(props.getProperty("IATMaximum", DefaultIATMaximum));
+	}
+
+	public static void setIatMaximumValue(double v) {
+		props.setProperty("IATMaximum", Double.toString(v));
+	}
+	
+	public static double getLCIatMaximumValue() {
+		return Double.parseDouble(props.getProperty("LCIATMaximum", DefaultLCIATMaximum));
+	}
+
+	public static void setLCIatMaximumValue(double v) {
+		props.setProperty("LCIATMaximum", Double.toString(v));
+	}
+
+	public static double getWidebandAfrErrorPercentValue() {
+		return Double.parseDouble(props.getProperty("WidebandAfrErrorPercent", DefaultWidebandAfrErrorPercent));
+	}
+	
+	public static void setWidebandAfrErrorPercentValue(double v) {
+		props.setProperty("WidebandAfrErrorPercent", Double.toString(v));
+	}
+	
+	public static double getWOTEnrichmentValue() {
+		return Double.parseDouble(props.getProperty("WOTEnrichment", DefaultWOTEnrichment));
+	}
+	
+	public static void setWOTEnrichmentValue(double v) {
+		props.setProperty("WOTEnrichment", Double.toString(v));
+	}
+
 	public static double getAfrMinimumValue() {
-		return Double.parseDouble(props.getProperty("AfrMinimum", "13.7"));
+		return Double.parseDouble(props.getProperty("AfrMinimum", DefaultAfrMinimum));
 	}
 
 	public static void setAfrMinimumValue(double v) {
@@ -277,15 +356,31 @@ public class Config {
 	}
 
 	public static double getAfrMaximumValue() {
-		return Double.parseDouble(props.getProperty("AfrMaximum", "15"));
+		return Double.parseDouble(props.getProperty("AfrMaximum", DefaultAfrMaximum));
 	}
 
 	public static void setAfrMaximumValue(double v) {
 		props.setProperty("AfrMaximum", Double.toString(v));
 	}
+	
+	public static double getLCAfrMinimumValue() {
+		return Double.parseDouble(props.getProperty("LCAfrMinimum", DefaultLCAfrMinimum));
+	}
 
+	public static void setLCAfrMinimumValue(double v) {
+		props.setProperty("LCAfrMinimum", Double.toString(v));
+	}
+
+	public static double getLCAfrMaximumValue() {
+		return Double.parseDouble(props.getProperty("LCAfrMaximum", DefaultLCAfrMaximum));
+	}
+
+	public static void setLCAfrMaximumValue(double v) {
+		props.setProperty("LCAfrMaximum", Double.toString(v));
+	}
+	
 	public static double getLoadMinimumValue() {
-		return Double.parseDouble(props.getProperty("LoadMinimum", "0.05"));
+		return Double.parseDouble(props.getProperty("LoadMinimum", DefaultLoadMinimum));
 	}
 
 	public static void setLoadMinimumValue(double v) {
@@ -293,35 +388,19 @@ public class Config {
 	}
 
 	public static double getDvDtMaximumValue() {
-		return Double.parseDouble(props.getProperty("DvDtMaximum", "0.5"));
+		return Double.parseDouble(props.getProperty("DvDtMaximum", DefaultDvDtMaximum));
 	}
 
 	public static void setDvDtMaximumValue(double v) {
 		props.setProperty("DvDtMaximum", Double.toString(v));
 	}
 
-	public static double getDvDtLCMaximumValue() {
-		return Double.parseDouble(props.getProperty("DvDtLoadCompMaximum", "0.7"));
+	public static double getLCDvDtMaximumValue() {
+		return Double.parseDouble(props.getProperty("LCDvDtMaximum", DefaultLCDvDtMaximum));
 	}
 
-	public static void setDvDtLCMaximumValue(double v) {
-		props.setProperty("DvDtLoadCompMaximum", Double.toString(v));
-	}
-
-	public static double getIatLCMinimumOffset() {
-		return Double.parseDouble(props.getProperty("IATLoadCompMinimumOffset", "10"));
-	}
-
-	public static void setIatLCMinimumOffset(double v) {
-		props.setProperty("IATLoadCompMinimumOffset", Double.toString(v));
-	}
-
-	public static double getTrimsLCVarianceValue() {
-		return Double.parseDouble(props.getProperty("TrimsLoadCompVariance", "10"));
-	}
-
-	public static void setTrimsLCVarianceValue(double v) {
-		props.setProperty("TrimsLoadCompVariance", Double.toString(v));
+	public static void setLCDvDtMaximumValue(double v) {
+		props.setProperty("LCDvDtMaximum", Double.toString(v));
 	}
 
 	public static String getDefaultPOLFueling() {

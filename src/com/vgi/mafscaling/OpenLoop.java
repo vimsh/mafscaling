@@ -22,6 +22,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayDeque;
@@ -62,6 +64,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
@@ -107,7 +111,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     private double minMafV = Config.getMafVMinimumValue();
     private double afrErrPrct = Config.getWidebandAfrErrorPercentValue();
     private double minWotEnrichment = Config.getWOTEnrichmentValue();
-    private int wotPoint = Config.getWotStationaryPointValue();
+    private int wotPoint = Config.getWOTStationaryPointValue();
     private int afrRowOffset = Config.getWBO2RowOffset();
     private int skipRowsOnTransition = Config.getOLCLTransitionSkipRows();
     private int logThtlAngleColIdx = -1;
@@ -729,12 +733,25 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createUsageTab() {
+    	final Desktop desktop = Desktop.getDesktop();
         JTextPane  usageTextArea = new JTextPane();
         usageTextArea.setMargin(new Insets(10, 10, 10, 10));
         usageTextArea.setContentType("text/html");
         usageTextArea.setText(usage());
         usageTextArea.setEditable(false);
         usageTextArea.setCaretPosition(0);
+        usageTextArea.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
+                    try {
+                    	desktop.browse(new URI(e.getURL().toString()));
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
 
         JScrollPane textScrollPane = new JScrollPane(usageTextArea);
         textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -1493,7 +1510,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
         if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
         if (logLoadColIdx == -1)         { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
         if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME);  if (!isPolSet) ret = false; }
-        wotPoint = Config.getWotStationaryPointValue();
+        wotPoint = Config.getWOTStationaryPointValue();
         minMafV = Config.getMafVMinimumValue();
         afrErrPrct = Config.getWidebandAfrErrorPercentValue();
         minWotEnrichment = Config.getWOTEnrichmentValue();

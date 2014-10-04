@@ -31,13 +31,15 @@ import org.apache.log4j.Logger;
 
 public class MafScaling {
     private static final Logger logger = Logger.getLogger(MafScaling.class);
-    private static final String Title = "MAF Scaling - v1.5.5";
-    private static final String LVTabName = "<html>Log View</html>";
+    private static final String Title = "MAF Scaling - v1.6.0";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
     private static final String RTabName = "<html>Rescale</html>";
     private static final String LCTabName = "<html>Load Comp</html>";
+    private static final String MITabName = "<html>MAF IAT Comp</html>";
+    private static final String VETabName = "<html>MAF VE Calc</html>";
     private static final String LSTabName = "<html>Log Stats</html>";
+    private static final String LVTabName = "<html>Log View</html>";
     private JFrame frame;
 
     /**
@@ -116,6 +118,14 @@ public class MafScaling {
         JTabbedPane lc = new LoadComp(JTabbedPane.LEFT);
         lc.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(lc, LCTabName);
+
+        JTabbedPane mi = new MafIatComp(JTabbedPane.LEFT);
+        mi.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(mi, MITabName);
+        
+        //JTabbedPane ve = new VECalc(JTabbedPane.LEFT);
+        //ve.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        //tabbedPane.add(ve, VETabName);
 
         JTabbedPane ls = new LogStats(JTabbedPane.LEFT);
         ls.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);

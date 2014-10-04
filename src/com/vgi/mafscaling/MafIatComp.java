@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -89,54 +90,52 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 import org.math.plot.Plot3DPanel;
 
-public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHolder {
-    private static final long serialVersionUID = 2988105467764335997L;
-    private static final Logger logger = Logger.getLogger(LoadComp.class);
+public class MafIatComp extends JTabbedPane implements ActionListener, IMafChartHolder {
+	private static final long serialVersionUID = 42535949864314233L;
+	private static final Logger logger = Logger.getLogger(MafIatComp.class);
 
-    private static final String MpTableName = "Current MP table";
-    private static final String NewMpTableName = "New MP table";
-    private static final String MpCorrTableName = "MP Correction (%) table";
-    private static final String MpCorrCountTableName = "MP Correction Count table";
+    private static final String MafIatTableName = "Current MAF IAT compensation table";
+    private static final String NewMafIatTableName = "New MAF IAT compensation table";
+    private static final String MafIatCorrTableName = "MAF IAT Correction (ratio) table";
+    private static final String MafIatCorrCountTableName = "MAF IAT Correction Count table";
     private static final String dvdtAxisName = "dV / dt";
     private static final String iatAxisName = "IAT";
-    private static final String trpmAxisName = "Trims";
     private static final String timeAxisName = "Time";
-    private static final String rpmAxisName = "RPM";
-    private static final String mafvAxisName = "MAF Voltage";
-    private static final String x3dAxisName = "MP";
-    private static final String y3dAxisName = "RPM";
+    private static final String mafAxisName = "MAF";
+    private static final String corrAxisName = "AFR Correction";
+    private static final String x3dAxisName = "IAT";
+    private static final String y3dAxisName = "MAF";
     private static final String z3dAxisName = "Avg Error %";
-    private static final int ColumnWidth = 50;
-    private static final int ColumnCount = 9;
-    private static final int MpTableRowCount = 20;
+    private static final int ColumnWidth = 60;
+    private static final int ColumnCount = 5;
+    private static final int MafIatTableRowCount = 20;
     private static final int LogDataRowCount = 200;
-    private boolean isLoadCompInRatio = Config.getIsLoadCompInRatio();
-    private int thrtlMaxChange = Config.getThrottleChangeMaxValue();
-    private int minCellHitCount = Config.getLCMinCellHitCount();
-    private double afrMin = Config.getLCAfrMinimumValue();
-    private double afrMax = Config.getLCAfrMaximumValue();
-    private double rpmMax = Config.getRPMMaximumValue();
-    private double rpmMin = Config.getRPMMinimumValue();
-    private double dvDtMax = Config.getLCDvDtMaximumValue();
-    private double iatMax = Config.getLCIatMaximumValue();
-    private double cruiseValue = Config.getCruiseStatusValue();
-    private int corrApplied = Config.getLCCorrectionAppliedValue();
-    
+    private boolean isMafIatInRatio = Config.getIsMafIatInRatio();
+    private int afrRowOffset = Config.getWBO2RowOffset();
+    private int corrApplied = Config.getMICorrectionAppliedValue();
+    private int clValue = Config.getClOlStatusValue();
+    private int thrtlMaxChange = Config.getMIThrottleChangeMaxValue();
+    private int minCellHitCount = Config.getMIMinCellHitCount();
+    private double afrMin = Config.getMIAfrMinimumValue();
+    private double afrMax = Config.getMIAfrMaximumValue();
+    private double dvDtMax = Config.getMIDvDtMaximumValue();
+
+    private int logClOlStatusColIdx = -1;
     private int logThrottleAngleColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
     private int logAfrColIdx = -1;
-    private int logRpmColIdx = -1;
+    private int logWBAfrColIdx = -1;
+    private int logCommandedAfrCol = -1;
     private int logTimeColIdx = -1;
     private int logMafvColIdx = -1;
     private int logIatColIdx = -1;
-    private int logMpColIdx = -1;
-    private int logCruiseStatusColIdx = -1;
+    private int logMafColIdx = -1;
 
-    private JTable mpTable = null;
-    private JTable newMpTable = null;
-    private JTable mpCorrTable = null;
-    private JTable mpCorrCountTable = null;
+    private JTable mafIatTable = null;
+    private JTable newMafIatTable = null;
+    private JTable mafIatCorrTable = null;
+    private JTable mafIatCorrCountTable = null;
     private JTable logDataTable = null;
     private JCheckBox compareTableCheckBox = null;
     private ButtonGroup rbGroup = null;
@@ -145,8 +144,8 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 
     private ExcelAdapter mpExcelAdapter = null;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
-    private ArrayList<Double> trimArray = new ArrayList<Double>();
-    private ArrayList<Double> rpmArray = new ArrayList<Double>();
+    private ArrayList<Double> errCorrArray = new ArrayList<Double>();
+    private ArrayList<Double> mafArray = new ArrayList<Double>();
     private ArrayList<Double> mafvArray = new ArrayList<Double>();
     private ArrayList<Double> timeArray = new ArrayList<Double>();
     private ArrayList<Double> iatArray = new ArrayList<Double>();
@@ -159,9 +158,9 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     private Plot3DPanel plot3d = null;
     private ArrayList<Double> xAxisArray = null;
     private ArrayList<Double> yAxisArray = null;
-    private ArrayList<ArrayList<Double>> savedNewMpTable = new ArrayList<ArrayList<Double>>();
+    private ArrayList<ArrayList<Double>> savedNewMafIatTable = new ArrayList<ArrayList<Double>>();
 
-    public LoadComp(int tabPlacement) {
+    public MafIatComp(int tabPlacement) {
         super(tabPlacement);
         initialize();
     }
@@ -171,7 +170,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
     	    	super.onPaste(table, extendRows, extendCols);
     	    	validateTable(table);
-    	    	clearRunMpTables();
+    	    	clearRunMafIatTables();
     	    }
     	};
         createDataTab();
@@ -224,15 +223,15 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         btnLoadDataButton.addActionListener(this);
         cntlPanel.add(btnLoadDataButton, gbc_btnLoadDataButton);
         
-        JButton btnMpClearButton = new JButton("Clear MP Data");
-        GridBagConstraints gbc_btnMpClearButton = new GridBagConstraints();
-        gbc_btnMpClearButton.anchor = GridBagConstraints.PAGE_START;
-        gbc_btnMpClearButton.insets = new Insets(0, 0, 5, 5);
-        gbc_btnMpClearButton.gridx = 1;
-        gbc_btnMpClearButton.gridy = 0;
-        btnMpClearButton.setActionCommand("clearmp");
-        btnMpClearButton.addActionListener(this);
-        cntlPanel.add(btnMpClearButton, gbc_btnMpClearButton);
+        JButton btnMafIatClearButton = new JButton("Clear MP Data");
+        GridBagConstraints gbc_btnMafIatClearButton = new GridBagConstraints();
+        gbc_btnMafIatClearButton.anchor = GridBagConstraints.PAGE_START;
+        gbc_btnMafIatClearButton.insets = new Insets(0, 0, 5, 5);
+        gbc_btnMafIatClearButton.gridx = 1;
+        gbc_btnMafIatClearButton.gridy = 0;
+        btnMafIatClearButton.setActionCommand("clearmp");
+        btnMafIatClearButton.addActionListener(this);
+        cntlPanel.add(btnMafIatClearButton, gbc_btnMafIatClearButton);
         
         JButton btnRunClearButton = new JButton("Clear Run Data");
         GridBagConstraints gbc_btnRunClearButton = new GridBagConstraints();
@@ -309,17 +308,17 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         gbc_aprScrollPane.gridy = 1;
         dataPanel.add(aprScrollPane, gbc_aprScrollPane);
         
-        JPanel MpTablesPanel = new JPanel();
-        aprScrollPane.setViewportView(MpTablesPanel);
-        GridBagLayout gbl_MpTablesPanel = new GridBagLayout();
-        gbl_MpTablesPanel.columnWidths = new int[]{0, 0};
-        gbl_MpTablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0};
-        gbl_MpTablesPanel.columnWeights = new double[]{0.0, 1.0};
-        gbl_MpTablesPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-        MpTablesPanel.setLayout(gbl_MpTablesPanel);
+        JPanel MafIatTablesPanel = new JPanel();
+        aprScrollPane.setViewportView(MafIatTablesPanel);
+        GridBagLayout gbl_MafIatTablesPanel = new GridBagLayout();
+        gbl_MafIatTablesPanel.columnWidths = new int[]{0, 0};
+        gbl_MafIatTablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0};
+        gbl_MafIatTablesPanel.columnWeights = new double[]{0.0, 1.0};
+        gbl_MafIatTablesPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        MafIatTablesPanel.setLayout(gbl_MafIatTablesPanel);
 
         createLogDataTable(dataRunPanel);
-        createMpDataTables(MpTablesPanel);
+        createMafIatDataTables(MafIatTablesPanel);
     }
     
     private void createLogDataTable(JPanel panel) {
@@ -332,14 +331,10 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
             logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
             logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             logDataTable.getColumnModel().getColumn(0).setHeaderValue("Time");
-            logDataTable.getColumnModel().getColumn(1).setHeaderValue("RPM");
+            logDataTable.getColumnModel().getColumn(1).setHeaderValue("MAF");
             logDataTable.getColumnModel().getColumn(2).setHeaderValue("IAT");
-            logDataTable.getColumnModel().getColumn(3).setHeaderValue("STFT");
-            logDataTable.getColumnModel().getColumn(4).setHeaderValue("LTFT");
-            logDataTable.getColumnModel().getColumn(5).setHeaderValue("MP");
-            logDataTable.getColumnModel().getColumn(6).setHeaderValue("MafV");
-            logDataTable.getColumnModel().getColumn(7).setHeaderValue("Trims");
-            logDataTable.getColumnModel().getColumn(8).setHeaderValue("dV/dt");
+            logDataTable.getColumnModel().getColumn(3).setHeaderValue("AFR Corr");
+            logDataTable.getColumnModel().getColumn(4).setHeaderValue("dV/dt");
             Utils.initializeTable(logDataTable, ColumnWidth);
 
             JTableHeader header = logDataTable.getTableHeader();
@@ -359,14 +354,14 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
             excelAdapter.addTable(logDataTable, true, false);
     }
     
-    private void createMpDataTables(JPanel panel) {
-        mpTable = createMpDataTable(panel, MpTableName, 0);
-        newMpTable = createMpDataTable(panel, NewMpTableName, 2);
-        mpCorrTable = createMpDataTable(panel, MpCorrTableName, 4);
-        mpCorrCountTable = createMpDataTable(panel, MpCorrCountTableName, 6);
+    private void createMafIatDataTables(JPanel panel) {
+        mafIatTable = createMafIatDataTable(panel, MafIatTableName, 0);
+        newMafIatTable = createMafIatDataTable(panel, NewMafIatTableName, 2);
+        mafIatCorrTable = createMafIatDataTable(panel, MafIatCorrTableName, 4);
+        mafIatCorrCountTable = createMafIatDataTable(panel, MafIatCorrCountTableName, 6);
     }
     
-    private JTable createMpDataTable(JPanel panel, String tableName, int gridy) {
+    private JTable createMafIatDataTable(JPanel panel, String tableName, int gridy) {
     	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
         final TableColumn afrColumn = new TableColumn(0, 250);
         afrColumn.setHeaderValue(tableName);
@@ -386,7 +381,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         panel.add(lblAfrTableName, gbc_lblAfrTableName);
         
         final JTable table;
-        if (tableName.equals(MpTableName)) {
+        if (tableName.equals(MafIatTableName)) {
 	        table = new JTable() {
 				private static final long serialVersionUID = 3218402382894083287L;
 				public boolean isCellEditable(int row, int column) { return false; };
@@ -412,11 +407,11 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         table.setBorder(new LineBorder(new Color(0, 0, 0)));
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.setModel(new DefaultTableModel(MpTableRowCount, MpTableRowCount));
+        table.setModel(new DefaultTableModel(MafIatTableRowCount, MafIatTableRowCount));
         table.setTableHeader(null);
         Utils.initializeTable(table, ColumnWidth);
         
-        formatMpTable(table);
+        formatMafIatTable(table);
         
         GridBagConstraints gbc_table = new GridBagConstraints();
         gbc_table.insets = new Insets(0, 0, 0, 0);
@@ -428,8 +423,8 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         return table;
     }
     
-    private void formatMpTable(JTable table) {
-        if (table.getName().equals(MpCorrCountTableName)) {
+    private void formatMafIatTable(JTable table) {
+        if (table.getName().equals(MafIatCorrCountTableName)) {
 	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
 	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
 	        renderer.setFormats(formatMatrix);
@@ -496,27 +491,27 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         rbGroup.add(radioButtonIatData);
         cntlPanel.add(radioButtonIatData, gbc_radioButtonIatData);
         
-        JRadioButton radioButtonTrpmData = new JRadioButton("Trims/RPM");
-        GridBagConstraints gbc_radioButtonTrpmData = new GridBagConstraints();
-        gbc_radioButtonTrpmData.anchor = GridBagConstraints.WEST;
-        gbc_radioButtonTrpmData.insets = new Insets(0, 0, 3, 3);
-        gbc_radioButtonTrpmData.gridx = 2;
-        gbc_radioButtonTrpmData.gridy = 0;
-        radioButtonTrpmData.setActionCommand("trpm");
-        radioButtonTrpmData.addActionListener(this);
-        rbGroup.add(radioButtonTrpmData);
-        cntlPanel.add(radioButtonTrpmData, gbc_radioButtonTrpmData);
+        JRadioButton radioButtonMafErrCorrData = new JRadioButton("AFR Corr/MAF");
+        GridBagConstraints gbc_radioButtonMafErrCorrData = new GridBagConstraints();
+        gbc_radioButtonMafErrCorrData.anchor = GridBagConstraints.WEST;
+        gbc_radioButtonMafErrCorrData.insets = new Insets(0, 0, 3, 3);
+        gbc_radioButtonMafErrCorrData.gridx = 2;
+        gbc_radioButtonMafErrCorrData.gridy = 0;
+        radioButtonMafErrCorrData.setActionCommand("mafcorr");
+        radioButtonMafErrCorrData.addActionListener(this);
+        rbGroup.add(radioButtonMafErrCorrData);
+        cntlPanel.add(radioButtonMafErrCorrData, gbc_radioButtonMafErrCorrData);
         
-        JRadioButton radioButtonTrmafvData = new JRadioButton("Trims/MAFv");
-        GridBagConstraints gbc_radioButtonTrmafvData = new GridBagConstraints();
-        gbc_radioButtonTrmafvData.anchor = GridBagConstraints.WEST;
-        gbc_radioButtonTrmafvData.insets = new Insets(0, 0, 3, 3);
-        gbc_radioButtonTrmafvData.gridx = 3;
-        gbc_radioButtonTrmafvData.gridy = 0;
-        radioButtonTrmafvData.setActionCommand("trmafv");
-        radioButtonTrmafvData.addActionListener(this);
-        rbGroup.add(radioButtonTrmafvData);
-        cntlPanel.add(radioButtonTrmafvData, gbc_radioButtonTrmafvData);
+        JRadioButton radioButtonIatErrCorrData = new JRadioButton("AFR Corr/IAT");
+        GridBagConstraints gbc_radioButtonIatErrCorrData = new GridBagConstraints();
+        gbc_radioButtonIatErrCorrData.anchor = GridBagConstraints.WEST;
+        gbc_radioButtonIatErrCorrData.insets = new Insets(0, 0, 3, 3);
+        gbc_radioButtonIatErrCorrData.gridx = 3;
+        gbc_radioButtonIatErrCorrData.gridy = 0;
+        radioButtonIatErrCorrData.setActionCommand("iatcorr");
+        radioButtonIatErrCorrData.addActionListener(this);
+        rbGroup.add(radioButtonIatErrCorrData);
+        cntlPanel.add(radioButtonIatErrCorrData, gbc_radioButtonIatErrCorrData);
         
         JRadioButton radioButtonCorrData = new JRadioButton("Corrections");
         GridBagConstraints gbc_radioButtonCorrData = new GridBagConstraints();
@@ -686,7 +681,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     
     private String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.load_comp");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.mafiat_comp");
         return bundle.getString("usage"); 
     }
 
@@ -694,28 +689,28 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     // COMMOMN ACTIONS RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////////////////
     
-    private void clearMpTables() {
-    	clearMpTable(mpTable);
-    	clearRunMpTables();
+    private void clearMafIatTables() {
+    	clearMafIatTable(mafIatTable);
+    	clearRunMafIatTables();
     }
     
-    private void clearRunMpTables() {
-    	clearMpTable(newMpTable);
-    	clearMpTable(mpCorrTable);
-    	clearMpTable(mpCorrCountTable);
-    	savedNewMpTable.clear();
+    private void clearRunMafIatTables() {
+    	clearMafIatTable(newMafIatTable);
+    	clearMafIatTable(mafIatCorrTable);
+    	clearMafIatTable(mafIatCorrCountTable);
+    	savedNewMafIatTable.clear();
     	compareTableCheckBox.setSelected(false);
         clear2dChartData();
         plot3d.removeAllPlots();
     }
     
-    private void clearMpTable(JTable table) {
-        if (table.getName().equals(MpTableName))
-        	table.setModel(new DefaultTableModel(newMpTable.getRowCount(), newMpTable.getColumnCount()));
+    private void clearMafIatTable(JTable table) {
+        if (table.getName().equals(MafIatTableName))
+        	table.setModel(new DefaultTableModel(newMafIatTable.getRowCount(), newMafIatTable.getColumnCount()));
         else
-        	table.setModel(new DefaultTableModel(mpTable.getRowCount(), mpTable.getColumnCount()));
+        	table.setModel(new DefaultTableModel(mafIatTable.getRowCount(), mafIatTable.getColumnCount()));
         Utils.initializeTable(table, ColumnWidth);
-        formatMpTable(table);
+        formatMafIatTable(table);
     }
     
     private void clearLogDataTables() {
@@ -745,47 +740,48 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     private boolean getColumnsFilters(String[] elements) {
     	boolean ret = true;
         ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
+        String logClOlStatusColName = Config.getClOlStatusColumnName();
         String logThrottleAngleColName = Config.getThrottleAngleColumnName();
         String logAfLearningColName = Config.getAfLearningColumnName();
         String logAfCorrectionColName = Config.getAfCorrectionColumnName();
+        String logWBAfrColName = Config.getWidebandAfrColumnName();
         String logAfrColName = Config.getAfrColumnName();
-        String logRpmColName = Config.getRpmColumnName();
         String logTimeColName = Config.getTimeColumnName();
         String logMafvColName = Config.getMafVoltageColumnName();
         String logIatColName = Config.getIatColumnName();
-        String logMpColName = Config.getMpColumnName();
-        String logCruiseStatusColName = Config.getCruiseStatusColumnName();
+        String logMafColName = Config.getMassAirflowColumnName();
+        String logCommandedAfrColName = Config.getCommandedAfrColumnName();
+        logClOlStatusColIdx = columns.indexOf(logClOlStatusColName);
         logThrottleAngleColIdx = columns.indexOf(logThrottleAngleColName);
         logAfLearningColIdx = columns.indexOf(logAfLearningColName);
         logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
+        logWBAfrColIdx = columns.indexOf(logWBAfrColName);
         logAfrColIdx = columns.indexOf(logAfrColName);
-        logRpmColIdx = columns.indexOf(logRpmColName);
+        logCommandedAfrCol = columns.indexOf(logCommandedAfrColName);
         logTimeColIdx = columns.indexOf(logTimeColName);
         logMafvColIdx = columns.indexOf(logMafvColName);
         logIatColIdx = columns.indexOf(logIatColName);
-        logMpColIdx = columns.indexOf(logMpColName);
-        logCruiseStatusColIdx = columns.indexOf(logCruiseStatusColName);
+        logMafColIdx = columns.indexOf(logMafColName);
+        if (logClOlStatusColIdx == -1)   { Config.setClOlStatusColumnName(Config.NO_NAME);   ret = false; }
         if (logThrottleAngleColIdx == -1){ Config.setThrottleAngleColumnName(Config.NO_NAME);ret = false; }
         if (logAfLearningColIdx == -1)   { Config.setAfLearningColumnName(Config.NO_NAME);   ret = false; }
         if (logAfCorrectionColIdx == -1) { Config.setAfCorrectionColumnName(Config.NO_NAME); ret = false; }
+        if (logWBAfrColIdx == -1)        { Config.setWidebandAfrColumnName(Config.NO_NAME);  ret = false; }
         if (logAfrColIdx == -1)          { Config.setAfrColumnName(Config.NO_NAME);          ret = false; }
-        if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);          ret = false; }
+        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME); ret = false; }
         if (logTimeColIdx == -1)         { Config.setTimeColumnName(Config.NO_NAME);         ret = false; }
         if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
         if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
-        if (logMpColIdx == -1)           { Config.setMpColumnName(Config.NO_NAME);           ret = false; }
-        if (logCruiseStatusColIdx == -1) { Config.setCommandedAfrColumnName(Config.NO_NAME); }
-        isLoadCompInRatio = Config.getIsLoadCompInRatio();
-        thrtlMaxChange = Config.getThrottleChangeMaxValue();
-        minCellHitCount = Config.getLCMinCellHitCount();
-        afrMin = Config.getLCAfrMinimumValue();
-        afrMax = Config.getLCAfrMaximumValue();
-        rpmMax = Config.getRPMMaximumValue();
-        rpmMin = Config.getRPMMinimumValue();
-        dvDtMax = Config.getLCDvDtMaximumValue();
-        iatMax = Config.getLCIatMaximumValue();
-        cruiseValue = Config.getCruiseStatusValue();
-        corrApplied = Config.getLCCorrectionAppliedValue();
+        if (logMafColIdx == -1)          { Config.setMassAirflowColumnName(Config.NO_NAME);  ret = false; }
+        isMafIatInRatio = Config.getIsMafIatInRatio();
+        afrRowOffset = Config.getWBO2RowOffset();
+        corrApplied = Config.getMICorrectionAppliedValue();
+        clValue = Config.getMIClOlStatusValue();
+        thrtlMaxChange = Config.getMIThrottleChangeMaxValue();
+        minCellHitCount = Config.getMIMinCellHitCount();
+        afrMin = Config.getMIAfrMinimumValue();
+        afrMax = Config.getMIAfrMaximumValue();
+        dvDtMax = Config.getMIDvDtMaximumValue();
         return ret;
     }
     
@@ -795,6 +791,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
+	        ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
@@ -803,48 +800,55 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 	                getColumnsFilters(elements);
 	
 	                boolean resetColumns = false;
-	                if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-	                	logRpmColIdx >= 0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
+	                if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 ||
+	                	logWBAfrColIdx >= 0 || logAfrColIdx >= 0 || logCommandedAfrCol >= 0 || logTimeColIdx >=0 ||
+	                	logMafvColIdx >= 0 || logIatColIdx >= 0 || logMafColIdx >= 0 || logClOlStatusColIdx >= 0) {
 	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
 	                    	resetColumns = true;
 	                }
 	
-	                if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-	                	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
-	                	ColumnsFiltersSelection selectionWindow = new LCColumnsFiltersSelection(false);
+	                if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 ||
+	                	logWBAfrColIdx < 0 || logAfrColIdx < 0 || logCommandedAfrCol < 0 || logTimeColIdx < 0 || 
+	                	logMafvColIdx < 0 || logIatColIdx < 0 || logMafColIdx < 0 || logClOlStatusColIdx < 0) {
+	                	ColumnsFiltersSelection selectionWindow = new MafIatColumnsFiltersSelection(false);
 	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
 	                		return;
 	                }
 	                
 	                String[] flds;
-	                line = br.readLine();
+	                String[] afrflds;
 	                boolean removed = false;
 	                int i = 2;
 	                int row = getLogTableEmptyRow();
-	                double cruise = -1;
 	                double thrtlMaxChange2 = thrtlMaxChange * 2.0;
 	                double throttle = 0;
 	                double pThrottle = 0;
 	                double ppThrottle = 0;
-	                double trims = 0;
-	                double stft = 0;
-	                double ltft = 0;
 	                double afr = 0;
+	                double corr = 0;
 	                double dVdt = 0;
 	                double prevTime = 0;
 	                double time = 0;
 	                double timeMultiplier = 1.0;
 	                double pmafv = 0;
+	                double maf = 0;
 	                double mafv = 0;
 	                double iat;
-	                double rpm;
 	                clearChartData();
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
+	                	line = br.readLine();
+	                	if (line != null)
+	                		buffer.addFirst(line.split(",", -1));
+	                }
 	                try {
-	                	if (-1 == logCruiseStatusColIdx)
-	                		cruiseValue = -1;
-		                while (line != null) {
-		                    flds = line.split(",", -1);
+		                while (line != null && buffer.size() > afrRowOffset) {
+		                    afrflds = buffer.getFirst();
+		                    flds = buffer.removeLast();
+		                    line = br.readLine();
+		                	if (line != null)
+		                		buffer.addFirst(line.split(",", -1));
+		                	
 		                    ppThrottle = pThrottle;
 		                    pThrottle = throttle;
 		                    try {
@@ -870,28 +874,26 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 		                    	}
 		                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
 		                            // Filters
-		                        	afr = Double.valueOf(flds[logAfrColIdx]);
-	                                rpm = Double.valueOf(flds[logRpmColIdx]);
+	                            	if (clValue == Double.valueOf(flds[logClOlStatusColIdx])) {
+	                            		afr = Double.valueOf(flds[logAfrColIdx]);
+	                            		corr = (Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]) + 100.0) / 100.0;
+	                            	}
+	                            	else {
+	                            		afr = Double.valueOf(flds[logWBAfrColIdx]);
+	                            		corr = Double.valueOf(afrflds[logWBAfrColIdx]) / Double.valueOf(flds[logCommandedAfrCol]);
+	                            	}
 		                        	iat = Double.valueOf(flds[logIatColIdx]);
-		                        	stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-		                        	ltft = Double.valueOf(flds[logAfLearningColIdx]);
-		                        	trims = stft + ltft;
-		                        	if (cruiseValue != -1)
-		                        		cruise = Double.valueOf(flds[logCruiseStatusColIdx]);
-		                        	if (afrMin <= afr && afr <= afrMax && rpmMin <= rpm && rpm <= rpmMax && dVdt <= dvDtMax && iat <= iatMax && cruise == cruiseValue) {
+		                        	maf = Double.valueOf(flds[logMafColIdx]);
+		                        	if (afrMin <= afr && afr <= afrMax && dVdt <= dvDtMax) {
 			                    		removed = false;
 		                                Utils.ensureRowCount(row + 1, logDataTable);
 		                                logDataTable.setValueAt(time, row, 0);
-		                                logDataTable.setValueAt(rpm, row, 1);
+		                                logDataTable.setValueAt(maf, row, 1);
 		                                logDataTable.setValueAt(iat, row, 2);
-		                                logDataTable.setValueAt(stft, row, 3);
-		                                logDataTable.setValueAt(ltft, row, 4);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 5);
-		                                logDataTable.setValueAt(mafv, row, 6);
-		                                logDataTable.setValueAt(trims, row, 7);
-		                                logDataTable.setValueAt(dVdt, row, 8);
-		                                trimArray.add(trims);
-		                                rpmArray.add(rpm);
+		                                logDataTable.setValueAt(corr, row, 3);
+		                                logDataTable.setValueAt(dVdt, row, 4);
+		                                mafArray.add(maf);
+		                                errCorrArray.add(corr);
 		                                mafvArray.add(mafv);
 		                                timeArray.add(time);
 		                                iatArray.add(iat);
@@ -909,7 +911,6 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 		                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
 		                        return;
 		                    }
-		                    line = br.readLine();
 		                    i += 1;
 		                }
 		    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
@@ -991,16 +992,16 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     
     private boolean getAxisData() {
     	try {
-    		if (Utils.isTableEmpty(mpTable)) {
+    		if (Utils.isTableEmpty(mafIatTable)) {
                 JOptionPane.showMessageDialog(null, "PLease paste current Engine Load Compensation table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
                 return false;
     		}
     		xAxisArray = new ArrayList<Double>();
     		yAxisArray = new ArrayList<Double>();
-	        for (int i = 1; i < mpTable.getColumnCount(); ++i)
-	        	xAxisArray.add(Double.valueOf(mpTable.getValueAt(0, i).toString()));
-	        for (int i = 1; i < mpTable.getRowCount(); ++i)
-	        	yAxisArray.add(Double.valueOf(mpTable.getValueAt(i, 0).toString()));
+	        for (int i = 1; i < mafIatTable.getColumnCount(); ++i)
+	        	xAxisArray.add(Double.valueOf(mafIatTable.getValueAt(0, i).toString()));
+	        for (int i = 1; i < mafIatTable.getRowCount(); ++i)
+	        	yAxisArray.add(Double.valueOf(mafIatTable.getValueAt(i, 0).toString()));
 	        if (xAxisArray.size() > 0 && yAxisArray.size() > 0)
 	        	return true;
     	}
@@ -1020,19 +1021,19 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
             HashMap<Double, ArrayList<Double>> yData;
             ArrayList<Double> data;
             for (int i = 0; i < logDataTable.getRowCount(); ++i) {
-            	xStr = logDataTable.getValueAt(i, 5).toString();
+            	xStr = logDataTable.getValueAt(i, 2).toString();
             	yStr = logDataTable.getValueAt(i, 1).toString();
-            	valStr = logDataTable.getValueAt(i, 7).toString();
+            	valStr = logDataTable.getValueAt(i, 3).toString();
                 if (!Pattern.matches(Utils.fpRegex, xStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for MP, row " + i + 1, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for IAT, row " + i + 1, "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, yStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for RPM, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for MAF, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, valStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for Trims, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for AFR Corr, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 x = xAxisArray.get(Utils.closestValueIndex(Double.valueOf(xStr), xAxisArray));
@@ -1052,54 +1053,53 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
                 data.add(val);
             }
 
-            Color[][] colorMatrix = new Color[mpCorrTable.getRowCount()][mpCorrTable.getColumnCount()];
+            Color[][] colorMatrix = new Color[mafIatCorrTable.getRowCount()][mafIatCorrTable.getColumnCount()];
 	        for (int i = 1; i < xAxisArray.size() + 1; ++i) {
-	        	newMpTable.setValueAt(mpTable.getValueAt(0, i), 0, i);
-	        	mpCorrTable.setValueAt(mpTable.getValueAt(0, i), 0, i);
-	        	mpCorrCountTable.setValueAt(mpTable.getValueAt(0, i), 0, i);
+	        	newMafIatTable.setValueAt(mafIatTable.getValueAt(0, i), 0, i);
+	        	mafIatCorrTable.setValueAt(mafIatTable.getValueAt(0, i), 0, i);
+	        	mafIatCorrCountTable.setValueAt(mafIatTable.getValueAt(0, i), 0, i);
 	        	for (int j = 1; j < yAxisArray.size() + 1; ++j) {
 	        		if (i == 1) {
-	        			newMpTable.setValueAt(mpTable.getValueAt(j, 0), j, 0);
-	        			mpCorrTable.setValueAt(mpTable.getValueAt(j, 0), j, 0);
-	        			mpCorrCountTable.setValueAt(mpTable.getValueAt(j, 0), j, 0);
+	        			newMafIatTable.setValueAt(mafIatTable.getValueAt(j, 0), j, 0);
+	        			mafIatCorrTable.setValueAt(mafIatTable.getValueAt(j, 0), j, 0);
+	        			mafIatCorrCountTable.setValueAt(mafIatTable.getValueAt(j, 0), j, 0);
 	        		}
         			x = xAxisArray.get(i - 1);
         			y = yAxisArray.get(j - 1);
                     yData = xData.get(x);
                     if (yData == null)
-                    	newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
+                    	newMafIatTable.setValueAt(mafIatTable.getValueAt(j, i), j, i);
                     else {
                     	data = yData.get(y);
 	                    if (data == null)
-	                    	newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
+	                    	newMafIatTable.setValueAt(mafIatTable.getValueAt(j, i), j, i);
 	                    else {
 	    	        		cnt = data.size();
     		        		val = (Utils.mean(data) + Utils.mode(data)) / 2.0;
-	    	        		mpCorrTable.setValueAt(val, j, i);
-	    	        		mpCorrCountTable.setValueAt(cnt, j, i);
+	    	        		mafIatCorrTable.setValueAt(val, j, i);
+	    	        		mafIatCorrCountTable.setValueAt(cnt, j, i);
 	    	        		if (cnt > minCellHitCount) {
 	    		        		val = val / 100.0 * corrApplied;
-	    		        		val = 1 + val / 100.0;
-	    		        		if (isLoadCompInRatio)
-	    		        			newMpTable.setValueAt(val * Double.valueOf(mpTable.getValueAt(j, i).toString()), j, i);
+	    		        		if (isMafIatInRatio)
+		    		            	newMafIatTable.setValueAt(val * Double.valueOf(mafIatTable.getValueAt(j, i).toString()), j, i);
 	    		        		else
-	    		        			newMpTable.setValueAt(val * (100.0 + Double.valueOf(mpTable.getValueAt(j, i).toString())) - 100.0, j, i);
+	    		        			newMafIatTable.setValueAt(val * (100.0 + Double.valueOf(mafIatTable.getValueAt(j, i).toString())) - 100.0, j, i);
 	    		            	colorMatrix[j][i] = Color.PINK;
 	    	        		}
 	    	        		else
-	    	        			newMpTable.setValueAt(mpTable.getValueAt(j, i), j, i);
+	    	        			newMafIatTable.setValueAt(mafIatTable.getValueAt(j, i), j, i);
 	                    }
                     }
 	        	}
 	        }
-	        Utils.colorTable(newMpTable);
+	        Utils.colorTable(newMafIatTable);
 	        
             for (int i = 0; i < colorMatrix.length; ++i)
                 colorMatrix[i][0] = Color.LIGHT_GRAY;
             for (int i = 0; i < colorMatrix[0].length; ++i)
                 colorMatrix[0][i] = Color.LIGHT_GRAY;
-            ((BgColorFormatRenderer)mpCorrTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
-            ((BgColorFormatRenderer)mpCorrCountTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
+            ((BgColorFormatRenderer)mafIatCorrTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
+            ((BgColorFormatRenderer)mafIatCorrCountTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
 
 	        plot3dCorrection();
             
@@ -1113,8 +1113,8 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     }
     
     private void clearChartData() {
-        trimArray.clear();
-        rpmArray.clear();
+        mafArray.clear();
+        errCorrArray.clear();
         mafvArray.clear();
         timeArray.clear();
         iatArray.clear();
@@ -1125,10 +1125,10 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         plot3d.removeAllPlots();
     }
     
-    private void calculateLoad() {
+    private void calculateIATComp() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-	    	clearRunMpTables();
+	    	clearRunMafIatTables();
             if (!getAxisData() || !processLog())
                 return;
         }
@@ -1174,9 +1174,9 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
         return false;
     }
 
-    private boolean plotTrimRpmData() {
+    private boolean plotMafErrCorrData() {
     	clear2dChartData();
-        if (setXYSeries(runData, rpmArray, trimArray)) {
+        if (setXYSeries(runData, mafArray, errCorrArray)) {
 	        double[] ols = Regression.getOLSRegression(chartPanel.getChart().getXYPlot().getDataset(1), 0);
 	        Function2D curve = new LineFunction2D(ols[0], ols[1]);
 	        trendData.clear();
@@ -1187,17 +1187,17 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 	        XYPlot plot = chartPanel.getChart().getXYPlot();
         	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
 	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getDomainAxis(0).setLabel(rpmAxisName);
-	    	plot.getRangeAxis(0).setLabel(trpmAxisName);
+	    	plot.getDomainAxis(0).setLabel(mafAxisName);
+	    	plot.getRangeAxis(0).setLabel(corrAxisName);
 	        plot.getRenderer(0).setSeriesVisible(0, true);
 	        return true;
         }
         return false;
     }
-
-    private boolean plotTrimMafvData() {
+    
+    private boolean plotIatErrCorrData() {
     	clear2dChartData();
-        if (setXYSeries(runData, mafvArray, trimArray)) {
+        if (setXYSeries(runData, iatArray, errCorrArray)) {
 	        double[] ols = Regression.getOLSRegression(chartPanel.getChart().getXYPlot().getDataset(1), 0);
 	        Function2D curve = new LineFunction2D(ols[0], ols[1]);
 	        trendData.clear();
@@ -1208,8 +1208,8 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 	        XYPlot plot = chartPanel.getChart().getXYPlot();
         	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
 	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getDomainAxis(0).setLabel(mafvAxisName);
-	    	plot.getRangeAxis(0).setLabel(trpmAxisName);
+	    	plot.getDomainAxis(0).setLabel(iatAxisName);
+	    	plot.getRangeAxis(0).setLabel(corrAxisName);
 	        plot.getRenderer(0).setSeriesVisible(0, true);
 	        return true;
         }
@@ -1227,16 +1227,16 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     	String val;
     	int i = 0;
     	int j = 0;
-    	if (!Utils.isTableEmpty(mpCorrTable)) {
+    	if (!Utils.isTableEmpty(mafIatCorrTable)) {
     		try {
-		    	for (i = 1; i < mpCorrTable.getColumnCount(); ++i) {
-		    		val = mpCorrTable.getValueAt(0, i).toString();
+		    	for (i = 1; i < mafIatCorrTable.getColumnCount(); ++i) {
+		    		val = mafIatCorrTable.getValueAt(0, i).toString();
 		    		series = new XYSeries(df.format(Double.valueOf(val)));
-		    		for (j = 1; j < mpCorrTable.getRowCount(); ++j) { 
-		    			if (mpCorrTable.getValueAt(j, i) != null) {
-		    				val = mpCorrTable.getValueAt(j, i).toString();
+		    		for (j = 1; j < mafIatCorrTable.getRowCount(); ++j) { 
+		    			if (mafIatCorrTable.getValueAt(j, i) != null) {
+		    				val = mafIatCorrTable.getValueAt(j, i).toString();
 		    				if (!val.isEmpty())
-		    					series.add(Double.valueOf(mpCorrTable.getValueAt(j, 0).toString()), Double.valueOf(val));
+		    					series.add(Double.valueOf(mafIatCorrTable.getValueAt(j, 0).toString()), Double.valueOf(val));
 		    			}
 		    		}
 		    		if (series.getItemCount() > 0) {
@@ -1247,13 +1247,13 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 		    	}
 		    	plot.getDomainAxis(0).setAutoRange(true);
 		    	plot.getRangeAxis(0).setAutoRange(true);
-		    	plot.getDomainAxis(0).setLabel(rpmAxisName);
-		    	plot.getRangeAxis(0).setLabel(trpmAxisName);
+		    	plot.getDomainAxis(0).setLabel(mafAxisName);
+		    	plot.getRangeAxis(0).setLabel(corrAxisName);
 		        plot.getRenderer(0).setSeriesVisible(0, false);
             }
             catch (NumberFormatException e) {
                 logger.error(e);
-                JOptionPane.showMessageDialog(null, "Error parsing number from " + MpCorrTableName + " table, cell(" + i + " : " + j + "): " + e, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Error parsing number from " + MafIatCorrTableName + " table, cell(" + i + " : " + j + "): " + e, "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
     	}
@@ -1262,7 +1262,7 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     
     private void plot3dCorrection() {
         plot3d.removeAllPlots();
-    	if (!Utils.isTableEmpty(mpCorrTable)) {
+    	if (!Utils.isTableEmpty(mafIatCorrTable)) {
     		try {
 		        double[] x = new double[xAxisArray.size()];
 		        int i = 0;
@@ -1271,8 +1271,8 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
 		        double[] y = new double[yAxisArray.size()];
 		        for (i = 0; i < yAxisArray.size(); ++i)
 		        	y[i] = yAxisArray.get(i);
-		        double[][] z = Utils.doubleZArray(mpCorrTable, x, y);
-		        Color[][] colors = Utils.generateTableColorMatrix(mpCorrTable, 1, 1);
+		        double[][] z = Utils.doubleZArray(mafIatCorrTable, x, y);
+		        Color[][] colors = Utils.generateTableColorMatrix(mafIatCorrTable, 1, 1);
 		        plot3d.addGridPlot("Average Error % Plot", colors, x, y, z);
             }
             catch (Exception e) {
@@ -1301,25 +1301,25 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     }
     
     private boolean setCompareTables() {
-    	if (mpTable.getColumnCount() != newMpTable.getColumnCount() || mpTable.getRowCount() != newMpTable.getRowCount())
+    	if (mafIatTable.getColumnCount() != newMafIatTable.getColumnCount() || mafIatTable.getRowCount() != newMafIatTable.getRowCount())
     		return false;
     	ArrayList<Double> row;
     	double v1, v2;
-    	Utils.clearTableColors(newMpTable);
-    	savedNewMpTable.clear();
-    	for (int i = 1; i < mpTable.getRowCount(); ++i) {
+    	Utils.clearTableColors(newMafIatTable);
+    	savedNewMafIatTable.clear();
+    	for (int i = 1; i < mafIatTable.getRowCount(); ++i) {
     		row = new ArrayList<Double>();
-    		savedNewMpTable.add(row);
-    		for (int j = 1; j < mpTable.getColumnCount(); ++j) {
+    		savedNewMafIatTable.add(row);
+    		for (int j = 1; j < mafIatTable.getColumnCount(); ++j) {
     			try {
-    				v1 = Double.valueOf(mpTable.getValueAt(i, j).toString());
-    				v2 = Double.valueOf(newMpTable.getValueAt(i, j).toString());
+    				v1 = Double.valueOf(mafIatTable.getValueAt(i, j).toString());
+    				v2 = Double.valueOf(newMafIatTable.getValueAt(i, j).toString());
     				row.add(v2);
     				v2 = v2 - v1;
     				if (v2 == 0)
-        				newMpTable.setValueAt("", i, j);
+        				newMafIatTable.setValueAt("", i, j);
     				else
-    					newMpTable.setValueAt(v2, i, j);
+    					newMafIatTable.setValueAt(v2, i, j);
     			}
     			catch (Exception e) {
     				unsetCompareTables();
@@ -1327,37 +1327,37 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
     			}
     		}
     	}
-    	Utils.colorTable(newMpTable);
+    	Utils.colorTable(newMafIatTable);
     	return true;
     }
     
     private void unsetCompareTables() {
-    	Utils.clearTableColors(newMpTable);
+    	Utils.clearTableColors(newMafIatTable);
     	ArrayList<Double> row;
-    	for (int i = 0; i < savedNewMpTable.size(); ++i) {
-    		row = savedNewMpTable.get(i);
+    	for (int i = 0; i < savedNewMafIatTable.size(); ++i) {
+    		row = savedNewMafIatTable.get(i);
     		for (int j = 0; j < row.size(); ++j)
-    			newMpTable.setValueAt(row.get(j), i + 1, j + 1);
+    			newMafIatTable.setValueAt(row.get(j), i + 1, j + 1);
     	}
-    	Utils.colorTable(newMpTable);
-    	savedNewMpTable.clear();
+    	Utils.colorTable(newMafIatTable);
+    	savedNewMafIatTable.clear();
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if ("clearmp".equals(e.getActionCommand())) {
-	    	clearMpTables();
+	    	clearMafIatTables();
         }
         else if ("clearlog".equals(e.getActionCommand())) {
             clearLogDataTables();
-            clearRunMpTables();
+            clearRunMafIatTables();
         }
         else if ("clearall".equals(e.getActionCommand())) {
             clearLogDataTables();
-	    	clearMpTables();
+	    	clearMafIatTables();
         }
         else if ("go".equals(e.getActionCommand())) {
-        	calculateLoad();
+        	calculateIATComp();
         }
         else if ("loadlog".equals(e.getActionCommand())) {
             loadLogFile();
@@ -1398,10 +1398,10 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
             else
                 runData.clear();
         }
-        else if ("trpm".equals(e.getActionCommand())) {
+        else if ("mafcorr".equals(e.getActionCommand())) {
         	JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
-                if (!plotTrimRpmData())
+                if (!plotMafErrCorrData())
                 	radioButton.setSelected(false);
             }
             else {
@@ -1409,10 +1409,10 @@ public class LoadComp extends JTabbedPane implements ActionListener, IMafChartHo
                 trendData.clear();
             }
         }
-        else if ("trmafv".equals(e.getActionCommand())) {
+        else if ("iatcorr".equals(e.getActionCommand())) {
         	JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
-                if (!plotTrimMafvData())
+                if (!plotIatErrCorrData())
                 	radioButton.setSelected(false);
             }
             else {

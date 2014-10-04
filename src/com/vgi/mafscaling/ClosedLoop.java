@@ -1958,7 +1958,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
 	
 	                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
 	                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-	                	ColumnsFiltersSelection selectionWindow = new ColumnsFiltersSelection(ColumnsFiltersSelection.TaskTab.CLOSED_LOOP, isPolSet);
+	                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolSet);
 	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
 	                		return;
 	                }
@@ -1982,22 +1982,22 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
 	                while (line != null) {
 	                    flds = line.split(",", -1);
 	                    try {
+                        	// Calculate dV/dt
+                        	prevTime = time;
+                        	time = Double.valueOf(flds[logTimeColIdx]);
+                        	if (timeMultiplier == 1.0 && (int)time - time < 0) {
+                        		timeMultiplier = 1000.0;
+                        		prevTime *= timeMultiplier;
+                        	}
+                    		time *= timeMultiplier;
+                        	pmafv = mafv;
+                        	mafv = Double.valueOf(flds[logMafvColIdx]);
+                        	if ((time - prevTime) == 0.0)
+                        		dVdt = 100.0;
+                        	else
+                        		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
 	                        clol = Integer.valueOf(flds[logClOlStatusColIdx]);
 	                        if (clol == clValue) {
-	                        	// Calculate dV/dt
-                            	prevTime = time;
-                            	time = Double.valueOf(flds[logTimeColIdx]);
-                            	if (timeMultiplier == 1.0 && (int)time - time < 0) {
-                            		timeMultiplier = 1000.0;
-                            		prevTime *= timeMultiplier;
-                            	}
-                        		time *= timeMultiplier;
-                            	pmafv = mafv;
-                            	mafv = Double.valueOf(flds[logMafvColIdx]);
-                            	if ((time - prevTime) == 0.0)
-                            		dVdt = 100.0;
-                            	else
-                            		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
 	                            // Filters
 	                        	afr = Double.valueOf(flds[logAfrColIdx]);
 	                        	load = Double.valueOf(flds[logLoadColIdx]);
@@ -2019,7 +2019,7 @@ public class ClosedLoop extends JTabbedPane implements ActionListener, IMafChart
 	                    }
 	                    catch (NumberFormatException e) {
 	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
 	                        return;
 	                    }
 	                    line = br.readLine();

@@ -370,6 +370,41 @@ public final class Utils {
         return isEmpty;
     }
 
+    /**
+     * Method calculates plotting z[][] based on provided x and y arrays and related table
+     * @param x is a column table header
+     * @param y is a row table header
+     * @return double array
+     */
+    public static double[][] doubleZArray(JTable dataTable, double[] x, double[] y) {
+    	double[][] z = new double[y.length][x.length];
+    	for (int i = 0; i < x.length; ++i) {
+    		for (int j = 0; j < y.length; ++j) {
+    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
+    				z[j][i] = Double.valueOf(dataTable.getValueAt(j + 1, i + 1).toString());
+    		}
+    	}
+    	return z;
+    }
+
+    /**
+     * Method copies Color[][] array from input data table for z-axis based on provided x and y arrays
+     * @param x
+     * @param y
+     * @return
+     */
+    public static Color[][] doubleColorArray(JTable dataTable, double[] x, double[] y) {
+        BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
+    	Color[][] z = new Color[y.length][x.length];
+    	for (int i = 0; i < x.length; ++i) {
+    		for (int j = 0; j < y.length; ++j) {
+    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
+    				z[j][i] = renderer.getColorAt(j + 1, i + 1);
+    		}
+    	}
+    	return z;
+    }
+
     //////////////////////////////////////////////////////////////////////////////
     // MATH METHODS
     //////////////////////////////////////////////////////////////////////////////

@@ -393,7 +393,7 @@ public class ExcelAdapter implements ActionListener {
                 	Utils.ensureRowCount(startRow + rowCount, table);
                 // add extra columns to the table to accommodate for paste data
                 rowstring = lines[0];
-                String[] entries = rowstring.split("\t", -1);
+                String[] entries = rowstring.split("[\t,]", -1);
                 int colCount = entries.length;
                 if (extendCols && startCol + colCount > table.getColumnCount())
                 	Utils.ensureColumnCount(startCol + colCount, table);
@@ -410,7 +410,7 @@ public class ExcelAdapter implements ActionListener {
 	                for (int i = 0; i < rowCount; ++i) {
 	                    if (i > 0)
 	                        rowstring = lines[i];
-	                    entries = rowstring.split("\t", -1);
+	                    entries = rowstring.split("[\t,]", -1);
 	                    for (int j = 0; j < entries.length; ++j) {
 	                        value = entries[j];
 	                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
@@ -437,7 +437,7 @@ public class ExcelAdapter implements ActionListener {
             String[] lines = trstring.split("\\r?\\n");
             ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
             for (String colsArr : lines) {
-            	String[] rowsArr = colsArr.split("\t", -1);
+            	String[] rowsArr = colsArr.split("[\t,]", -1);
             	ArrayList<String> rows = new ArrayList<String>();
             	for (String row : rowsArr)
             		rows.add(row);

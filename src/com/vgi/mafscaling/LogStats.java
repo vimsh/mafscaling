@@ -1084,29 +1084,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
         }
     }
 
-    public double[][] doubleZArray(double[] x, double[] y) {
-    	double[][] z = new double[y.length][x.length];
-    	for (int i = 0; i < x.length; ++i) {
-    		for (int j = 0; j < y.length; ++j) {
-    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
-    				z[j][i] = Double.valueOf(dataTable.getValueAt(j + 1, i + 1).toString());
-    		}
-    	}
-    	return z;
-    }
-
-    public Color[][] doubleColorArray(double[] x, double[] y) {
-        BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
-    	Color[][] z = new Color[y.length][x.length];
-    	for (int i = 0; i < x.length; ++i) {
-    		for (int j = 0; j < y.length; ++j) {
-    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
-    				z[j][i] = renderer.getColorAt(j + 1, i + 1);
-    		}
-    	}
-    	return z;
-    }
-
     private void addGridPlot() {
     	if (xData == null || xData.size() == 0)
     		return;
@@ -1125,8 +1102,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
         i = 0;
         for (Double key : yAxisMap.keySet())
         	y[i++] = key;
-        double[][] z = doubleZArray(x, y);
-        Color[][] colors = doubleColorArray(x, y);
+        double[][] z = Utils.doubleZArray(dataTable, x, y);
+        Color[][] colors = Utils.doubleColorArray(dataTable, x, y);
         plot.addGridPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, x, y, z);
     }
     

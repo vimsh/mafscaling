@@ -1118,6 +1118,7 @@ public class LogView extends JTabbedPane implements ActionListener {
     	}
         plot3d.setAxisLabel(0, xAxisColumn.getSelectedItem().toString());
         plot3d.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
+        plot3d.setAxisLabel(2, plotsColumn.getSelectedItemsString());
     }
 
 	@Override

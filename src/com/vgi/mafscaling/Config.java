@@ -41,10 +41,17 @@ public class Config {
 	public static final String DefaultCompareWindowPositionX = "50";
 	public static final String DefaultCompareWindowPositionY = "50";
 	public static final String DefaultClOlStatusValue = "-1";
+	public static final String DefaultCruiseStatusValue = "-1";
+	public static final String DefaultCorrectionAppliedValue = "100";
 	public static final String DefaultThrottleChangeMax = "2";
+	public static final String DefaultVEThrottleChangeMax = "4";
+	public static final String DefaultVEThrottleMinimum = "5";
 	public static final String DefaultIsLoadCompInRatio = "false";
+	public static final String DefaultIsMafIatInRatio = "false";	
 	public static final String DefaultCLMinCellHitCount = "30";
+	public static final String DefaultMIMinCellHitCount = "15";
 	public static final String DefaultLCMinCellHitCount = "15";
+	public static final String DefaultVEMinCellHitCount = "10";
 	public static final String DefaultWOTStationaryPoint = "80";
 	public static final String DefaultWBO2RowOffset = "0";
 	public static final String DefaultOLCLTransitionSkipRows = "3";
@@ -52,17 +59,23 @@ public class Config {
 	public static final String DefaultMafVMinimum = "0.0";
 	public static final String DefaultRPMMaximum = "5000";
 	public static final String DefaultRPMMinimum = "0";
-	public static final String DefaultIATMaximum = "110.0";
-	public static final String DefaultLCIATMaximum = "110.0";
+	public static final String DefaultFFBMaximum = "100.0";
+	public static final String DefaultFFBMinimum = "0.0";
+	public static final String DefaultMPMinimum = "-100.0";
+	public static final String DefaultIATMaximum = "300.0";
+	public static final String DefaultLCIATMaximum = "300.0";
+	public static final String DefaultVEIATMaximum = "300.0";
 	public static final String DefaultWidebandAfrErrorPercent = "15.0";
 	public static final String DefaultWOTEnrichment = "16.0";
 	public static final String DefaultAfrMinimum = "13.7";
 	public static final String DefaultAfrMaximum = "15.0";
-	public static final String DefaultLCAfrMinimum = "14.2";
 	public static final String DefaultLCAfrMaximum = "15.0";
+	public static final String DefaultLCAfrMinimum = "14.2";
+	public static final String DefaultVEAfrMaximum = "16.0";
 	public static final String DefaultLoadMinimum = "0.2";
 	public static final String DefaultDvDtMaximum = "0.7";
-	public static final String DefaultLCDvDtMaximum = "0.7";
+	public static final String DefaultMIAfrMaximum = "16.0";
+	public static final String DefaultMIAfrMinimum = "10.0";
 	private static final String CFG_FILE = "config.xml";
 	public static final String NO_NAME = "#$#";
 	private static Properties props = new Properties();
@@ -131,12 +144,36 @@ public class Config {
 		props.setProperty("MafVoltageColumnName", name);
 	}
 
+	public static String getMassAirflowColumnName() {
+		return props.getProperty("MassAirflowColumnName", "#$#");
+	}
+	
+	public static void setMassAirflowColumnName(String name) {
+		props.setProperty("MassAirflowColumnName", name);
+	}
+
 	public static String getIatColumnName() {
 		return props.getProperty("IATColumnName", "#$#");
 	}
 	
 	public static void setIatColumnName(String name) {
 		props.setProperty("IATColumnName", name);
+	}
+	
+	public static String getFinalFuelingBaseColumnName() {
+		return props.getProperty("FFBColumnName", "#$#");
+	}
+	
+	public static void setFinalFuelingBaseColumnName(String name) {
+		props.setProperty("FFBColumnName", name);
+	}
+	
+	public static String getVEFlowColumnName() {
+		return props.getProperty("VEFlowColumnName", "#$#");
+	}
+	
+	public static void setVEFlowColumnName(String name) {
+		props.setProperty("VEFlowColumnName", name);
 	}
 
 	public static String getWidebandAfrColumnName() {
@@ -202,6 +239,14 @@ public class Config {
 	public static void setClOlStatusColumnName(String name) {
 		props.setProperty("ClOlStatusColumnName", name);
 	}
+	
+	public static String getCruiseStatusColumnName() {
+		return props.getProperty("CruiseStatusColumnName", "#$#");
+	}
+	
+	public static void setCruiseStatusColumnName(String name) {
+		props.setProperty("CruiseStatusColumnName", name);
+	}
 
 	public static String getAfLearningColumnName() {
 		return props.getProperty("AfLearningColumnName", "#$#");
@@ -225,6 +270,22 @@ public class Config {
 
 	public static void setClOlStatusValue(int v) {
 		props.setProperty("ClOlStatusValue", Integer.toString(v));
+	}
+	
+	public static int getCruiseStatusValue() {
+		return Integer.parseInt(props.getProperty("CruiseStatusValue", DefaultCruiseStatusValue));
+	}
+
+	public static void setCruiseStatusValue(int v) {
+		props.setProperty("CruiseStatusValue", Integer.toString(v));
+	}
+	
+	public static int getLCCorrectionAppliedValue() {
+		return Integer.parseInt(props.getProperty("LCCorrectionApplied", DefaultCorrectionAppliedValue));
+	}
+
+	public static void setLCCorrectionAppliedValue(int v) {
+		props.setProperty("LCCorrectionApplied", Integer.toString(v));
 	}
 
 	public static int getThrottleChangeMaxValue() {
@@ -257,6 +318,114 @@ public class Config {
 
 	public static void setLCMinCellHitCount(int v) {
 		props.setProperty("LCMinCellHitCount", Integer.toString(v));
+	}
+	
+	///////////////////////////////////////////////////////////////////////////
+	
+	public static boolean getIsMafIatInRatio() {
+		return Boolean.parseBoolean(props.getProperty("IsMafIatInRatio", DefaultIsMafIatInRatio));
+	}
+	
+	public static void setIsMafIatInRatio(boolean v) {
+		props.setProperty("IsMafIatInRatio", Boolean.toString(v));
+	}
+	
+	public static int getMICorrectionAppliedValue() {
+		return Integer.parseInt(props.getProperty("MICorrectionApplied", DefaultCorrectionAppliedValue));
+	}
+
+	public static void setMICorrectionAppliedValue(int v) {
+		props.setProperty("MICorrectionApplied", Integer.toString(v));
+	}
+
+	public static int getMIClOlStatusValue() {
+		return Integer.parseInt(props.getProperty("MIClOlStatusValue", DefaultClOlStatusValue));
+	}
+
+	public static void setMIClOlStatusValue(int v) {
+		props.setProperty("MIClOlStatusValue", Integer.toString(v));
+	}
+	
+	public static int getMIThrottleChangeMaxValue() {
+		return Integer.parseInt(props.getProperty("MIThrottleChangeMax", DefaultThrottleChangeMax));
+	}
+
+	public static void setMIThrottleChangeMaxValue(int v) {
+		props.setProperty("MIThrottleChangeMax", Integer.toString(v));
+	}
+
+	public static int getMIMinCellHitCount() {
+		return Integer.parseInt(props.getProperty("MIMinCellHitCount", DefaultMIMinCellHitCount));
+	}
+
+	public static void setMIMinCellHitCount(int v) {
+		props.setProperty("MIMinCellHitCount", Integer.toString(v));
+	}
+
+	public static double getMIDvDtMaximumValue() {
+		return Double.parseDouble(props.getProperty("MIDvDtMaximum", DefaultDvDtMaximum));
+	}
+
+	public static void setMIDvDtMaximumValue(double v) {
+		props.setProperty("MIDvDtMaximum", Double.toString(v));
+	}
+
+	public static double getMIAfrMaximumValue() {
+		return Double.parseDouble(props.getProperty("MIAfrMaximum", DefaultMIAfrMaximum));
+	}
+
+	public static void setMIAfrMaximumValue(double v) {
+		props.setProperty("MIAfrMaximum", Double.toString(v));
+	}
+
+	public static double getMIAfrMinimumValue() {
+		return Double.parseDouble(props.getProperty("MIAfrMinimum", DefaultMIAfrMinimum));
+	}
+
+	public static void setMIAfrMinimumValue(double v) {
+		props.setProperty("MIAfrMinimum", Double.toString(v));
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////
+	
+	public static int getVECorrectionAppliedValue() {
+		return Integer.parseInt(props.getProperty("VECorrectionApplied", DefaultCorrectionAppliedValue));
+	}
+
+	public static void setVECorrectionAppliedValue(int v) {
+		props.setProperty("VECorrectionApplied", Integer.toString(v));
+	}
+
+	public static int getVEClOlStatusValue() {
+		return Integer.parseInt(props.getProperty("VEClOlStatusValue", DefaultClOlStatusValue));
+	}
+
+	public static void setVEClOlStatusValue(int v) {
+		props.setProperty("VEClOlStatusValue", Integer.toString(v));
+	}
+	
+	public static int getVEThrottleChangeMaxValue() {
+		return Integer.parseInt(props.getProperty("VEThrottleChangeMax", DefaultVEThrottleChangeMax));
+	}
+
+	public static void setVEThrottleChangeMaxValue(int v) {
+		props.setProperty("VEThrottleChangeMax", Integer.toString(v));
+	}
+
+	public static int getVEThrottleMinimumValue() {
+		return Integer.parseInt(props.getProperty("VEThrottleMinimum", DefaultVEThrottleMinimum));
+	}
+
+	public static void setVEThrottleMinimumValue(int v) {
+		props.setProperty("VEThrottleMinimum", Integer.toString(v));
+	}
+
+	public static int getVEMinCellHitCount() {
+		return Integer.parseInt(props.getProperty("VEMinCellHitCount", DefaultVEMinCellHitCount));
+	}
+
+	public static void setVEMinCellHitCount(int v) {
+		props.setProperty("VEMinCellHitCount", Integer.toString(v));
 	}
 
 	public static int getWOTStationaryPointValue() {
@@ -315,6 +484,38 @@ public class Config {
 		props.setProperty("RPMMinimum", Integer.toString(v));
 	}
 
+	public static int getVERPMMinimumValue() {
+		return Integer.parseInt(props.getProperty("VERPMMinimum", DefaultRPMMinimum));
+	}
+
+	public static void setVERPMMinimumValue(int v) {
+		props.setProperty("VERPMMinimum", Integer.toString(v));
+	}
+
+	public static double getFFBMaximumValue() {
+		return Double.parseDouble(props.getProperty("FFBMaximum", DefaultFFBMaximum));
+	}
+
+	public static void setFFBMaximumValue(double v) {
+		props.setProperty("FFBMaximum", Double.toString(v));
+	}
+
+	public static double getFFBMinimumValue() {
+		return Double.parseDouble(props.getProperty("FFBMinimum", DefaultFFBMinimum));
+	}
+
+	public static void setFFBMinimumValue(double v) {
+		props.setProperty("FFBMinimum", Double.toString(v));
+	}
+	
+	public static double getVEMPMinimumValue() {
+		return Double.parseDouble(props.getProperty("VEMPMinimum", DefaultMPMinimum));
+	}
+
+	public static void setVEMPMinimumValue(double v) {
+		props.setProperty("VEMPMinimum", Double.toString(v));
+	}
+
 	public static double getIatMaximumValue() {
 		return Double.parseDouble(props.getProperty("IATMaximum", DefaultIATMaximum));
 	}
@@ -329,6 +530,14 @@ public class Config {
 
 	public static void setLCIatMaximumValue(double v) {
 		props.setProperty("LCIATMaximum", Double.toString(v));
+	}
+	
+	public static double getVEIatMaximumValue() {
+		return Double.parseDouble(props.getProperty("VEIATMaximum", DefaultVEIATMaximum));
+	}
+
+	public static void setVEIatMaximumValue(double v) {
+		props.setProperty("VEIATMaximum", Double.toString(v));
 	}
 
 	public static double getWidebandAfrErrorPercentValue() {
@@ -378,6 +587,14 @@ public class Config {
 	public static void setLCAfrMaximumValue(double v) {
 		props.setProperty("LCAfrMaximum", Double.toString(v));
 	}
+
+	public static double getVEAfrMaximumValue() {
+		return Double.parseDouble(props.getProperty("VEAfrMaximum", DefaultVEAfrMaximum));
+	}
+
+	public static void setVEAfrMaximumValue(double v) {
+		props.setProperty("VEAfrMaximum", Double.toString(v));
+	}
 	
 	public static double getLoadMinimumValue() {
 		return Double.parseDouble(props.getProperty("LoadMinimum", DefaultLoadMinimum));
@@ -396,7 +613,7 @@ public class Config {
 	}
 
 	public static double getLCDvDtMaximumValue() {
-		return Double.parseDouble(props.getProperty("LCDvDtMaximum", DefaultLCDvDtMaximum));
+		return Double.parseDouble(props.getProperty("LCDvDtMaximum", DefaultDvDtMaximum));
 	}
 
 	public static void setLCDvDtMaximumValue(double v) {

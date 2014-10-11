@@ -874,13 +874,13 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
 		                    	}
 		                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
 		                            // Filters
+                            		corr = (Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]) + 100.0) / 100.0;
 	                            	if (clValue == Double.valueOf(flds[logClOlStatusColIdx])) {
 	                            		afr = Double.valueOf(flds[logAfrColIdx]);
-	                            		corr = (Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]) + 100.0) / 100.0;
 	                            	}
 	                            	else {
 	                            		afr = Double.valueOf(flds[logWBAfrColIdx]);
-	                            		corr = Double.valueOf(afrflds[logWBAfrColIdx]) / Double.valueOf(flds[logCommandedAfrCol]);
+	                            		corr = Double.valueOf(afrflds[logWBAfrColIdx]) / corr / Double.valueOf(flds[logCommandedAfrCol]);
 	                            	}
 		                        	iat = Double.valueOf(flds[logIatColIdx]);
 		                        	maf = Double.valueOf(flds[logMafColIdx]);

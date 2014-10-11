@@ -547,4 +547,103 @@ public final class Utils {
     public static int getRandomInRange(int min, int max) {
     	return (min + (int)(Math.random() * ((max - min) + 1)));
     }
+
+    /**
+     * Method calculates commanded afr from POL table
+     * @param rpm
+     * @param load
+     * @param minWotEnrichment
+     * @param polfTable
+     * @return commanded afr
+     */
+    public static double calculateCommandedAfr(double rpm, double load, double minWotEnrichment, PrimaryOpenLoopFuelingTable polfTable) {
+        double rpmLow = 0;
+        double rpmHigh = 0;
+        double loadLow = 0;
+        double loadHigh = 0;
+        double timingLowLow = 0;
+        double timingLowHigh = 0;
+        double timingHighLow = 0;
+        double timingHighHigh = 0;
+        int rpmRowLow = 0;
+        int rpmRowHigh = 0;
+        int loadColLow = 0;
+        int loadColHigh = 0;
+        int index = 1;
+        double value;
+
+        // Get values for RPM
+        for (index = 1; index < polfTable.getRowCount(); ++index) {
+            value = Double.valueOf(polfTable.getValueAt(index, 0).toString());
+            if (rpm < value) {
+                rpmHigh = value;
+                rpmRowHigh = index;
+                break;
+            }
+            else if (rpm == value) {
+                rpmLow = rpmHigh = value;
+                rpmRowLow = rpmRowHigh = index;
+                break;
+            }
+            else {
+                rpmLow = value;
+                rpmRowLow = index;
+            }
+        }
+        if (index == polfTable.getRowCount()) {
+            rpmHigh = 10000;
+            rpmRowHigh = index - 1;
+        }
+        // Get values for Load
+        for (index = 1; index < polfTable.getColumnCount(); ++index) {
+            value = Double.valueOf(polfTable.getValueAt(0, index).toString());
+            if (load < value) {
+                loadHigh = value;
+                loadColHigh = index;
+                break;
+            }
+            else if (rpm == value) {
+                loadLow = loadHigh = value;
+                loadColLow = loadColHigh = index;
+                break;
+            }
+            else {
+                loadLow = value;
+                loadColLow = index;
+            }
+        }
+        if (index == polfTable.getColumnCount()) {
+            loadHigh = 10000;
+            loadColHigh = index - 1;
+        }
+        timingLowLow = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColLow).toString());
+        if (timingLowLow > minWotEnrichment)
+        	timingLowLow = minWotEnrichment;
+        timingLowHigh = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColHigh).toString());
+        if (timingLowHigh > minWotEnrichment)
+        	timingLowHigh = minWotEnrichment;
+        timingHighLow = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColLow).toString());
+        if (timingHighLow > minWotEnrichment)
+        	timingHighLow = minWotEnrichment;
+        timingHighHigh = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColHigh).toString());
+        if (timingHighHigh > minWotEnrichment)
+        	timingHighHigh = minWotEnrichment;
+
+        double temp1;
+        double temp2;
+        double interpolatedAfr;
+        if (rpmHigh == rpmLow) {
+            temp1 = timingLowLow;
+            temp2 = timingLowHigh;
+        }
+        else {
+            temp1 = (rpm - rpmLow) * (timingHighLow - timingLowLow) / (rpmHigh - rpmLow) + timingLowLow;
+            temp2 = (rpm - rpmLow) * (timingHighHigh - timingLowHigh) / (rpmHigh - rpmLow) + timingLowHigh;
+        }
+        if (loadHigh == loadLow)
+        	interpolatedAfr = temp1;
+        else
+        	interpolatedAfr = (load - loadLow) * (temp2 - temp1) / (loadHigh - loadLow) + temp1;
+        return interpolatedAfr;
+    }
 }

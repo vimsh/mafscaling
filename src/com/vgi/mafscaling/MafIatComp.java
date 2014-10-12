@@ -884,7 +884,7 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
 	                            	else {
 	                            		afr = Double.valueOf(afrflds[logWBAfrColIdx]);
 	                            		cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-	                            		corr = (100.0 + (afr / ((100.0 - trims) / 100.0) - cmdafr) / cmdafr) / 100.0;
+	                            		corr = (afr / ((100.0 - trims) / 100.0)) / cmdafr;
 	                            	}
 		                        	iat = Double.valueOf(flds[logIatColIdx]);
 		                        	maf = Double.valueOf(flds[logMafColIdx]);

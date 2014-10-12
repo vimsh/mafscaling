@@ -826,6 +826,7 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
 	                double ppThrottle = 0;
 	                double afr = 0;
 	                double corr = 0;
+	                double cmdafr = 0;
 	                double trims = 0;
 	                double dVdt = 0;
 	                double prevTime = 0;
@@ -878,11 +879,12 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
 		                    		trims = Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]);
 	                            	if (clValue == Double.valueOf(flds[logClOlStatusColIdx])) {
 	                            		afr = Double.valueOf(flds[logAfrColIdx]);
-	                            		corr = (trims + 100.0) / 100.0;
+	                            		corr = (100.0 + trims) / 100.0;
 	                            	}
 	                            	else {
 	                            		afr = Double.valueOf(afrflds[logWBAfrColIdx]);
-	                            		corr = afr / ((100.0 - trims) / 100.0) / Double.valueOf(flds[logCommandedAfrCol]);
+	                            		cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
+	                            		corr = (100.0 + (afr / ((100.0 - trims) / 100.0) - cmdafr) / cmdafr) / 100.0;
 	                            	}
 		                        	iat = Double.valueOf(flds[logIatColIdx]);
 		                        	maf = Double.valueOf(flds[logMafColIdx]);

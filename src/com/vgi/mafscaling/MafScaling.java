@@ -31,7 +31,7 @@ import org.apache.log4j.Logger;
 
 public class MafScaling {
     private static final Logger logger = Logger.getLogger(MafScaling.class);
-    private static final String Title = "MAF Scaling - v1.6.0";
+    private static final String Title = "MAF Scaling - v1.6.1";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
     private static final String RTabName = "<html>Rescale</html>";
@@ -119,7 +119,7 @@ public class MafScaling {
         lc.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(lc, LCTabName);
 
-        JTabbedPane mi = new MafIatComp(JTabbedPane.LEFT);
+        JTabbedPane mi = new MafIatComp(JTabbedPane.LEFT, pofFuelingTable);
         mi.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(mi, MITabName);
         

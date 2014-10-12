@@ -30,25 +30,27 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
 	}
     
     protected int getWindowHeight() {
-    	return 750;
+    	return 850;
     }
     
     protected int getColSelectionGridHeight() {
-    	return 10;
+    	return 13;
     }
     
     protected void addColSelection() {
     	addTimeColSelection();
+        addRPMColSelection();
+        addLoadColSelection();
         addThrottleAngleColSelection();
         addAFLearningColSelection();
         addAFCorrectionColSelection();
         addMAFVoltageColSelection();
         addStockAFRColSelection();
         addWidebandAFRColSelection();
-    	addCommandedAFRColSelection();
     	addIATColSelection();
     	addMAFColSelection();
         addClOlStatusColSelection();
+    	addCommandedAFRColSelection();
     }
     
     protected void addFilterSelection() {
@@ -64,6 +66,8 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
         minAfrFilter.setText(String.valueOf(Config.getMIAfrMinimumValue()));
         addDvDtMaximumFilter();
         maxDvdtFilter.setText(String.valueOf(Config.getMIDvDtMaximumValue()));
+        addWOTEnrichmentMinimumFilter();
+        wotEnrichmentField.setText(String.valueOf(Config.getWOTEnrichmentValue()));
         addWideBandAFRRowOffsetFilter();
         wbo2RowOffsetField.setText(String.valueOf(Config.getWBO2RowOffset()));
         addCellHitCountMinimumFilter();
@@ -84,6 +88,26 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	boolean ret = true;
     	String value;
     	String colName;
+    	
+    	// Engine Speed
+    	value = rpmName.getText().trim();
+    	colName = rpmLabelText;
+    	if (value.isEmpty()) {
+    		ret = false;
+    		error.append("\"").append(colName).append("\" column must be specified\n");
+    	}
+    	else
+    		Config.setRpmColumnName(value);
+    	
+    	// Engine Load
+    	value = loadName.getText().trim();
+    	colName = loadLabelText;
+    	if (value.isEmpty()) {
+    		ret = false;
+    		error.append("\"").append(colName).append("\" column must be specified\n");
+    	}
+    	else
+    		Config.setLoadColumnName(value);
 
     	// AFR Learning
     	value = afLearningName.getText().trim();
@@ -174,16 +198,23 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	}
     	else
     		Config.setWidebandAfrColumnName(value);
-    	
+
     	// Commanded AFR
     	value = commAfrName.getText().trim();
     	colName = commAfrLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
-    	}
-    	else
+    	if (isPolfTableSet) {
+	    	if (value.isEmpty())
+	    		value = Config.NO_NAME;
 	    	Config.setCommandedAfrColumnName(value);
+    	}
+    	else {
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
+	    	}
+	    	else
+	    		Config.setCommandedAfrColumnName(value);
+    	}
 
     	// MAF
     	value = mafName.getText().trim();
@@ -220,6 +251,9 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	// dV/dt filter
     	Config.setMIDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
     	
+    	// WOT Enrichment
+    	Config.setWOTEnrichmentValue(Double.valueOf(wotEnrichmentField.getText()));
+    	
     	// WBO2 Row Offset
     	Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
     	
@@ -240,6 +274,8 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
         	maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
         else if ("minhitcnt".equals(e.getActionCommand()))
         	minCellHitCountFilter.setText(Config.DefaultMIMinCellHitCount);
+        else if ("wotenrich".equals(e.getActionCommand()))
+        	wotEnrichmentField.setText(Config.DefaultWOTEnrichment);
         else if ("wbo2offset".equals(e.getActionCommand()))
         	wbo2RowOffsetField.setText(Config.DefaultWBO2RowOffset);
         else if ("corrapply".equals(e.getActionCommand()))

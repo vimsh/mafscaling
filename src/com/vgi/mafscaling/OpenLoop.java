@@ -1043,7 +1043,7 @@ public class OpenLoop extends JTabbedPane implements ActionListener, IMafChartHo
                 avgError /= closestVolatageArray.size();
                 lastErrIndex = i;
             }
-            gsCorrected.set(i, gs +(gs * 0.01 * avgError));
+            gsCorrected.set(i, gs * (1 + avgError/100.0));
         }
         avgError = 0;
         ArrayList<Double> sortedAfrArray = result.get(lastErrIndex);

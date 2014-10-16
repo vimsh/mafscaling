@@ -439,12 +439,12 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
     
     private void formatMafIatTable(JTable table) {
         if (table.getName().equals(MafIatCorrCountTableName)) {
-	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
+	        Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
 	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
 	        renderer.setFormats(formatMatrix);
         }
         else {
-	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
+	        Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") } };
 	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
 	        renderer.setFormats(formatMatrix);
         }

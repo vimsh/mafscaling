@@ -151,7 +151,7 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
     private JComboBox<String> dataType = null;
 
     private ExcelAdapter mpExcelAdapter = null;
-    private ExcelAdapter excelAdapter = new ExcelAdapter();
+    private ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
     private final JFileChooser fileChooser = new JFileChooser();
     private Plot3DPanel plot3d = null;
     private ArrayList<Double> xAxisArray = null;
@@ -404,7 +404,9 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
             gbc_table.gridy = 1;
             panel.add(logDataTable, gbc_table);
 
+	        ExcelAdapter excelAdapter = new ExcelAdapter();
             excelAdapter.addTable(logDataTable, true, false);
+            excelAdapterList.add(excelAdapter);
     }
     
     private void createMpDataTables(JPanel panel) {
@@ -445,7 +447,9 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         	table = new JTable() {
 				private static final long serialVersionUID = -3754572906310312568L;
 	        };
+	        ExcelAdapter excelAdapter = new ExcelAdapter();
 	        excelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
+            excelAdapterList.add(excelAdapter);
         }
         table.addComponentListener(new ComponentAdapter() {
             @Override

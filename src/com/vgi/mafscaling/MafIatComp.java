@@ -147,7 +147,7 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
 
     private PrimaryOpenLoopFuelingTable polfTable = null;
     private ExcelAdapter mpExcelAdapter = null;
-    private ExcelAdapter excelAdapter = new ExcelAdapter();
+    private ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
     private ArrayList<Double> errCorrArray = new ArrayList<Double>();
     private ArrayList<Double> mafArray = new ArrayList<Double>();
     private ArrayList<Double> mafvArray = new ArrayList<Double>();
@@ -365,7 +365,9 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
             gbc_table.gridy = 1;
             panel.add(logDataTable, gbc_table);
 
+	        ExcelAdapter excelAdapter = new ExcelAdapter();
             excelAdapter.addTable(logDataTable, true, false);
+            excelAdapterList.add(excelAdapter);
     }
     
     private void createMafIatDataTables(JPanel panel) {
@@ -406,7 +408,9 @@ public class MafIatComp extends JTabbedPane implements ActionListener, IMafChart
         	table = new JTable() {
 				private static final long serialVersionUID = -3754572906310312568L;
 	        };
+	        ExcelAdapter excelAdapter = new ExcelAdapter();
 	        excelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
+	        excelAdapterList.add(excelAdapter);
         }
         table.addComponentListener(new ComponentAdapter() {
             @Override

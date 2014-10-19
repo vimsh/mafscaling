@@ -1000,69 +1000,60 @@ public class LogStats extends JTabbedPane implements ActionListener {
     }
     
     public void processData(Statistics id) {
-        HashMap<Double, ArrayList<Double>> yData;
-        ArrayList<Double> data;
         try {
-	        TreeMap<Double, Integer> xAxisMap = new TreeMap<Double, Integer>();
-	        TreeMap<Double, Integer> yAxisMap = new TreeMap<Double, Integer>();
-	        for (Map.Entry<Double, HashMap<Double, ArrayList<Double>>> xentry : xData.entrySet()) {
-	        	xAxisMap.put(xentry.getKey(), 0);
-	        	for (Map.Entry<Double, ArrayList<Double>> yentry : xentry.getValue().entrySet())
-	        		yAxisMap.put(yentry.getKey(), 0);
-	        }
-	        Utils.ensureColumnCount(xAxisMap.size() + 1, dataTable);
-	        int i = 0;
-	        for (Map.Entry<Double, Integer> entry : xAxisMap.entrySet()) {
-	        	entry.setValue(++i);
-	        	dataTable.setValueAt(entry.getKey(), 0, i);
-	        }
-	        Utils.ensureRowCount(yAxisMap.size() + 1, dataTable);
-	        i = 0;
-	        for (Map.Entry<Double, Integer> entry : yAxisMap.entrySet()) {
-	        	entry.setValue(++i);
-	        	dataTable.setValueAt(entry.getKey(), i, 0);
-	        }
-	        double x, y, val;
-	        for (Map.Entry<Double, HashMap<Double, ArrayList<Double>>> xentry : xData.entrySet()) {
-	        	x = xentry.getKey();
-	        	yData = xentry.getValue();
-	        	val = 0;
-	        	for (Map.Entry<Double, ArrayList<Double>> yentry : yData.entrySet()) {
-	        		y = yentry.getKey();
-	        		data = yentry.getValue();
+	        Utils.ensureColumnCount(xAxisArray.size() + 1, dataTable);
+	        Utils.ensureRowCount(yAxisArray.size() + 1, dataTable);
+	        int x = 0;
+	        int y = 0;
+	        double val = 0;
+	        HashMap<Double, ArrayList<Double>> xentry;
+	        ArrayList<Double> yentry;
+	        for (double xval : xAxisArray) {
+	        	dataTable.setValueAt(xval, 0, ++x);
+	        	xentry = xData.get(xval);
+	        	if (xentry == null)
+	        		continue;
+	        	y = 0;
+		        for (double yval : yAxisArray) {
+		        	dataTable.setValueAt(yval, ++y, 0);
+		        	yentry = xentry.get(yval);
+		        	if (yentry == null)
+		        		continue;
 	        		switch (id) {
 	        		case COUNT:
-	        			val = data.size();
+	        			val = yentry.size();
 	        			break;
 	        		case MINIMUM:
-	        			val = Collections.min(data);
+	        			val = Collections.min(yentry);
 	        			break;
 	        		case MAXIMUM:
-	        			val = Collections.max(data);
+	        			val = Collections.max(yentry);
 	        			break;
 	        		case MEAN:
-	        			val = Utils.mean(data);
+	        			val = Utils.mean(yentry);
 	        			break;
 	        		case MEDIAN:
-	        			val = Utils.median(data);
+	        			val = Utils.median(yentry);
 	        			break;
 	        		case MODE:
-	        			val = Utils.mode(data);
+	        			val = Utils.mode(yentry);
 	        			break;
 	        		case RANGE:
-	        			val = Utils.range(data);
+	        			val = Utils.range(yentry);
 	        			break;
 	        		case VARIANCE:
-	        			val = Utils.variance(data);
+	        			val = Utils.variance(yentry);
 	        			break;
 	        		case STDDEV:
-	        			val = Utils.standardDeviation(data);
+	        			val = Utils.standardDeviation(yentry);
 	        			break;
 	        		}
-	            	dataTable.setValueAt(val, yAxisMap.get(y), xAxisMap.get(x));
-	        	}
+	            	dataTable.setValueAt(val, y, x);
+		        	
+		        }
 	        }
 	        if (xData.size() > 0) {
+	        	int i;
 		        // remove extra rows
 		        for (i = dataTable.getRowCount() - 1; i >= 0 && dataTable.getValueAt(i, 0).toString().equals(""); --i)
 		            Utils.removeRow(i, dataTable);

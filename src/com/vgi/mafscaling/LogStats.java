@@ -26,6 +26,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -78,6 +80,26 @@ public class LogStats extends JTabbedPane implements ActionListener {
     private static final int ColumnWidth = 50;
     private static final int DataTableRowCount = 50;
     private static final int DataTableColumnCount = 25;
+    
+    public class JFmtTextField extends JFormattedTextField {
+		private static final long serialVersionUID = -8767848259312656943L;
+		public JFmtTextField(NumberFormat format) {
+            super(format);  
+		}
+		@Override  
+        protected void processFocusEvent(final FocusEvent e) {  
+            if (e.isTemporary()) {
+                return;
+            }
+      
+            if (e.getID() == FocusEvent.FOCUS_LOST) {
+                if (getText() == null || getText().isEmpty()) {
+                    setValue(null);
+                }
+            }
+            super.processFocusEvent(e);  
+        }  
+    };
 
     private final JFileChooser fileChooser = new JFileChooser();
     private File logFile = null;
@@ -149,10 +171,10 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
 	        
 	        NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
-	        doubleFmt.setGroupingUsed(false);
-	        doubleFmt.setMaximumFractionDigits(6);
-	        doubleFmt.setMinimumFractionDigits(0);
-	        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+	        doubleFmtFilters.setGroupingUsed(false);
+	        doubleFmtFilters.setMaximumFractionDigits(6);
+	        doubleFmtFilters.setMinimumFractionDigits(0);
+	        doubleFmtFilters.setRoundingMode(RoundingMode.HALF_UP);
 	        
 	        JPanel cntlPanel = new JPanel();
 	        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
@@ -209,7 +231,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        gbc_xAxisScalingLabel.gridy = 0;
 	        cntlPanel.add(xAxisScalingLabel, gbc_xAxisScalingLabel);
 	        
-	        xAxisRoundTextBox = new JFormattedTextField(doubleFmt);
+	        xAxisRoundTextBox = new JFmtTextField(doubleFmt);
 	        xAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
 	        GridBagConstraints gbc_xAxisRoundTextBox = new GridBagConstraints();
 	        gbc_xAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
@@ -246,7 +268,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        gbc_yAxisScalingLabel.gridy = 1;
 	        cntlPanel.add(yAxisScalingLabel, gbc_yAxisScalingLabel);
 	        
-	        yAxisRoundTextBox = new JFormattedTextField(doubleFmt);
+	        yAxisRoundTextBox = new JFmtTextField(doubleFmt);
 	        yAxisRoundTextBox.setPreferredSize(new Dimension(65, 20));
 	        GridBagConstraints gbc_yAxisRoundTextBox = new GridBagConstraints();
 	        gbc_yAxisRoundTextBox.anchor = GridBagConstraints.PAGE_START;
@@ -403,7 +425,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        gbc_filter3ComboBox.gridy = 2;
 	        cntlPanel.add(filter3ComboBox, gbc_filter3ComboBox);
 	        
-	        filter1TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter1TextBox = new JFmtTextField(doubleFmtFilters);
 	        filter1TextBox.setPreferredSize(new Dimension(60, 20));
 	        GridBagConstraints gbc_filter1TextBox = new GridBagConstraints();
 	        gbc_filter1TextBox.anchor = GridBagConstraints.WEST;
@@ -412,7 +434,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        gbc_filter1TextBox.gridy = 0;
 	        cntlPanel.add(filter1TextBox, gbc_filter1TextBox);
 	        
-	        filter2TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter2TextBox = new JFmtTextField(doubleFmtFilters);
 	        filter2TextBox.setPreferredSize(new Dimension(60, 20));
 	        GridBagConstraints gbc_filter2TextBox = new GridBagConstraints();
 	        gbc_filter2TextBox.anchor = GridBagConstraints.WEST;
@@ -421,7 +443,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
 	        gbc_filter2TextBox.gridy = 1;
 	        cntlPanel.add(filter2TextBox, gbc_filter2TextBox);
 	        
-	        filter3TextBox = new JFormattedTextField(doubleFmtFilters);
+	        filter3TextBox = new JFmtTextField(doubleFmtFilters);
 	        filter3TextBox.setPreferredSize(new Dimension(60, 20));
 	        GridBagConstraints gbc_filter3TextBox = new GridBagConstraints();
 	        gbc_filter3TextBox.anchor = GridBagConstraints.WEST;
@@ -897,6 +919,8 @@ public class LogStats extends JTabbedPane implements ActionListener {
                 xData = new HashMap<Double, HashMap<Double, ArrayList<Double>>>();
                 HashMap<Double, ArrayList<Double>> yData;
                 ArrayList<Double> data;
+                TreeSet<Double> xVals = new TreeSet<Double>();
+                TreeSet<Double> yVals = new TreeSet<Double>();
                 try {
                 	line = br.readLine();
 	                while (line != null) {
@@ -944,12 +968,16 @@ public class LogStats extends JTabbedPane implements ActionListener {
                             }
 	                    	if (Double.isNaN(xRound))
 	                    		x = xAxisArray.get(Utils.closestValueIndex(Double.valueOf(elements[xColIdx]), xAxisArray));
-	                    	else
+	                    	else {
 	                    		x = Utils.round(Double.valueOf(elements[xColIdx]), xRound);
+	                    		xVals.add(x);
+	                    	}
 	                    	if (Double.isNaN(yRound))
 	                    		y = yAxisArray.get(Utils.closestValueIndex(Double.valueOf(elements[yColIdx]), yAxisArray));
-	                    	else
+	                    	else {
 	                    		y = Utils.round(Double.valueOf(elements[yColIdx]), yRound);
+	                    		yVals.add(y);
+	                    	}
 	                    	val = 0;
 	                    	for (Integer vColIdx : vColIdxArray) {
 	                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx])) {
@@ -973,6 +1001,14 @@ public class LogStats extends JTabbedPane implements ActionListener {
                     	}
 	                    line = br.readLine();
 	                    i += 1;
+	                }
+	                if (xVals.size() > 0) {
+	                	xAxisArray.clear();
+	                	xAxisArray.addAll(xVals);
+	                }
+	                if (yVals.size() > 0) {
+	                	yAxisArray.clear();
+	                	yAxisArray.addAll(yVals);
 	                }
 	                processData(statid);
                 }

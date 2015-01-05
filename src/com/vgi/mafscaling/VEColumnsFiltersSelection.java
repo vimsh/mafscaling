@@ -157,7 +157,7 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	else
     		Config.setFinalFuelingBaseColumnName(value);
 
-    	// FFB
+    	// VE Flow
     	value = veFlowName.getText().trim();
     	colName = veFlowLabelText;
     	if (value.isEmpty()) {
@@ -166,6 +166,16 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	}
     	else
     		Config.setVEFlowColumnName(value);
+    	
+    	// Intake Air Temperature
+    	value = iatName.getText().trim();
+    	colName = iatLabelText;
+    	if (value.isEmpty()) {
+    		ret = false;
+    		error.append("\"").append(colName).append("\" column must be specified\n");
+    	}
+    	else
+    		Config.setIatColumnName(value);
 
     	
     	// RPM Minimum

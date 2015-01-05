@@ -981,11 +981,11 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
             ArrayList<LogData> data;
             for (int i = 0; i < logDataTable.getRowCount(); ++i) {
             	rpmStr = logDataTable.getValueAt(i, 0).toString();
-            	mpStr  = logDataTable.getValueAt(i, 1).toString();
-            	iatStr = logDataTable.getValueAt(i, 2).toString();
-            	afrStr = logDataTable.getValueAt(i, 3).toString();
-            	mafStr = logDataTable.getValueAt(i, 4).toString();
-            	ffbStr = logDataTable.getValueAt(i, 5).toString();
+            	iatStr = logDataTable.getValueAt(i, 1).toString();
+            	mpStr  = logDataTable.getValueAt(i, 2).toString();
+            	ffbStr = logDataTable.getValueAt(i, 3).toString();
+            	afrStr = logDataTable.getValueAt(i, 4).toString();
+            	mafStr = logDataTable.getValueAt(i, 5).toString();
             	sdStr  = logDataTable.getValueAt(i, 6).toString();
                 if (rpmStr.isEmpty() || mpStr.isEmpty() || iatStr.isEmpty() || afrStr.isEmpty() || mafStr.isEmpty() || ffbStr.isEmpty() || sdStr.isEmpty())
                 	continue;

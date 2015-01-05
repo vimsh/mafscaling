@@ -411,6 +411,10 @@ public class ExcelAdapter implements ActionListener {
 	                    if (i > 0)
 	                        rowstring = lines[i];
 	                    entries = rowstring.split("[\t,]", -1);
+	                    if (entries.length > colCount && extendCols && startCol + entries.length > table.getColumnCount()) {
+	                    	colCount = entries.length;
+	                    	Utils.ensureColumnCount(startCol + colCount, table);
+	                    }
 	                    for (int j = 0; j < entries.length; ++j) {
 	                        value = entries[j];
 	                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())

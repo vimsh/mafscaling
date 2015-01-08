@@ -523,15 +523,22 @@ public class LogStatsFixedAxis implements ActionListener {
 	        while (axisName.isEmpty());
 	        
 	        String axisValues = "";
-	    	for (int i = 0; i < axisTable.getColumnCount(); ++i) {
-		        if (!Pattern.matches(Utils.fpRegex, axisTable.getValueAt(0, i).toString())) {
+	        String val;
+	        int i = 0;
+	    	for (; i < axisTable.getColumnCount(); ++i) {
+	    		val = axisTable.getValueAt(0, i).toString();
+	    		if (val.isEmpty())
+	    			break;
+	    		else if (!Pattern.matches(Utils.fpRegex, val)) {
 		        	JOptionPane.showMessageDialog(null, "Invalid data in table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 		            return;
 		        }
 		        if (i > 0)
 		        	axisValues += ",";
-		        axisValues += axisTable.getValueAt(0, i).toString();
+		        axisValues += val;
 	    	}
+	    	for (; i < axisTable.getColumnCount(); ++i)
+	    		axisTable.setValueAt("", 0, i);
         	if (type == Axis.XAXIS) {
         		String s = Config.getXAxisTemplates();
         		if (s.endsWith(","))

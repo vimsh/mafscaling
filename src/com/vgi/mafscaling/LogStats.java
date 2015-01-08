@@ -736,7 +736,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     		return Statistics.RANGE;
     	if ("Variance".equals(name))
     		return Statistics.VARIANCE;
-    	if ("Std Deviation".equals(name))
+    	if ("Std Devn".equals(name))
     		return Statistics.STDDEV;
 		return Statistics.MEAN;
     }

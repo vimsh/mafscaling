@@ -438,6 +438,36 @@ public final class Utils {
     public static double linearInterpolation(double x, double x1, double x2, double y1, double y2) {
         return (x1 == x2) ? 0.0 : (y1 + (x - x1) * (y2 - y1) / (x2 - x1));
     }
+
+    /**
+     * Method returns a value interpolated from 3D table
+     * @param x is X value you want to interpolate at
+     * @param y is Y value you want to interpolate at
+     * @param x0 is nearest x-axis value less than X
+     * @param x1 is nearest x-axis value greater than X
+     * @param y0 is nearest y-axis value less than Y
+     * @param y1 is nearest y-axis value greater than Y
+     * @param x0y0 is the table value at x0 and y0
+     * @param x0y1 is the table value at x0 and y1
+     * @param x1y0 is the table value at x1 and y0
+     * @param x1y1 is the table value at x1 and y1
+     * @return
+     */
+    public static double table3DInterpolation(double x, double y, double x0, double x1, double y0, double y1, double x0y0, double x0y1, double x1y0, double x1y1) {
+    	double t1, t2;
+        if (y1 == y0) {
+            t1 = x0y0;
+            t2 = x1y0;
+        }
+        else {
+            t1 = (y - y0) * (x0y1 - x0y0) / (y1 - y0) + x0y0;
+            t2 = (y - y0) * (x1y1 - x1y0) / (y1 - y0) + x1y0;
+        }
+        if (x1 == x0)
+        	return t1;
+        else
+        	return (x - x0) * (t2 - t1) / (x1 - x0) + t1;
+    }
     
     /**
      * Method rounds input number by a specific step
@@ -629,21 +659,6 @@ public final class Utils {
         if (timingHighHigh > minWotEnrichment)
         	timingHighHigh = minWotEnrichment;
 
-        double temp1;
-        double temp2;
-        double interpolatedAfr;
-        if (rpmHigh == rpmLow) {
-            temp1 = timingLowLow;
-            temp2 = timingLowHigh;
-        }
-        else {
-            temp1 = (rpm - rpmLow) * (timingHighLow - timingLowLow) / (rpmHigh - rpmLow) + timingLowLow;
-            temp2 = (rpm - rpmLow) * (timingHighHigh - timingLowHigh) / (rpmHigh - rpmLow) + timingLowHigh;
-        }
-        if (loadHigh == loadLow)
-        	interpolatedAfr = temp1;
-        else
-        	interpolatedAfr = (load - loadLow) * (temp2 - temp1) / (loadHigh - loadLow) + temp1;
-        return interpolatedAfr;
+        return Utils.table3DInterpolation(load, rpm, loadLow, loadHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
 }

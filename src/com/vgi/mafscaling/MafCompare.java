@@ -74,7 +74,7 @@ public class MafCompare extends JFrame {
     private static final String origMaf = "Original";
     private static final String newMaf = "New";
     private static final int RowHeight = 17;
-    private static final int ColumnWidth = 50;
+    private static final int ColumnWidth = 55;
     private static final int MafTableColumnCount = 50;
 
     private ChartPanel chartPanel = null;
@@ -241,7 +241,7 @@ public class MafCompare extends JFrame {
 	        tablesPanel.setLayout(gbl_tablesPanel);
 	
 	        JScrollPane mafScrollPane = new JScrollPane(tablesPanel);
-	        mafScrollPane.setMinimumSize(new Dimension(1600, 105));
+	        mafScrollPane.setMinimumSize(new Dimension(1600, 107));
 	        mafScrollPane.getHorizontalScrollBar().setMaximumSize(new Dimension(20, 20));
 	        mafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 	        mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -267,7 +267,7 @@ public class MafCompare extends JFrame {
 	        GridBagConstraints gbc_origMafTable = new GridBagConstraints();
 	        gbc_origMafTable.anchor = GridBagConstraints.PAGE_START;
 	        gbc_origMafTable.insets = new Insets(0, 0, 0, 0);
-	        gbc_origMafTable.fill = GridBagConstraints.BOTH;
+	        gbc_origMafTable.fill = GridBagConstraints.HORIZONTAL;
 	        gbc_origMafTable.weightx = 1.0;
 	        gbc_origMafTable.weighty = 0;
 	        gbc_origMafTable.gridx = 0;
@@ -288,7 +288,7 @@ public class MafCompare extends JFrame {
 	        GridBagConstraints gbc_newMafTable = new GridBagConstraints();
 	        gbc_newMafTable.anchor = GridBagConstraints.PAGE_START;
 	        gbc_newMafTable.insets = new Insets(0, 0, 0, 0);
-	        gbc_newMafTable.fill = GridBagConstraints.BOTH;
+	        gbc_newMafTable.fill = GridBagConstraints.HORIZONTAL;
 	        gbc_newMafTable.weightx = 1.0;
 	        gbc_newMafTable.weighty = 0;
 	        gbc_newMafTable.gridx = 0;
@@ -312,7 +312,7 @@ public class MafCompare extends JFrame {
 	        GridBagConstraints gbc_compMafTable = new GridBagConstraints();
 	        gbc_compMafTable.anchor = GridBagConstraints.PAGE_START;
 	        gbc_compMafTable.insets = new Insets(0, 0, 0, 0);
-	        gbc_compMafTable.fill = GridBagConstraints.BOTH;
+	        gbc_compMafTable.fill = GridBagConstraints.HORIZONTAL;
 	        gbc_compMafTable.weightx = 1.0;
 	        gbc_compMafTable.weighty = 0;
 	        gbc_compMafTable.gridx = 0;

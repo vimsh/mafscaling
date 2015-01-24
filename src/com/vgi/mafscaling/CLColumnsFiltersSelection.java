@@ -26,14 +26,6 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
 		super(isPolfTableSet);
 	}
     
-    protected int getWindowHeight() {
-    	return 650;
-    }
-    
-    protected int getColSelectionGridHeight() {
-    	return 9;
-    }
-    
     protected void addColSelection() {
         addRPMColSelection();
         addLoadColSelection();
@@ -160,14 +152,15 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
     	else
     		Config.setIatColumnName(value);
     	    	
-    	// CL/OL Status
-    	value = clolStatusFilter.getValue().toString();
-    	if (value.isEmpty() || value.equals("-1")) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" value must be specified\n");
-    	}
-    	else
-    		Config.setClOlStatusValue(Integer.valueOf(value));
+        // CL/OL Status
+        value = clolStatusFilter.getValue().toString();
+        colName = clolStatusLabelText;
+        if (value.isEmpty() || value.equals("-1")) {
+        	ret = false;
+        	error.append("\"").append(colName).append("\" value must be specified\n");
+        }
+        else
+        	Config.setClOlStatusValue(Integer.valueOf(value));
     	
     	// Max MAF Voltage filter
     	Config.setMafVMaximumValue(Double.valueOf(maxMafVFilter.getText()));

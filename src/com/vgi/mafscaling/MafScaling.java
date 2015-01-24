@@ -19,19 +19,23 @@
 package com.vgi.mafscaling;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
 import org.apache.log4j.Logger;
 
 public class MafScaling {
     private static final Logger logger = Logger.getLogger(MafScaling.class);
-    private static final String Title = "MAF Scaling - v1.6.3";
+    private static final String Title = "MAF Scaling - v2.0.0 BETA";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
     private static final String RTabName = "<html>Rescale</html>";
@@ -40,19 +44,31 @@ public class MafScaling {
     private static final String VETabName = "<html>MAF VE Calc</html>";
     private static final String LSTabName = "<html>Log Stats</html>";
     private static final String LVTabName = "<html>Log View</html>";
+    private static final String LPTabName = "<html>Log Play</html>";
     private JFrame frame;
 
     /**
      * Launch the application.
+     * @throws UnsupportedLookAndFeelException 
+     * @throws IllegalAccessException 
+     * @throws InstantiationException 
+     * @throws ClassNotFoundException 
      */
-    public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error(e);
-        }
+    public static void main(String[] args) throws Exception {
+    	//UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+    	//UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+    	
+    	if (UIManager.getLookAndFeel().getName().equals("Nimbus")) {
+	    	UIManager.put("Table.gridColor", new Color(214, 217, 223));
+	        UIManager.put("Table.disabled", false);
+	        UIManager.put("Table.showGrid", true);
+	    	UIManager.put("Table.intercellSpacing", new Dimension (1, 1));
+	    	UIManager.put("TitledBorder.font", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+	    	UIManager.put("Table.selectionBackground", new Color(115, 164, 209));
+	    	UIManager.put("Table.selectionForeground", Color.WHITE);
+	    	UIManager.put("Table.focusCellBackground", new Color(115, 164, 209));
+	    	UIManager.put("Table.focusCellForeground", Color.WHITE);
+    	}
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -85,12 +101,6 @@ public class MafScaling {
         ImageIcon chartImage = new ImageIcon(getClass().getResource("/chart.jpg"));
     	
         frame = new JFrame();
-        frame.setTitle(Title);
-        frame.setBounds(100, 100, 621, 372);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(Config.getWindowSize());
-        frame.setLocation(Config.getWindowLocation());
-        frame.setIconImage(chartImage.getImage());
         frame.addWindowListener(new WindowAdapter() {
         	public void windowClosing(WindowEvent e) {
                 Config.setWindowSize(frame.getSize());
@@ -123,10 +133,10 @@ public class MafScaling {
         mi.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(mi, MITabName);
         
-        //JTabbedPane ve = new VECalc(JTabbedPane.LEFT);
-        //ve.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        //tabbedPane.add(ve, VETabName);
-
+        JTabbedPane ve = new VECalc(JTabbedPane.LEFT);
+        ve.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(ve, VETabName);
+		
         JTabbedPane ls = new LogStats(JTabbedPane.LEFT);
         ls.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(ls, LSTabName);
@@ -134,5 +144,18 @@ public class MafScaling {
         JTabbedPane lv = new LogView(JTabbedPane.LEFT);
         lv.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(lv, LVTabName);
+        
+        JTabbedPane lp = new LogPlay(JTabbedPane.LEFT);
+        lp.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(lp, LPTabName);
+
+        frame.pack();
+        frame.doLayout();
+        frame.setTitle(Title);
+        frame.setBounds(100, 100, 621, 372);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(Config.getWindowSize());
+        frame.setLocation(Config.getWindowLocation());
+        frame.setIconImage(chartImage.getImage());
     }
 }

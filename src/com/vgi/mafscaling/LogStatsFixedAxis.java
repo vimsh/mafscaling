@@ -37,10 +37,12 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
@@ -50,68 +52,106 @@ import org.apache.log4j.Logger;
 public class LogStatsFixedAxis implements ActionListener {
     private static final Logger logger = Logger.getLogger(LogStatsFixedAxis.class);
 	private enum Axis {XAXIS, YAXIS};
-    private final static int ColumnWidth = 40;
+    private final static int ColumnWidth = 55;
     private final static int AxisColumnCount = 25;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
     private JTable xAxisTable = null;
     private JTable yAxisTable = null;
     private JTable templateTable = null;
+    private JPanel dataPanel = null;
+    private JSpinner distanceSpinner = null;
     private JComboBox<String> xAxisList = null;
     private JComboBox<String> yAxisList = null;
     private ArrayList<Double> xAxisArray;
     private ArrayList<Double> yAxisArray;
+    private ArrayList<Integer> distance;
+    private Insets insets0 = new Insets(0, 0, 0, 0);
+    private Insets insets3 = new Insets(3, 3, 3, 3);
     
-    public LogStatsFixedAxis(ArrayList<Double> xAxis, ArrayList<Double> yAxis) {
+    public LogStatsFixedAxis(ArrayList<Integer> distancePct, ArrayList<Double> xAxis, ArrayList<Double> yAxis) {
     	xAxisArray = xAxis;
     	yAxisArray = yAxis;
+    	distance = distancePct;
     	initialize();
     }
     
     private void initialize() {
-        JPanel dataPanel = new JPanel();
+    	String templNames;
+    	
+        dataPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
-        gbl_dataPanel.columnWidths = new int[]{0};
-        gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0};
-        gbl_dataPanel.columnWeights = new double[]{0.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0, 0};
+        gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 1.0, 0.0, 0.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         dataPanel.setLayout(gbl_dataPanel);
-        dataPanel.setPreferredSize(new Dimension(620, 500));
+        dataPanel.setPreferredSize(new Dimension(620, 550));
+        
+        GridBagConstraints gbc_fullWidth = new GridBagConstraints();
+        gbc_fullWidth.anchor = GridBagConstraints.PAGE_START;
+        gbc_fullWidth.fill = GridBagConstraints.HORIZONTAL;
+        gbc_fullWidth.insets = insets3;
+        gbc_fullWidth.gridwidth = 5;
+        gbc_fullWidth.gridx = 0;
+        gbc_fullWidth.gridy = 0;
 
-        JLabel note1Label = new JLabel("You can manually enter axis values or paste them into tables below");
-        note1Label.setForeground(Color.BLUE);
-        GridBagConstraints gbc_note1Label = new GridBagConstraints();
-        gbc_note1Label.anchor = GridBagConstraints.WEST;
-        gbc_note1Label.fill = GridBagConstraints.HORIZONTAL;
-        gbc_note1Label.insets = new Insets(3, 3, 3, 3);
-        gbc_note1Label.gridx = 0;
-        gbc_note1Label.gridy = 0;
-        dataPanel.add(note1Label, gbc_note1Label);
+        JLabel noteLabel = new JLabel("Select saved, manually enter, or paste axis values into tables below");
+        noteLabel.setForeground(Color.BLUE);
+        dataPanel.add(noteLabel, gbc_fullWidth);
         
-        createAxisPanel(dataPanel);
+        // add controls for x-axis
+        templNames = Config.getXAxisTemplates();
+        if (templNames.isEmpty())
+        	templNames = ",";
+        gbc_fullWidth.gridy++;
+        addLabel(gbc_fullWidth.gridy, 0, "Saved X-Axis");
+        xAxisList = addComboBox(gbc_fullWidth.gridy, 1, templNames, "xaxis");
+        addButton(gbc_fullWidth.gridy, 2, "Clear", "clearxaxis");
+        addButton(gbc_fullWidth.gridy, 3, "Save", "savexaxis");
+        addButton(gbc_fullWidth.gridy, 4, "Remove", "remxtempl");
         
-        JLabel note2Label = new JLabel("You can select existing axis if you have saved them before");
-        note2Label.setForeground(Color.BLUE);
-        GridBagConstraints gbc_note2Label = new GridBagConstraints();
-        gbc_note2Label.anchor = GridBagConstraints.WEST;
-        gbc_note2Label.fill = GridBagConstraints.HORIZONTAL;
-        gbc_note2Label.insets = new Insets(3, 3, 3, 3);
-        gbc_note2Label.gridx = 0;
-        gbc_note2Label.gridy = 2;
-        dataPanel.add(note2Label, gbc_note2Label);
+        // add x-axis table
+        gbc_fullWidth.gridy++;
+        xAxisTable = createAxisPanel(gbc_fullWidth.gridy, "X-Axis");
+
+        gbc_fullWidth.gridy++;
+        dataPanel.add(new JLabel(" "), gbc_fullWidth);
         
-        createControlPanel(dataPanel);
+        // add controls for y-axis
+        templNames = Config.getYAxisTemplates();
+        if (templNames.isEmpty())
+        	templNames = ",";
+        gbc_fullWidth.gridy++;
+        addLabel(gbc_fullWidth.gridy, 0, "Saved Y-Axis");
+        yAxisList = addComboBox(gbc_fullWidth.gridy, 1, templNames, "yaxis");
+        addButton(gbc_fullWidth.gridy, 2, "Clear", "clearyaxis");
+        addButton(gbc_fullWidth.gridy, 3, "Save", "saveyaxis");
+        addButton(gbc_fullWidth.gridy, 4, "Remove", "remytempl");
         
-        JLabel note3Label = new JLabel("You can paste a table below and first row and first column will be used as axis");
-        note3Label.setForeground(Color.BLUE);
-        GridBagConstraints gbc_note3Label = new GridBagConstraints();
-        gbc_note3Label.anchor = GridBagConstraints.WEST;
-        gbc_note3Label.fill = GridBagConstraints.HORIZONTAL;
-        gbc_note3Label.insets = new Insets(3, 3, 3, 3);
-        gbc_note3Label.gridx = 0;
-        gbc_note3Label.gridy = 4;
-        dataPanel.add(note3Label, gbc_note3Label);
+        // add y-axis table
+        gbc_fullWidth.gridy++;
+        yAxisTable = createAxisPanel(gbc_fullWidth.gridy, "Y-Axis");
+
+        gbc_fullWidth.gridy++;
+        noteLabel = new JLabel("You can paste a table below and first row / first column will be used as axis");
+        noteLabel.setForeground(Color.BLUE);
+        dataPanel.add(noteLabel, gbc_fullWidth);
+
+        gbc_fullWidth.gridy++;
+        addButton(gbc_fullWidth.gridy, 3, "Clear", "cleartempl");
+        addButton(gbc_fullWidth.gridy, 4, "Validate", "validate");
         
-        createDataTablePanel(dataPanel);
+        gbc_fullWidth.gridy++;
+        createAxisTablePanel(gbc_fullWidth.gridy);
+
+        gbc_fullWidth.gridy++;
+        noteLabel = new JLabel("<html>You can set specific distance % to get data that falls as close the the axis points as possible (where 50% is the mid-point between two axis points)<html>");
+        noteLabel.setForeground(Color.BLUE);
+        dataPanel.add(noteLabel, gbc_fullWidth);
+
+        gbc_fullWidth.gridy++;
+        addLabel(gbc_fullWidth.gridy, 0, "Distance %");
+        distanceSpinner = addSpinnerFilter(gbc_fullWidth.gridy, 1, distance.get(0).intValue(), 1, 50, 1);
 
     	setAxisTables();
         
@@ -123,235 +163,37 @@ public class LogStatsFixedAxis implements ActionListener {
         while (!validateAxisData());
     }
 
-    private void createAxisPanel(JPanel dataPanel) {
-        JPanel axisPanel = new JPanel();
-        GridBagConstraints gbc_axisPanel = new GridBagConstraints();
-        gbc_axisPanel.insets = new Insets(3, 3, 3, 3);
-        gbc_axisPanel.anchor = GridBagConstraints.NORTHWEST;
-        gbc_axisPanel.fill = GridBagConstraints.HORIZONTAL;
-        gbc_axisPanel.weightx = 1.0;
-        gbc_axisPanel.gridx = 0;
-        gbc_axisPanel.gridy = 1;
-        dataPanel.add(axisPanel, gbc_axisPanel);
+    private JTable createAxisPanel(int row, String tableName) {
+    	JTable axisTable = new JTable();
+    	axisTable.setColumnSelectionAllowed(true);
+    	axisTable.setCellSelectionEnabled(true);
+    	axisTable.setBorder(new LineBorder(Color.GRAY));
+    	axisTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+    	axisTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    	axisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+    	axisTable.setTableHeader(null);
+        Utils.initializeTable(axisTable, ColumnWidth);
+        excelAdapter.addTable(axisTable, false, false, false, false, true, false, true, false, true);
         
-        GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0};
-        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0};
-        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 1.0};
-        axisPanel.setLayout(gbl_cntlPanel);
-
-    	xAxisTable = new JTable();
-        xAxisTable.setColumnSelectionAllowed(true);
-        xAxisTable.setCellSelectionEnabled(true);
-        xAxisTable.setBorder(new LineBorder(Color.GRAY));
-        xAxisTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-        xAxisTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        xAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
-        xAxisTable.setTableHeader(null);
-        Utils.initializeTable(xAxisTable, ColumnWidth);
-        excelAdapter.addTable(xAxisTable, false, false, false, false, true, false, true, false, true);
+        JScrollPane axisScrollPane = new JScrollPane(axisTable);
+        axisScrollPane.setViewportBorder(new TitledBorder(null, tableName, TitledBorder.LEADING, TitledBorder.TOP, null, null));
+        axisScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        axisScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        GridBagConstraints gbc_axisScrollPane = new GridBagConstraints();
+        gbc_axisScrollPane.insets = insets0;
+        gbc_axisScrollPane.anchor = GridBagConstraints.NORTH;
+        gbc_axisScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_axisScrollPane.weightx = 1.0;
+        gbc_axisScrollPane.gridx = 0;
+        gbc_axisScrollPane.gridy = row;
+        gbc_axisScrollPane.gridwidth = 5;
+        gbc_axisScrollPane.ipady = 10;
+        dataPanel.add(axisScrollPane, gbc_axisScrollPane);
         
-        JScrollPane xAxisScrollPane = new JScrollPane(xAxisTable);
-        xAxisScrollPane.setViewportBorder(new TitledBorder(null, "X-Axis", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-        xAxisScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        xAxisScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-        GridBagConstraints gbc_xAxisScrollPane = new GridBagConstraints();
-        gbc_xAxisScrollPane.insets = new Insets(0, 0, 0, 0);
-        gbc_xAxisScrollPane.anchor = GridBagConstraints.NORTH;
-        gbc_xAxisScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbc_xAxisScrollPane.ipady = 17;
-        gbc_xAxisScrollPane.weightx = 1.0;
-        gbc_xAxisScrollPane.gridx = 0;
-        gbc_xAxisScrollPane.gridy = 0;
-        axisPanel.add(xAxisScrollPane, gbc_xAxisScrollPane);
-
-        JButton btnClearXAxis = new JButton("Clear");
-        GridBagConstraints gbc_btnClearXAxis = new GridBagConstraints();
-        gbc_btnClearXAxis.anchor = GridBagConstraints.EAST;
-        gbc_btnClearXAxis.insets = new Insets(1, 5, 1, 1);
-        gbc_btnClearXAxis.gridx = 1;
-        gbc_btnClearXAxis.gridy = 0;
-        btnClearXAxis.setActionCommand("clearxaxis");
-        btnClearXAxis.addActionListener(this);
-        axisPanel.add(btnClearXAxis, gbc_btnClearXAxis);
-
-        JButton btnSaveXAxis = new JButton("Save");
-        GridBagConstraints gbc_btnSaveXAxis = new GridBagConstraints();
-        gbc_btnSaveXAxis.anchor = GridBagConstraints.EAST;
-        gbc_btnSaveXAxis.insets = new Insets(1, 5, 1, 1);
-        gbc_btnSaveXAxis.gridx = 2;
-        gbc_btnSaveXAxis.gridy = 0;
-        btnSaveXAxis.setActionCommand("savexaxis");
-        btnSaveXAxis.addActionListener(this);
-        axisPanel.add(btnSaveXAxis, gbc_btnSaveXAxis);
-
-    	yAxisTable = new JTable();
-        yAxisTable.setColumnSelectionAllowed(true);
-        yAxisTable.setCellSelectionEnabled(true);
-        yAxisTable.setBorder(new LineBorder(Color.GRAY));
-        yAxisTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-        yAxisTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        yAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
-        yAxisTable.setTableHeader(null);
-        Utils.initializeTable(yAxisTable, ColumnWidth);
-        excelAdapter.addTable(yAxisTable, false, false, false, false, true, false, true, false, true);
-        
-        JScrollPane yAxisScrollPane = new JScrollPane(yAxisTable);
-        yAxisScrollPane.setViewportBorder(new TitledBorder(null, "Y-Axis", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-        yAxisScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        yAxisScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-        GridBagConstraints gbc_yAxisScrollPane = new GridBagConstraints();
-        gbc_yAxisScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_yAxisScrollPane.weightx = 1.0;
-        gbc_yAxisScrollPane.insets = new Insets(0, 0, 0, 0);
-        gbc_yAxisScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbc_yAxisScrollPane.ipady = 17;
-        gbc_yAxisScrollPane.gridx = 0;
-        gbc_yAxisScrollPane.gridy = 1;
-        axisPanel.add(yAxisScrollPane, gbc_yAxisScrollPane);
-
-        JButton btnClearYAxis = new JButton("Clear");
-        GridBagConstraints gbc_btnClearYAxis = new GridBagConstraints();
-        gbc_btnClearYAxis.anchor = GridBagConstraints.EAST;
-        gbc_btnClearYAxis.insets = new Insets(1, 5, 1, 1);
-        gbc_btnClearYAxis.gridx = 1;
-        gbc_btnClearYAxis.gridy = 1;
-        btnClearYAxis.setActionCommand("clearyaxis");
-        btnClearYAxis.addActionListener(this);
-        axisPanel.add(btnClearYAxis, gbc_btnClearYAxis);
-
-        JButton btnSaveYAxis = new JButton("Save");
-        GridBagConstraints gbc_btnSaveYAxis = new GridBagConstraints();
-        gbc_btnSaveYAxis.anchor = GridBagConstraints.EAST;
-        gbc_btnSaveYAxis.insets = new Insets(1, 5, 1, 1);
-        gbc_btnSaveYAxis.gridx = 2;
-        gbc_btnSaveYAxis.gridy = 1;
-        btnSaveYAxis.setActionCommand("saveyaxis");
-        btnSaveYAxis.addActionListener(this);
-        axisPanel.add(btnSaveYAxis, gbc_btnSaveYAxis);
+        return axisTable;
     }
-    
-    private void createControlPanel(JPanel dataPanel) {
-    	String templNames;
-        JPanel cntlPanel = new JPanel();
-        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
-        gbc_ctrlPanel.insets = new Insets(3, 3, 3, 3);
-        gbc_ctrlPanel.anchor = GridBagConstraints.WEST;
-        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
-        gbc_ctrlPanel.gridx = 0;
-        gbc_ctrlPanel.gridy = 3;
-        dataPanel.add(cntlPanel, gbc_ctrlPanel);
-        
-        GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
-        gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0, 0.0, 0.0};
-        gbl_cntlPanel.rowWeights = new double[]{0.0};
-        cntlPanel.setLayout(gbl_cntlPanel);
 
-        JLabel xAxisLabel = new JLabel("Saved X-Axis");
-        GridBagConstraints gbc_xAxisLabel = new GridBagConstraints();
-        gbc_xAxisLabel.anchor = GridBagConstraints.WEST;
-        gbc_xAxisLabel.insets = new Insets(3, 0, 3, 0);
-        gbc_xAxisLabel.gridx = 0;
-        gbc_xAxisLabel.gridy = 0;
-        cntlPanel.add(xAxisLabel, gbc_xAxisLabel);
-
-        templNames = Config.getXAxisTemplates();
-        if (templNames.isEmpty())
-        	templNames = ",";
-        xAxisList = new JComboBox<String>(templNames.split(","));
-        GridBagConstraints gbc_xAxisList = new GridBagConstraints();
-        gbc_xAxisList.anchor = GridBagConstraints.WEST;
-        gbc_xAxisList.insets = new Insets(1, 5, 1, 1);
-        gbc_xAxisList.gridx = 1;
-        gbc_xAxisList.gridy = 0;
-        xAxisList.setActionCommand("xaxis");
-        xAxisList.addActionListener(this);
-        xAxisList.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(xAxisList, gbc_xAxisList);
-
-        JButton btnRemXAxisTempl = new JButton("Remove");
-        GridBagConstraints gbc_btnRemXAxisTempl = new GridBagConstraints();
-        gbc_btnRemXAxisTempl.anchor = GridBagConstraints.EAST;
-        gbc_btnRemXAxisTempl.insets = new Insets(1, 5, 1, 1);
-        gbc_btnRemXAxisTempl.gridx = 2;
-        gbc_btnRemXAxisTempl.gridy = 0;
-        btnRemXAxisTempl.setActionCommand("remxtempl");
-        btnRemXAxisTempl.addActionListener(this);
-        cntlPanel.add(btnRemXAxisTempl, gbc_btnRemXAxisTempl);
-        
-        JLabel yAxisLabel = new JLabel("Saved Y-Axis");
-        GridBagConstraints gbc_yAxisLabel = new GridBagConstraints();
-        gbc_yAxisLabel.anchor = GridBagConstraints.EAST;
-        gbc_yAxisLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_yAxisLabel.gridx = 3;
-        gbc_yAxisLabel.gridy = 0;
-        cntlPanel.add(yAxisLabel, gbc_yAxisLabel);
-
-        templNames = Config.getYAxisTemplates();
-        if (templNames.isEmpty())
-        	templNames = ",";
-        yAxisList = new JComboBox<String>(templNames.split(","));
-        GridBagConstraints gbc_yAxisList = new GridBagConstraints();
-        gbc_yAxisList.anchor = GridBagConstraints.WEST;
-        gbc_yAxisList.insets = new Insets(1, 5, 1, 1);
-        gbc_yAxisList.gridx = 4;
-        gbc_yAxisList.gridy = 0;
-        yAxisList.setActionCommand("yaxis");
-        yAxisList.addActionListener(this);
-        yAxisList.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(yAxisList, gbc_yAxisList);
-
-        JButton btnRemYAxisTempl = new JButton("Remove");
-        GridBagConstraints gbc_btnRemYAxisTempl = new GridBagConstraints();
-        gbc_btnRemYAxisTempl.anchor = GridBagConstraints.EAST;
-        gbc_btnRemYAxisTempl.insets = new Insets(1, 5, 1, 1);
-        gbc_btnRemYAxisTempl.gridx = 5;
-        gbc_btnRemYAxisTempl.gridy = 0;
-        btnRemYAxisTempl.setActionCommand("remytempl");
-        btnRemYAxisTempl.addActionListener(this);
-        cntlPanel.add(btnRemYAxisTempl, gbc_btnRemYAxisTempl);
-    }
-    
-    public void createDataTablePanel(JPanel dataPanel) {    	
-        JPanel tblPanel = new JPanel();
-        GridBagConstraints gbc_tblPanel = new GridBagConstraints();
-        gbc_tblPanel.insets = new Insets(3, 3, 3, 3);
-        gbc_tblPanel.anchor = GridBagConstraints.NORTHWEST;
-        gbc_tblPanel.fill = GridBagConstraints.BOTH;
-        gbc_tblPanel.gridx = 0;
-        gbc_tblPanel.gridy = 5;
-        dataPanel.add(tblPanel, gbc_tblPanel);
-        
-        GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0,0};
-        gbl_cntlPanel.rowHeights = new int[]{0, 0};
-        gbl_cntlPanel.columnWeights = new double[]{1.0,0.0};
-        gbl_cntlPanel.rowWeights = new double[]{0.0, 1.0};
-        tblPanel.setLayout(gbl_cntlPanel);
-        
-        JButton btnClearData = new JButton("Clear");
-        GridBagConstraints gbc_btnClearData = new GridBagConstraints();
-        gbc_btnClearData.anchor = GridBagConstraints.EAST;
-        gbc_btnClearData.insets = new Insets(1, 5, 1, 1);
-        gbc_btnClearData.gridx = 0;
-        gbc_btnClearData.gridy = 0;
-        btnClearData.setActionCommand("cleartempl");
-        btnClearData.addActionListener(this);
-        tblPanel.add(btnClearData, gbc_btnClearData);
-
-        JButton btnValidateData = new JButton("Validate");
-        GridBagConstraints gbc_btnValidateData = new GridBagConstraints();
-        gbc_btnValidateData.anchor = GridBagConstraints.EAST;
-        gbc_btnValidateData.insets = new Insets(1, 5, 1, 1);
-        gbc_btnValidateData.gridx = 1;
-        gbc_btnValidateData.gridy = 0;
-        btnValidateData.setActionCommand("validate");
-        btnValidateData.addActionListener(this);
-        tblPanel.add(btnValidateData, gbc_btnValidateData);
-
+    public void createAxisTablePanel(int row) {
         templateTable = new JTable();
         templateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         templateTable.setColumnSelectionAllowed(true);
@@ -371,13 +213,60 @@ public class LogStatsFixedAxis implements ActionListener {
         gbc_templTable.weightx = 1.0;
         gbc_templTable.weighty = 1.0;
         gbc_templTable.gridx = 0;
-        gbc_templTable.gridy = 1;
-        gbc_templTable.gridwidth = 2;
+        gbc_templTable.gridy = row;
+        gbc_templTable.gridwidth = 5;
         
         JScrollPane scrollPane = new JScrollPane(templateTable);
-        tblPanel.add(scrollPane, gbc_templTable);
+        dataPanel.add(scrollPane, gbc_templTable);
+    }
+    
+    private void addLabel(int row, int column, String text) {
+        JLabel label = new JLabel(text);
+        GridBagConstraints gbc_label = new GridBagConstraints();
+        gbc_label.anchor = GridBagConstraints.EAST;
+        gbc_label.insets = new Insets(3, 0, 3, 0);
+        gbc_label.gridx = column;
+        gbc_label.gridy = row;
+        dataPanel.add(label, gbc_label);
+    }
+    
+    private JComboBox<String> addComboBox(int row, int column, String names, String action) {
+    	JComboBox<String> combo = new JComboBox<String>(names.split(","));
+        combo.setActionCommand(action);
+        combo.addActionListener(this);
+        combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        GridBagConstraints gbc_combo = new GridBagConstraints();
+        gbc_combo.anchor = GridBagConstraints.WEST;
+        gbc_combo.insets = new Insets(1, 5, 1, 1);
+        gbc_combo.gridx = column;
+        gbc_combo.gridy = row;
+        dataPanel.add(combo, gbc_combo);
+        return combo;
     }
 
+    private JSpinner addSpinnerFilter(int row, int column, int value, int min, int max, int step) {
+    	JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
+        GridBagConstraints gbc_spinner = new GridBagConstraints();
+        gbc_spinner.anchor = GridBagConstraints.WEST;
+        gbc_spinner.insets = new Insets(1, 5, 1, 1);
+        gbc_spinner.gridx = column;
+        gbc_spinner.gridy = row;
+        dataPanel.add(spinner, gbc_spinner);
+        return spinner;
+    }
+    
+    private void addButton(int row, int column, String name, String action) {
+        JButton button = new JButton(name);
+        GridBagConstraints gbc_button = new GridBagConstraints();
+        gbc_button.anchor = GridBagConstraints.EAST;
+        gbc_button.insets = new Insets(1, 5, 1, 1);
+        gbc_button.gridx = column;
+        gbc_button.gridy = row;
+        button.setActionCommand(action);
+        button.addActionListener(this);
+        dataPanel.add(button, gbc_button);
+    }
+    
     /**
      * Methods sets the axis table from axis array if they have been set before
      */
@@ -647,15 +536,22 @@ public class LogStatsFixedAxis implements ActionListener {
 	        	JOptionPane.showMessageDialog(null, "Both axis tables are either empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
 	        	return false;
 	        }
+	        String val;
+	        int i = 0;
 	        ArrayList<Double> tempArray = new ArrayList<Double>();
 	        if (!Utils.isTableEmpty(xAxisTable)) {
-		    	for (int i = 0; i < xAxisTable.getColumnCount(); ++i) {
-			        if (!Pattern.matches(Utils.fpRegex, xAxisTable.getValueAt(0, i).toString())) {
+		    	for (i = 0; i < xAxisTable.getColumnCount(); ++i) {
+		    		val = xAxisTable.getValueAt(0, i).toString();
+		    		if (val.isEmpty())
+		    			break;
+		    		else if (!Pattern.matches(Utils.fpRegex, val)) {
 			        	JOptionPane.showMessageDialog(null, "Invalid data in X-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 			            return false;
 			        }
-			        tempArray.add(Double.valueOf(xAxisTable.getValueAt(0, i).toString()));
+			        tempArray.add(Double.valueOf(val));
 		    	}
+		    	for (; i < xAxisTable.getColumnCount(); ++i)
+		    		xAxisTable.setValueAt("", 0, i);
 		    	xAxisArray.clear();
 		    	for (Double d : tempArray)
 		    		xAxisArray.add(d);
@@ -663,18 +559,24 @@ public class LogStatsFixedAxis implements ActionListener {
 	        }
 	        tempArray.clear();
 	        if (!Utils.isTableEmpty(yAxisTable)) {
-		    	for (int i = 0; i < yAxisTable.getColumnCount(); ++i) {
-			        if (!Pattern.matches(Utils.fpRegex, yAxisTable.getValueAt(0, i).toString())) {
+		    	for (i = 0; i < yAxisTable.getColumnCount(); ++i) {
+		    		val = yAxisTable.getValueAt(0, i).toString();
+		    		if (val.isEmpty())
+		    			break;
+			        if (!Pattern.matches(Utils.fpRegex, val)) {
 			        	JOptionPane.showMessageDialog(null, "Invalid data in Y-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
 			            return false;
 			        }
-			        tempArray.add(Double.valueOf(yAxisTable.getValueAt(0, i).toString()));
+			        tempArray.add(Double.valueOf(val));
 		    	}
+		    	for (; i < yAxisTable.getColumnCount(); ++i)
+		    		yAxisTable.setValueAt("", 0, i);
 		    	yAxisArray.clear();
 		    	for (Double d : tempArray)
 		    		yAxisArray.add(d);
 		    	Collections.sort(yAxisArray);
 	        }
+	        distance.set(0, (Integer)distanceSpinner.getValue());
 	        return true;
     	}
     	catch (Exception e) {

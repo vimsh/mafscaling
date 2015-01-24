@@ -20,22 +20,13 @@ package com.vgi.mafscaling;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-
-import javax.swing.JLabel;
+import javax.swing.JEditorPane;
 
 public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public VEColumnsFiltersSelection(boolean isPolfTableSet) {
 		super(isPolfTableSet);
 	}
-    
-    protected int getWindowHeight() {
-    	return 850;
-    }
-    
-    protected int getColSelectionGridHeight() {
-    	return 9;
-    }
     
     protected void addColSelection() {
         addRPMColSelection();
@@ -75,9 +66,9 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	addCorrectionAppliedValue();
     	correctionAppliedValue.setValue(Config.getVECorrectionAppliedValue());
     	
-    	for (Component c : selectionPanel.getComponents()) {
-    		if (c instanceof JLabel) {
-    			JLabel label = (JLabel)c;
+    	for (Component c : filtersPanel.getComponents()) {
+    		if (c instanceof JEditorPane) {
+    			JEditorPane label = (JEditorPane)c;
     			if (label.getText().startsWith("Remove data where Throttle Input is below"))
     				label.setText(label.getText() + " (*** works with AFR Maximum filter)");
     			else if (label.getText().startsWith("Remove data where AFR is above"))

@@ -21,53 +21,28 @@ package com.vgi.mafscaling;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Cursor;
-import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.regex.Pattern;
 import java.util.ResourceBundle;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextPane;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
-import javax.swing.border.LineBorder;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.TableColumn;
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -84,9 +59,8 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
-import org.math.plot.Plot3DPanel;
 
-public class VECalc extends JTabbedPane implements ActionListener, IMafChartHolder {
+public class VECalc extends ACompCalc {
 	private static final long serialVersionUID = -6288885401403089256L;
 	private static final Logger logger = Logger.getLogger(VECalc.class);
     
@@ -102,20 +76,8 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
     	public double afrerr = 0;
     }
 
-    private static final String SdTableName = "Current VE table";
-    private static final String NewSdTableName = "New VE table";
-    private static final String CorrTableName = "Error % table";
-    private static final String CorrCountTableName = "Error % Count table";
     private static final String xAxisName = "RPM";
     private static final String yAxisName = "Estimated VE";
-    private static final String x3dAxisName = "MP";
-    private static final String y3dAxisName = "RPM";
-    private static final String z3dAxisName = "Avg Error %";
-    private static final int ColumnWidth = 50;
-    private static final int ColumnCount = 7;
-    private static final int TableRowCount = 20;
-    private static final int LogDataRowCount = 200;
-
     private int clValue = Config.getClOlStatusValue();
     private int afrRowOffset = Config.getWBO2RowOffset();
     private int thrtlMaxChange = Config.getVEThrottleChangeMaxValue();
@@ -138,72 +100,38 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
     private int logMafColIdx = -1;    
     private int logFfbColIdx = -1;    
     private int logSdColIdx = -1;
-
-    private JTable sdTable = null;
-    private JTable newSdTable = null;
-    private JTable corrTable = null;
-    private JTable corrCountTable = null;
-    private JTable logDataTable = null;
-    private ChartPanel chartPanel = null;
-    private JScrollPane dataScrollPane = null;
+    
+    private String[] logColumns = new String[] { "RPM", "IAT", "MP", "FFB", "AFR", "MAF", "VE" };
     private JComboBox<String> sdType = null;
     private JComboBox<String> mpType = null;
     private JComboBox<String> dataType = null;
-
-    private ExcelAdapter mpExcelAdapter = null;
-    private ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
-    private final JFileChooser fileChooser = new JFileChooser();
-    private Plot3DPanel plot3d = null;
-    private ArrayList<Double> xAxisArray = null;
-    private ArrayList<Double> yAxisArray = null;
     private HashMap<Double, HashMap<Double, ArrayList<LogData>>> xData = null;
-    private List<XYSeries> corrData = new ArrayList<XYSeries>();
-    private ArrayList<ArrayList<Double>> savedNewMpTable = new ArrayList<ArrayList<Double>>();
 
     public VECalc(int tabPlacement) {
         super(tabPlacement);
-        initialize();
-    }
-
-    private void initialize() {
-        mpExcelAdapter = new ExcelAdapter() {
-    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
-    	    	super.onPaste(table, extendRows, extendCols);
-    	    	validateTable(table);
-    	    	clearRunSdTables();
-    	    }
-    	};
-        createDataTab();
-        createGraghTab();
-        create3dGraghTab();
-        createUsageTab();
+        origTableName = "Current VE table";
+        newTableName = "New VE table";
+        corrTableName = "Error % table";
+        corrCountTableName = "Error % Count table";
+        x3dAxisName = "MP";
+        y3dAxisName = "RPM";
+        z3dAxisName = "Avg Error %";
+        initialize(logColumns);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
     // DATA TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
-    private void createDataTab() {
-    	fileChooser.setMultiSelectionEnabled(true);
-        fileChooser.setCurrentDirectory(new File("."));
-        
-        JPanel dataPanel = new JPanel();
-        add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
-        GridBagLayout gbl_dataPanel = new GridBagLayout();
-        gbl_dataPanel.columnWidths = new int[] {0, 0};
-        gbl_dataPanel.rowHeights = new int[] {0, 0};
-        gbl_dataPanel.columnWeights = new double[]{0.0, 0.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 1.0};
-        dataPanel.setLayout(gbl_dataPanel);
-
+    protected void createControlPanel(JPanel dataPanel) {
         JPanel cntlPanel = new JPanel();
         GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
-        gbl_ctrlPanel.insets = new Insets(3, 3, 3, 3);
-        gbl_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
-        gbl_ctrlPanel.weightx = 1.0;
+        gbl_ctrlPanel.insets = insets3;
+        gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
         gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
         gbl_ctrlPanel.gridx = 0;
         gbl_ctrlPanel.gridy = 0;
+        gbl_ctrlPanel.weightx = 1.0;
         gbl_ctrlPanel.gridwidth = 2;
         dataPanel.add(cntlPanel, gbl_ctrlPanel);
         
@@ -213,275 +141,24 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
-        
-        JButton btnLoadDataButton = new JButton("Load Log");
-        GridBagConstraints gbc_btnLoadDataButton = new GridBagConstraints();
-        gbc_btnLoadDataButton.insets = new Insets(0, 0, 5, 5);
-        gbc_btnLoadDataButton.gridx = 0;
-        gbc_btnLoadDataButton.gridy = 0;
-        btnLoadDataButton.setActionCommand("loadlog");
-        btnLoadDataButton.addActionListener(this);
-        cntlPanel.add(btnLoadDataButton, gbc_btnLoadDataButton);
-        
-        JButton btnSdClearButton = new JButton("Clear SD Data");
-        GridBagConstraints gbc_btnSdClearButton = new GridBagConstraints();
-        gbc_btnSdClearButton.anchor = GridBagConstraints.PAGE_START;
-        gbc_btnSdClearButton.insets = new Insets(0, 0, 5, 5);
-        gbc_btnSdClearButton.gridx = 1;
-        gbc_btnSdClearButton.gridy = 0;
-        btnSdClearButton.setActionCommand("clearsd");
-        btnSdClearButton.addActionListener(this);
-        cntlPanel.add(btnSdClearButton, gbc_btnSdClearButton);
-        
-        JButton btnRunClearButton = new JButton("Clear Run Data");
-        GridBagConstraints gbc_btnRunClearButton = new GridBagConstraints();
-        gbc_btnRunClearButton.insets = new Insets(0, 0, 5, 5);
-        gbc_btnRunClearButton.gridx = 2;
-        gbc_btnRunClearButton.gridy = 0;
-        btnRunClearButton.setActionCommand("clearlog");
-        btnRunClearButton.addActionListener(this);
-        cntlPanel.add(btnRunClearButton, gbc_btnRunClearButton);
-        
-        JButton btnAllClearButton = new JButton("Clear All");
-        GridBagConstraints gbc_btnAllClearButton = new GridBagConstraints();
-        gbc_btnAllClearButton.insets = new Insets(0, 0, 5, 5);
-        gbc_btnAllClearButton.gridx = 3;
-        gbc_btnAllClearButton.gridy = 0;
-        btnAllClearButton.setActionCommand("clearall");
-        btnAllClearButton.addActionListener(this);
-        cntlPanel.add(btnAllClearButton, gbc_btnAllClearButton);
 
-        JLabel sdLabel = new JLabel("SD");
-        sdLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_sdLabel = new GridBagConstraints();
-        gbc_sdLabel.anchor = GridBagConstraints.EAST;
-        gbc_sdLabel.insets = new Insets(0, 5, 5, 2);
-        gbc_sdLabel.gridx = 4;
-        gbc_sdLabel.gridy = 0;
-        cntlPanel.add(sdLabel, gbc_sdLabel);
-        
-        sdType = new JComboBox<String>(new String [] { "RR SD", "Cobb SD" });
-        GridBagConstraints gbc_sdType = new GridBagConstraints();
-        gbc_sdType.anchor = GridBagConstraints.PAGE_START;
-        gbc_sdType.insets = new Insets(0, 0, 5, 5);
-        gbc_sdType.gridx = 5;
-        gbc_sdType.gridy = 0;
-        cntlPanel.add(sdType, gbc_sdType);
-
-        JLabel mpLabel = new JLabel("MP");
-        mpLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_mpLabel = new GridBagConstraints();
-        gbc_mpLabel.anchor = GridBagConstraints.EAST;
-        gbc_mpLabel.insets = new Insets(0, 5, 5, 2);
-        gbc_mpLabel.gridx = 6;
-        gbc_mpLabel.gridy = 0;
-        cntlPanel.add(mpLabel, gbc_mpLabel);
-        
-        mpType = new JComboBox<String>(new String [] { "Torr/mmHG Abs", "Torr/mmHG Rel Sea Lvl", "Psi Abs", "Psi Rel Sea Lvl" });
-        GridBagConstraints gbc_mpType = new GridBagConstraints();
-        gbc_mpType.anchor = GridBagConstraints.PAGE_START;
-        gbc_mpType.insets = new Insets(0, 0, 5, 5);
-        gbc_mpType.gridx = 7;
-        gbc_mpType.gridy = 0;
-        cntlPanel.add(mpType, gbc_mpType);
-
-        JLabel dataTypeLabel = new JLabel("Run");
-        mpLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_dataTypeLabel = new GridBagConstraints();
-        gbc_dataTypeLabel.anchor = GridBagConstraints.EAST;
-        gbc_dataTypeLabel.insets = new Insets(0, 5, 5, 2);
-        gbc_dataTypeLabel.gridx = 8;
-        gbc_dataTypeLabel.gridy = 0;
-        cntlPanel.add(dataTypeLabel, gbc_dataTypeLabel);
-        
-        dataType = new JComboBox<String>(new String [] { "MAF Builder", "AFR Tuner" });
-        GridBagConstraints gbc_dataType = new GridBagConstraints();
-        gbc_dataType.anchor = GridBagConstraints.PAGE_START;
-        gbc_dataType.insets = new Insets(0, 0, 5, 5);
-        gbc_dataType.gridx = 9;
-        gbc_dataType.gridy = 0;
-        cntlPanel.add(dataType, gbc_dataType);
-        
-        JCheckBox hideLogTableCheckBox = new JCheckBox("Hide Log Table");
-        GridBagConstraints gbc_hideLogTableCheckBox = new GridBagConstraints();
-        gbc_hideLogTableCheckBox.insets = new Insets(0, 0, 3, 3);
-        gbc_hideLogTableCheckBox.gridx = 10;
-        gbc_hideLogTableCheckBox.gridy = 0;
-        hideLogTableCheckBox.setActionCommand("hidelogtable");
-        hideLogTableCheckBox.addActionListener(this);
-        cntlPanel.add(hideLogTableCheckBox, gbc_hideLogTableCheckBox);
-        
-        JCheckBox compareTableCheckBox = new JCheckBox("Compare Tables");
-        GridBagConstraints gbc_compareTableCheckBox = new GridBagConstraints();
-        gbc_compareTableCheckBox.insets = new Insets(0, 0, 3, 3);
-        gbc_compareTableCheckBox.gridx = 11;
-        gbc_compareTableCheckBox.gridy = 0;
-        compareTableCheckBox.setActionCommand("comparetables");
-        compareTableCheckBox.addActionListener(this);
-        cntlPanel.add(compareTableCheckBox, gbc_compareTableCheckBox);
-        
-        JButton btnGoButton = new JButton("GO");
-        GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
-        gbc_btnGoButton.anchor = GridBagConstraints.EAST;
-        gbc_btnGoButton.insets = new Insets(0, 0, 5, 0);
-        gbc_btnGoButton.gridx = 12;
-        gbc_btnGoButton.gridy = 0;
-        btnGoButton.setActionCommand("go");
-        btnGoButton.addActionListener(this);
-        cntlPanel.add(btnGoButton, gbc_btnGoButton);
-
-        dataScrollPane = new JScrollPane();
-        GridBagConstraints gbc_dataScrollPane = new GridBagConstraints();
-        gbc_dataScrollPane.weightx = 0;
-        gbc_dataScrollPane.weighty = 1.0;
-        gbc_dataScrollPane.fill = GridBagConstraints.BOTH;
-        gbc_dataScrollPane.ipadx = ColumnWidth * ColumnCount;
-        gbc_dataScrollPane.gridx = 0;
-        gbc_dataScrollPane.gridy = 1;
-        dataPanel.add(dataScrollPane, gbc_dataScrollPane);
-
-        JPanel dataRunPanel = new JPanel();
-        dataScrollPane.setViewportView(dataRunPanel);
-        GridBagLayout gbl_dataRunPanel = new GridBagLayout();
-        gbl_dataRunPanel.columnWidths = new int[]{0};
-        gbl_dataRunPanel.rowHeights = new int[] {0};
-        gbl_dataRunPanel.columnWeights = new double[]{0.0};
-        gbl_dataRunPanel.rowWeights = new double[]{0.0};
-        dataRunPanel.setLayout(gbl_dataRunPanel);
-
-        JScrollPane aprScrollPane = new JScrollPane();
-        GridBagConstraints gbc_aprScrollPane = new GridBagConstraints();
-        gbc_aprScrollPane.weightx = 1.0;
-        gbc_aprScrollPane.weighty = 1.0;
-        gbc_aprScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_aprScrollPane.fill = GridBagConstraints.BOTH;
-        gbc_aprScrollPane.gridx = 1;
-        gbc_aprScrollPane.gridy = 1;
-        dataPanel.add(aprScrollPane, gbc_aprScrollPane);
-        
-        JPanel MpTablesPanel = new JPanel();
-        aprScrollPane.setViewportView(MpTablesPanel);
-        GridBagLayout gbl_MpTablesPanel = new GridBagLayout();
-        gbl_MpTablesPanel.columnWidths = new int[]{0, 0};
-        gbl_MpTablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0};
-        gbl_MpTablesPanel.columnWeights = new double[]{0.0, 1.0};
-        gbl_MpTablesPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-        MpTablesPanel.setLayout(gbl_MpTablesPanel);
-
-        createLogDataTable(dataRunPanel);
-        createMpDataTables(MpTablesPanel);
+	    addButton(cntlPanel, 0, "Load Log", "loadlog", GridBagConstraints.WEST);
+	    addButton(cntlPanel, 1, "Clear SD Data", "clearorig", GridBagConstraints.WEST);
+	    addButton(cntlPanel, 2, "Clear Run Data", "clearlog", GridBagConstraints.WEST);
+	    addButton(cntlPanel, 3, "Clear All", "clearall", GridBagConstraints.WEST);
+	    addLabel(cntlPanel, 4, "SD");
+	    sdType = addComboBox(cntlPanel, 5, new String [] { "RR SD", "Cobb SD" });
+	    addLabel(cntlPanel, 6, "MP");
+	    mpType = addComboBox(cntlPanel, 7, new String [] { "Torr/mmHG Abs", "Torr/mmHG Rel Sea Lvl", "Psi Abs", "Psi Rel Sea Lvl" });
+	    addLabel(cntlPanel, 8, "Run");
+	    dataType = addComboBox(cntlPanel, 9, new String [] { "MAF Builder", "AFR Tuner" });
+	    addCheckBox(cntlPanel, 10, "Hide Log Table", "hidelogtable");
+	    compareTableCheckBox = addCheckBox(cntlPanel, 11, "Compare Tables", "comparetables");
+	    addButton(cntlPanel, 12, "GO", "go", GridBagConstraints.EAST);
     }
     
-    private void createLogDataTable(JPanel panel) {
-            logDataTable = new JTable();
-            logDataTable.getTableHeader().setReorderingAllowed(false);
-            logDataTable.setModel(new DefaultTableModel(LogDataRowCount, ColumnCount));
-            logDataTable.setColumnSelectionAllowed(true);
-            logDataTable.setCellSelectionEnabled(true);
-            logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
-            logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-            logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            logDataTable.getColumnModel().getColumn(0).setHeaderValue("RPM");
-            logDataTable.getColumnModel().getColumn(1).setHeaderValue("IAT");
-            logDataTable.getColumnModel().getColumn(2).setHeaderValue("MP");
-            logDataTable.getColumnModel().getColumn(3).setHeaderValue("FFB");
-            logDataTable.getColumnModel().getColumn(4).setHeaderValue("AFR");
-            logDataTable.getColumnModel().getColumn(5).setHeaderValue("MAF");
-            logDataTable.getColumnModel().getColumn(6).setHeaderValue("VE");
-            Utils.initializeTable(logDataTable, ColumnWidth);
-
-            JTableHeader header = logDataTable.getTableHeader();
-            GridBagConstraints gbc_header = new GridBagConstraints();
-            gbc_header.insets = new Insets(0, 0, 0, 0);
-            gbc_header.gridx = 0;
-            gbc_header.gridy = 0;
-            panel.add(header, gbc_header);
-
-            GridBagConstraints gbc_table = new GridBagConstraints();
-            gbc_table.insets = new Insets(0, 0, 0, 0);
-            gbc_table.anchor = GridBagConstraints.PAGE_START;
-            gbc_table.gridx = 0;
-            gbc_table.gridy = 1;
-            panel.add(logDataTable, gbc_table);
-
-	        ExcelAdapter excelAdapter = new ExcelAdapter();
-            excelAdapter.addTable(logDataTable, true, false);
-            excelAdapterList.add(excelAdapter);
-    }
-    
-    private void createMpDataTables(JPanel panel) {
-        sdTable = createMpDataTable(panel, SdTableName, 0);
-        newSdTable = createMpDataTable(panel, NewSdTableName, 2);
-        corrTable = createMpDataTable(panel, CorrTableName, 4);
-        corrCountTable = createMpDataTable(panel, CorrCountTableName, 6);
-    }
-    
-    private JTable createMpDataTable(JPanel panel, String tableName, int gridy) {
-    	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
-        final TableColumn afrColumn = new TableColumn(0, 250);
-        afrColumn.setHeaderValue(tableName);
-        afrModel.addColumn(afrColumn);
-        JTableHeader lblAfrTableName = new JTableHeader();
-        lblAfrTableName.setColumnModel(afrModel);
-        lblAfrTableName.setReorderingAllowed(false);
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) lblAfrTableName.getDefaultRenderer();
-        headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        
-        GridBagConstraints gbc_lblAfrTableName = new GridBagConstraints();
-        gbc_lblAfrTableName.insets = new Insets((gridy == 0 ? 0 : 5),0,0,0);
-        gbc_lblAfrTableName.anchor = GridBagConstraints.WEST;
-        gbc_lblAfrTableName.fill = GridBagConstraints.HORIZONTAL;
-        gbc_lblAfrTableName.gridx = 0;
-        gbc_lblAfrTableName.gridy = gridy;
-        panel.add(lblAfrTableName, gbc_lblAfrTableName);
-        
-        final JTable table;
-        if (tableName.equals(SdTableName)) {
-	        table = new JTable() {
-				private static final long serialVersionUID = 3218402382894083287L;
-				public boolean isCellEditable(int row, int column) { return false; };
-	        };
-	        mpExcelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
-        }
-        else {
-        	table = new JTable() {
-				private static final long serialVersionUID = -3754572906310312568L;
-	        };
-	        ExcelAdapter excelAdapter = new ExcelAdapter();
-	        excelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
-            excelAdapterList.add(excelAdapter);
-        }
-        table.addComponentListener(new ComponentAdapter() {
-            @Override
-            public void componentResized(ComponentEvent e) {
-                afrColumn.setWidth(table.getWidth());
-            }
-        });
-        table.setName(tableName);
-        table.getTableHeader().setReorderingAllowed(false);
-        table.setColumnSelectionAllowed(true);
-        table.setCellSelectionEnabled(true);
-        table.setBorder(new LineBorder(new Color(0, 0, 0)));
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.setModel(new DefaultTableModel(TableRowCount, TableRowCount));
-        table.setTableHeader(null);
-        Utils.initializeTable(table, ColumnWidth);
-        
-        formatMpTable(table);
-        
-        GridBagConstraints gbc_table = new GridBagConstraints();
-        gbc_table.insets = new Insets(0, 0, 0, 0);
-        gbc_table.anchor = GridBagConstraints.PAGE_START;
-        gbc_table.gridx = 0;
-        gbc_table.gridy = gridy + 1;
-        panel.add(table, gbc_table);
-
-        return table;
-    }
-    
-    private void formatMpTable(JTable table) {
-        if (table.getName().equals(CorrCountTableName)) {
+    protected void formatTable(JTable table) {
+        if (table == corrCountTable) {
 	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
 	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
 	        renderer.setFormats(formatMatrix);
@@ -497,7 +174,7 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
     // CREATE CHART TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
-    private void createGraghTab() {
+    protected void createGraghTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
 
@@ -525,6 +202,11 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
         
+        createChart(plotPanel, xAxisName, yAxisName);
+    }
+        
+
+    protected void createChart(JPanel plotPanel, String xAxisName, String yAxisName) {
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         chart.setBorderVisible(true);
 
@@ -589,84 +271,12 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         legend.setPosition(RectangleEdge.TOP);
         chart.addLegend(legend);
     }
-
-    //////////////////////////////////////////////////////////////////////////////////////
-    // CREATE 3D CHART TAB
-    //////////////////////////////////////////////////////////////////////////////////////
-    
-    private void create3dGraghTab() {
-        JPanel plotPanel = new JPanel();
-        add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br><br>C<br>h<br>a<br>r<br>t</div></html>");
-        GridBagLayout gbl_plotPanel = new GridBagLayout();
-        gbl_plotPanel.columnWidths = new int[] {0};
-        gbl_plotPanel.rowHeights = new int[] {0};
-        gbl_plotPanel.columnWeights = new double[]{1.0};
-        gbl_plotPanel.rowWeights = new double[]{1.0};
-        plotPanel.setLayout(gbl_plotPanel);
-                
-        plot3d = new Plot3DPanel("SOUTH") {
-			private static final long serialVersionUID = 7914951068593204419L;
-			public void addPlotToolBar(String location) {
-				super.addPlotToolBar(location);
-        		super.plotToolBar.remove(7);
-        		super.plotToolBar.remove(5);
-        		super.plotToolBar.remove(4);
-        	}        	
-        };
-        plot3d.setAutoBounds();
-        plot3d.setAutoscrolls(true);
-        plot3d.setEditable(false);
-        plot3d.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        plot3d.setForeground(Color.BLACK);
-        plot3d.getAxis(0).setColor(Color.BLACK);
-        plot3d.getAxis(1).setColor(Color.BLACK);
-        plot3d.getAxis(2).setColor(Color.BLACK);
-        plot3d.setAxisLabel(0, x3dAxisName);
-        plot3d.setAxisLabel(1, y3dAxisName);
-        plot3d.setAxisLabel(2, z3dAxisName);
-        
-        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
-        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
-        gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
-        gbl_chartPanel.fill = GridBagConstraints.BOTH;
-        gbl_chartPanel.gridx = 0;
-        gbl_chartPanel.gridy = 0;
-        plotPanel.add(plot3d, gbl_chartPanel);
-    }
     
     //////////////////////////////////////////////////////////////////////////////////////
     // CREATE USAGE TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
-    private void createUsageTab() {
-    	final Desktop desktop = Desktop.getDesktop(); 
-        JTextPane usageTextArea = new JTextPane();
-        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
-        usageTextArea.setContentType("text/html");
-        usageTextArea.setText(usage());
-        usageTextArea.setEditable(false);
-        usageTextArea.setCaretPosition(0);
-        usageTextArea.addHyperlinkListener(new HyperlinkListener() {
-            @Override
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
-                    try {
-                    	desktop.browse(new URI(e.getURL().toString()));
-                    } catch (Exception e1) {
-                        e1.printStackTrace();
-                    }
-                }
-            }
-        });
-
-        JScrollPane textScrollPane = new JScrollPane(usageTextArea);
-        textScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        textScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        add(textScrollPane, "<html><div style='text-align: center;'>U<br>s<br>a<br>g<br>e</div></html>");
-    }
-    
-    private String usage() {
+    protected String usage() {
         ResourceBundle bundle;
         bundle = ResourceBundle.getBundle("com.vgi.mafscaling.ve_calc");
         return bundle.getString("usage"); 
@@ -675,56 +285,6 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
     //////////////////////////////////////////////////////////////////////////////////////
     // COMMOMN ACTIONS RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////////////////
-    
-    private void clearSdTables() {
-        clearSdTable(sdTable);
-    	clearRunSdTables();
-    }
-    
-    private void clearRunSdTables() {
-        clearSdTable(newSdTable);
-    	clearSdTable(corrTable);
-    	clearSdTable(corrCountTable);
-        plot3d.removeAllPlots();
-        XYPlot plot = chartPanel.getChart().getXYPlot();
-    	XYSeriesCollection lineDataset = (XYSeriesCollection) plot.getDataset(0);
-    	for (XYSeries series : corrData)
-    		lineDataset.removeSeries(series);
-    	corrData.clear();
-    }
-    
-    private void clearSdTable(JTable table) {
-        if (table.getName().equals(SdTableName))
-        	table.setModel(new DefaultTableModel(newSdTable.getRowCount(), newSdTable.getColumnCount()));
-        else
-        	table.setModel(new DefaultTableModel(sdTable.getRowCount(), sdTable.getColumnCount()));
-        Utils.initializeTable(table, ColumnWidth);
-        formatMpTable(table);
-    }
-    
-    private void clearLogDataTables() {
-        setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	try {
-	        while (LogDataRowCount < logDataTable.getRowCount())
-	            Utils.removeRow(LogDataRowCount, logDataTable);
-	        Utils.clearTable(logDataTable);
-    	}
-    	finally {
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    	}
-    }
-    
-    private int getLogTableEmptyRow() {
-    	if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return 0;
-    	if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return logDataTable.getRowCount();
-    	for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
-    		if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())
-    			return i + 1;
-    	}
-    	return 0;
-    }
     
     private boolean getColumnsFilters(String[] elements) {
     	boolean ret = true;
@@ -770,7 +330,7 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         return ret;
     }
     
-    private void loadLogFile() {
+    protected void loadLogFile() {
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File[] files = fileChooser.getSelectedFiles();
@@ -814,7 +374,7 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
 	                double afr = 0;
 	                double rpm;
 	                double ffb;
-	                clearRunSdTables();
+	                clearRunTables();
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
 	                	line = br.readLine();
@@ -891,77 +451,8 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
 	        }
         }
     }
-    
-    private boolean validateTable(JTable table) {
-        if (table == null)
-            return false;
-        // check if table is empty
-        if (Utils.isTableEmpty(table))
-        	return true;
-        // check paste format
-        if (!table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-            !((table.getValueAt(0, 0).toString().equals("")) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString()) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString()))) {
-            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease post 'SD' table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if (table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-            // realign if paste is from RomRaider
-            if (table.getValueAt(0, 1).toString().equals("")) {
-                Utils.removeRow(0, table);
-                for (int i = table.getColumnCount() - 2; i >= 0; --i)
-                	table.setValueAt(table.getValueAt(0, i), 0, i + 1);
-                table.setValueAt("", 0, 0);
-            }
-            // paste is probably from excel, just blank out the first cell
-            else
-            	table.setValueAt("", 0, 0);
-        }
-        // remove extra rows
-        for (int i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)
-            Utils.removeRow(i, table);
-        // remove extra columns
-        for (int i = table.getColumnCount() - 1; i >= 0 && table.getValueAt(0, i).toString().equals(""); --i)
-            Utils.removeColumn(i, table);
-        // validate all cells are numeric
-        for (int i = 0; i < table.getRowCount(); ++i) {
-            for (int j = 0; j < table.getColumnCount(); ++j) {
-                if (i == 0 && j == 0)
-                    continue;
-                if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, j).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
-        }
-        Utils.colorTable(table);
-        return true;
-    }
-    
-    private boolean getAxisData() {
-    	try {
-    		if (Utils.isTableEmpty(sdTable)) {
-                JOptionPane.showMessageDialog(null, "PLease paste current SD table into top grid", "Error getting SD table headers", JOptionPane.ERROR_MESSAGE);
-                return false;
-    		}
-    		xAxisArray = new ArrayList<Double>();
-    		yAxisArray = new ArrayList<Double>();
-	        for (int i = 1; i < sdTable.getColumnCount(); ++i)
-	        	xAxisArray.add(Double.valueOf(sdTable.getValueAt(0, i).toString()));
-	        for (int i = 1; i < sdTable.getRowCount(); ++i)
-	        	yAxisArray.add(Double.valueOf(sdTable.getValueAt(i, 0).toString()));
-	        if (xAxisArray.size() > 0 && yAxisArray.size() > 0)
-	        	return true;
-    	}
-    	catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, "Invalid value in SD table: " + e, "Error getting SD table headers", JOptionPane.ERROR_MESSAGE);
-    	}
-    	return false;
-    }
 
-    private boolean processLog() {
+    protected boolean processLog() {
         try {
         	double mapG = 1;
         	double mapO = 0;
@@ -1027,33 +518,33 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
         return false;
     }
     
-    private boolean displayData() {
+    protected boolean displayData() {
         try {
-            double x, y, val;
             int cnt;
+            double x, y, val;
         	boolean isMaf = (dataType.getSelectedIndex() == 0? true : false);
             ArrayList<LogData> data;
             HashMap<Double, ArrayList<LogData>> yData;
             Color[][] colorMatrix = new Color[corrTable.getRowCount()][corrTable.getColumnCount()];
 	        for (int i = 1; i < xAxisArray.size() + 1; ++i) {
-	        	newSdTable.setValueAt(sdTable.getValueAt(0, i), 0, i);
-	        	corrTable.setValueAt(sdTable.getValueAt(0, i), 0, i);
-	        	corrCountTable.setValueAt(sdTable.getValueAt(0, i), 0, i);
+	        	newTable.setValueAt(origTable.getValueAt(0, i), 0, i);
+	        	corrTable.setValueAt(origTable.getValueAt(0, i), 0, i);
+	        	corrCountTable.setValueAt(origTable.getValueAt(0, i), 0, i);
 	        	for (int j = 1; j < yAxisArray.size() + 1; ++j) {
 	        		if (i == 1) {
-	        			newSdTable.setValueAt(sdTable.getValueAt(j, 0), j, 0);
-	        			corrTable.setValueAt(sdTable.getValueAt(j, 0), j, 0);
-	        			corrCountTable.setValueAt(sdTable.getValueAt(j, 0), j, 0);
+	        			newTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
+	        			corrTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
+	        			corrCountTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
 	        		}
         			x = xAxisArray.get(i - 1);
         			y = yAxisArray.get(j - 1);
                     yData = xData.get(x);
                     if (yData == null)
-                    	newSdTable.setValueAt(sdTable.getValueAt(j, i), j, i);
+                    	newTable.setValueAt(origTable.getValueAt(j, i), j, i);
                     else {
                     	data = yData.get(y);
 	                    if (data == null)
-	                    	newSdTable.setValueAt(sdTable.getValueAt(j, i), j, i);
+	                    	newTable.setValueAt(origTable.getValueAt(j, i), j, i);
 	                    else {
 	    	        		cnt = data.size();
 	    	        		val = 0;
@@ -1065,18 +556,18 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
 	    	        		if (cnt > minCellHitCount) {
 	    		        		val = 1 + (val / 100.0 * corrApplied) / 100.0;
 	    		        		if (isMaf)
-	    		        			newSdTable.setValueAt(Double.valueOf(sdTable.getValueAt(j, i).toString()) / val, j, i);
+	    		        			newTable.setValueAt(Double.valueOf(origTable.getValueAt(j, i).toString()) / val, j, i);
 	    		        		else
-	    		        			newSdTable.setValueAt(Double.valueOf(sdTable.getValueAt(j, i).toString()) * val, j, i);
+	    		        			newTable.setValueAt(Double.valueOf(origTable.getValueAt(j, i).toString()) * val, j, i);
 	    		            	colorMatrix[j][i] = Color.PINK;
 	    	        		}
 	    	        		else
-	    	        			newSdTable.setValueAt(sdTable.getValueAt(j, i), j, i);
+	    	        			newTable.setValueAt(origTable.getValueAt(j, i), j, i);
 	                    }
                     }
 	        	}
 	        }
-	        Utils.colorTable(newSdTable);
+	        Utils.colorTable(newTable);
 	        
             for (int i = 0; i < colorMatrix.length; ++i)
                 colorMatrix[i][0] = Color.LIGHT_GRAY;
@@ -1094,23 +585,6 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
             JOptionPane.showMessageDialog(null, e, "Error processing data", JOptionPane.ERROR_MESSAGE);
         }
         return false;    	
-    }
-    
-    private void calculateSD() {
-        setCursor(new Cursor(Cursor.WAIT_CURSOR));
-        clearRunSdTables();
-        try {
-            if (getAxisData() && processLog())
-            	displayData();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, "Error: " + e, "Error", JOptionPane.ERROR_MESSAGE);
-        }
-        finally {
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        }
     }
 
     private boolean plotCorrectionData() {
@@ -1158,95 +632,15 @@ public class VECalc extends JTabbedPane implements ActionListener, IMafChartHold
             }
             catch (NumberFormatException e) {
                 logger.error(e);
-                JOptionPane.showMessageDialog(null, "Error parsing number from " + CorrTableName + " table, cell(" + i + " : " + j + "): " + e, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Error parsing number from " + corrTableName + " table, cell(" + i + " : " + j + "): " + e, "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
     	}
         return true;
     }
-    
-    private boolean setCompareTables() {
-    	if (sdTable.getColumnCount() != newSdTable.getColumnCount() || sdTable.getRowCount() != newSdTable.getRowCount())
-    		return false;
-    	ArrayList<Double> row;
-    	double v1, v2;
-    	Utils.clearTableColors(newSdTable);
-    	savedNewMpTable.clear();
-    	for (int i = 1; i < sdTable.getRowCount(); ++i) {
-    		row = new ArrayList<Double>();
-    		savedNewMpTable.add(row);
-    		for (int j = 1; j < sdTable.getColumnCount(); ++j) {
-    			try {
-    				v1 = Double.valueOf(sdTable.getValueAt(i, j).toString());
-    				v2 = Double.valueOf(newSdTable.getValueAt(i, j).toString());
-    				row.add(v2);
-    				v2 = v2 - v1;
-    				if (v2 == 0)
-        				newSdTable.setValueAt("", i, j);
-    				else
-    					newSdTable.setValueAt(v2, i, j);
-    			}
-    			catch (Exception e) {
-    				unsetCompareTables();
-    				return false;
-    			}
-    		}
-    	}
-    	Utils.colorTable(newSdTable);
-    	return true;
-    }
-    
-    private void unsetCompareTables() {
-    	Utils.clearTableColors(newSdTable);
-    	ArrayList<Double> row;
-    	for (int i = 0; i < savedNewMpTable.size(); ++i) {
-    		row = savedNewMpTable.get(i);
-    		for (int j = 0; j < row.size(); ++j)
-    			newSdTable.setValueAt(row.get(j), i + 1, j + 1);
-    	}
-    	Utils.colorTable(newSdTable);
-    	savedNewMpTable.clear();
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if ("clearsd".equals(e.getActionCommand())) {
-            clearSdTables();
-        }
-        else if ("clearlog".equals(e.getActionCommand())) {
-            clearLogDataTables();
-            clearRunSdTables();
-        }
-        else if ("clearall".equals(e.getActionCommand())) {
-            clearLogDataTables();
-            clearSdTables();
-        }
-        else if ("go".equals(e.getActionCommand())) {
-        	calculateSD();
-        }
-        else if ("loadlog".equals(e.getActionCommand())) {
-            loadLogFile();
-        }
-        else if ("hidelogtable".equals(e.getActionCommand())) {
-        	JCheckBox checkBox = (JCheckBox)e.getSource();
-        	if (checkBox.isSelected())
-        		dataScrollPane.setVisible(false);
-        	else
-        		dataScrollPane.setVisible(true);
-        	fireStateChanged();
-        }
-        else if ("comparetables".equals(e.getActionCommand())) {
-        	JCheckBox checkBox = (JCheckBox)e.getSource();
-        	if (checkBox.isSelected()) {
-        		if (!setCompareTables())
-        			checkBox.setSelected(false);
-        	}
-        	else
-        		unsetCompareTables();
-        	fireStateChanged();
-        }
-    }
-        
-    public void onMovePoint(int itemIndex, double valueX, double valueY) {
+    	checkActionPerformed(e);
     }
 }

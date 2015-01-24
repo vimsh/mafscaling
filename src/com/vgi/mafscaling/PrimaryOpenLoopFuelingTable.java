@@ -76,7 +76,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
 	    }
 	}
     private static final Logger logger = Logger.getLogger(PrimaryOpenLoopFuelingTable.class);
-    private final static int ColumnWidth = 40;
+    private final static int ColumnWidth = 45;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
     private JFileChooser fileChooser = null;
     private JTable fuelingTable = null;
@@ -133,7 +133,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         loadList.setSelectedItem(fileName);
         loadList.setActionCommand("polselected");
         loadList.addActionListener(this);
-        loadList.setPreferredSize(new Dimension(150, 23));
         loadList.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
         fuelingPanel.add(loadList, gbc_loadList);
         

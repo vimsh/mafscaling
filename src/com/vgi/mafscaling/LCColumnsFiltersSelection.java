@@ -20,22 +20,13 @@ package com.vgi.mafscaling;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-
-import javax.swing.JLabel;
+import javax.swing.JEditorPane;
 
 public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public LCColumnsFiltersSelection(boolean isPolfTableSet) {
 		super(isPolfTableSet);
 	}
-    
-    protected int getWindowHeight() {
-    	return 820;
-    }
-    
-    protected int getColSelectionGridHeight() {
-    	return 10;
-    }
     
     protected void addColSelection() {
         addRPMColSelection();
@@ -74,9 +65,9 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
     	addCorrectionAppliedValue();
     	correctionAppliedValue.setValue(Config.getLCCorrectionAppliedValue());
     	
-    	for (Component c : selectionPanel.getComponents()) {
-    		if (c instanceof JLabel) {
-    			JLabel label = (JLabel)c;
+    	for (Component c : filtersPanel.getComponents()) {
+    		if (c instanceof JEditorPane) {
+    			JEditorPane label = (JEditorPane)c;
     			if (label.getText().startsWith("Remove data where RPM is above"))
     				label.setText(label.getText() + " (hint: check max RPM in Load Comp table)");
     		}

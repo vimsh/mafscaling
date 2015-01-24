@@ -26,14 +26,6 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
 		super(isPolfTableSet);
 	}
     
-    protected int getWindowHeight() {
-    	return 500;
-    }
-    
-    protected int getColSelectionGridHeight() {
-    	return 8;
-    }
-    
     protected void addColSelection() {
         addRPMColSelection();
         addLoadColSelection();

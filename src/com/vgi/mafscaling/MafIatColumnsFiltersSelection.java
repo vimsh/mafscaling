@@ -20,22 +20,13 @@ package com.vgi.mafscaling;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-
-import javax.swing.JLabel;
+import javax.swing.JEditorPane;
 
 public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public MafIatColumnsFiltersSelection(boolean isPolfTableSet) {
 		super(isPolfTableSet);
 	}
-    
-    protected int getWindowHeight() {
-    	return 850;
-    }
-    
-    protected int getColSelectionGridHeight() {
-    	return 13;
-    }
     
     protected void addColSelection() {
     	addTimeColSelection();
@@ -75,9 +66,9 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	addCorrectionAppliedValue();
     	correctionAppliedValue.setValue(Config.getMICorrectionAppliedValue());
     	
-    	for (Component c : selectionPanel.getComponents()) {
-    		if (c instanceof JLabel) {
-    			JLabel label = (JLabel)c;
+    	for (Component c : filtersPanel.getComponents()) {
+    		if (c instanceof JEditorPane) {
+    			JEditorPane label = (JEditorPane)c;
     			if (label.getText().startsWith("Filter out data using logged OL/CL status"))
     				label.setText("Set Closed Loop status (EcuTek CL: 2, RR CL: 8)");
     		}

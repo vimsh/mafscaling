@@ -21,7 +21,6 @@ package com.vgi.mafscaling;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -45,13 +44,14 @@ import java.util.ResourceBundle;
 import java.util.Stack;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -63,9 +63,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
+import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
@@ -272,29 +273,35 @@ public class LogView extends JTabbedPane implements ActionListener {
 			return arr;
     	}
     }
-
+    
+    public class CheckBoxIcon implements Icon {
+    	private Color color;
+		private boolean checked;
+		public CheckBoxIcon() { this.checked = false; this.color = UIManager.getColor("Panel.background"); }
+		public CheckBoxIcon(boolean checked, Color color) { this.checked = checked; this.color = color; }
+		public Color getColor() { return this.color; }
+		public void setColor(Color color) { this.color = color; }
+		public boolean isChecked() { return this.checked; }
+		public void setChecked(boolean checked) { this.checked = checked; }
+		@Override
+		public int getIconWidth() { return 20; }
+		@Override
+		public int getIconHeight() { return 20; }
+		@Override
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+	        g.setColor(Color.BLACK);
+	        g.fillRect(x + 4, y + 4, getIconWidth() - 8, getIconHeight() - 8);
+	        g.setColor(color);
+	        g.fillRect(x + 5, y + 5, getIconWidth() - 10, getIconHeight() - 10);
+		}
+	}
+    
     public class CheckboxHeaderRenderer implements TableCellRenderer {
-    	private class CheckBoxIcon implements Icon {
-    		private final JCheckBox check;
-    		public CheckBoxIcon(JCheckBox check) { this.check = check; }
-    		@Override
-    		public int getIconWidth() { return check.getPreferredSize().width; }
-    		@Override
-    		public int getIconHeight() { return check.getPreferredSize().height; }
-    		@Override
-    		public void paintIcon(Component c, Graphics g, int x, int y) {
-    			SwingUtilities.paintComponent(g, check, (Container) c, x, y, getIconWidth(), getIconHeight());
-    	        g.setColor(check.getBackground());
-    	        g.fillRect(x + 6, y + 6, 13 - 4, 13 - 4);
-    		}
-    	}
-    	private final JCheckBox check = new JCheckBox();
+    	private final CheckBoxIcon checkIcon = new CheckBoxIcon();
     	private int colId;
-    	private Color defaultColor;
+    	private Color defaultColor = checkIcon.getColor();
     	public CheckboxHeaderRenderer(int col, JTableHeader header) {
     		colId = col;
-    		check.setOpaque(false);
-    		check.setFont(header.getFont());
     		header.addMouseListener(new MouseAdapter() {
     			@Override
     			public void mouseClicked(MouseEvent e) {
@@ -305,17 +312,17 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    				int modelColumn = table.convertColumnIndexToModel(viewColumn);
 	    				if (colId != modelColumn)
 	    					return;
-	    				if (SwingUtilities.isLeftMouseButton(e)) {
-		    				check.setSelected(!check.isSelected());
-		    				if (check.isSelected()) {
-		    					defaultColor = check.getBackground();
-		    					check.setBackground(colors.pop());
+	    				if (SwingUtilities.isLeftMouseButton(e) && colors.size() > 0) {
+	    					checkIcon.setChecked(!checkIcon.isChecked());
+		    				if (checkIcon.isChecked()) {
+		    					defaultColor = checkIcon.getColor();
+		    					checkIcon.setColor(colors.pop());
 		    					TableModel model = table.getModel();
-		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), check.getBackground());
+		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), checkIcon.getColor());
 		    				}
 		    				else {
-		    					colors.push(check.getBackground());
-		    					check.setBackground(defaultColor);
+		    					colors.push(checkIcon.getColor());
+		    					checkIcon.setColor(defaultColor);
 		    					removeXYSeries(colId);
 		    				}
 							((JTableHeader) e.getSource()).repaint();
@@ -335,21 +342,36 @@ public class LogView extends JTabbedPane implements ActionListener {
     	public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isS, boolean hasF, int row, int col) {
     		TableCellRenderer r = tbl.getTableHeader().getDefaultRenderer();
     		JLabel label = (JLabel) r.getTableCellRendererComponent(tbl, val, isS, hasF, row, col);
-    		label.setIcon(new CheckBoxIcon(check));
+    		label.setIcon(checkIcon);
     		return label;
     	}
+    	
+    	public CheckBoxIcon getCheckIcon() { return checkIcon; }
+    	public Color getDefaultColor() { return defaultColor; }
     }
+    
+    class ImageListCellRenderer implements ListCellRenderer<Object> {
+    	public Component getListCellRendererComponent(JList<?> jlist, Object value, int cellIndex, boolean isSelected, boolean cellHasFocus) {
+    		if (value instanceof JLabel)
+    			return (Component)value;
+    		else
+    			return new JLabel("???");
+    	}
+    }
+    
     private ChartPanel chartPanel = null;
     private XYPlot plot = null;
     private XYSeriesCollection rpmDataset = null;
     private XYSeriesCollection dataset = null;
     private XYLineAndShapeRenderer rpmPlotRenderer = null;
     private XYLineAndShapeRenderer plotRenderer = null;
-    //private Stroke lineStroke = null;
     private int rpmCol = -1;
     private int displCount = 0;
     private JPanel logViewPanel = null;
+    private JToolBar toolBar = null;
     private DBTable logDataTable = null;
+    private JScrollPane headerScrollPane = null;
+    private DefaultListModel<JLabel> listModel = null;
     private JButton loadButton = null;
     private JButton printButton = null;
     private JButton previewButton = null;
@@ -359,12 +381,15 @@ public class LogView extends JTabbedPane implements ActionListener {
     private JComboBox<String> compareCombo;
     private JTextField  filterText;
     private JButton filterButton;
+    private JButton viewButton;
     private Plot3DPanel plot3d = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox plotsColumn = null;
     private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
     private Stack<Color> colors = new Stack<Color>();
+    private Insets insets0 = new Insets(0, 0, 0, 0);
+    private Insets insets3 = new Insets(3, 3, 3, 3);
 
 	public LogView(int tabPlacement) {
         super(tabPlacement);
@@ -372,6 +397,7 @@ public class LogView extends JTabbedPane implements ActionListener {
     }
 
     private void initialize() {
+        fileChooser.setCurrentDirectory(new File("."));
         createDataTab();
         createChartTab();
         createUsageTab();
@@ -382,8 +408,6 @@ public class LogView extends JTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
-        fileChooser.setCurrentDirectory(new File("."));
-        
         JPanel dataPanel = new JPanel(new BorderLayout());
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
         
@@ -405,7 +429,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    gbl_logViewPanel.columnWidths = new int[] {0};
 	    gbl_logViewPanel.rowHeights = new int[] {0, 0};
 	    gbl_logViewPanel.columnWeights = new double[]{1.0};
-	    gbl_logViewPanel.rowWeights = new double[]{0.0, 1.0};
+	    gbl_logViewPanel.rowWeights = new double[]{1.0, 0.0};
 	    logViewPanel.setLayout(gbl_logViewPanel);
     	try {
 	    	logDataTable = new DBTable();
@@ -423,21 +447,83 @@ public class LogView extends JTabbedPane implements ActionListener {
 			logDataTable.getTable().setColumnSelectionAllowed(true);
 			logDataTable.getTable().setRowSelectionAllowed(true);
 			logDataTable.getTable().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-			
-	    	selectionCombo.removeAllItems();
-			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
-				Column col = logDataTable.getColumn(i);
-				col.setNullable(true);
-				selectionCombo.addItem(col.getHeaderValue().toString());
-			}
+			JTextField rowTextField = ((JTextField)logDataTable.getControlPanel().getComponent(3));
+			rowTextField.setPreferredSize(null);
+			rowTextField.setColumns(5);
 
 	        GridBagConstraints gbl_logDataTable = new GridBagConstraints();
-	        gbl_logDataTable.insets = new Insets(0, 0, 0, 0);
+	        gbl_logDataTable.insets = insets0;
 	        gbl_logDataTable.anchor = GridBagConstraints.PAGE_START;
 	        gbl_logDataTable.fill = GridBagConstraints.BOTH;
 	        gbl_logDataTable.gridx = 0;
-	        gbl_logDataTable.gridy = 1;
+	        gbl_logDataTable.gridy = 0;
 	        logViewPanel.add(logDataTable, gbl_logDataTable);
+	        listModel = new DefaultListModel<JLabel>(); 
+	        
+	    	selectionCombo.removeAllItems();
+	    	String name;
+			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
+				Column col = logDataTable.getColumn(i);
+				col.setNullable(true);
+				col.setHeaderRenderer(new CheckboxHeaderRenderer(i + 1, logDataTable.getTableHeader()));
+				name = col.getHeaderValue().toString();
+				selectionCombo.addItem(name);
+	    		listModel.addElement(new JLabel(name, new CheckBoxIcon(), JLabel.LEFT));
+			}
+			
+			JList<JLabel> menuList = new JList<JLabel>(listModel);
+			menuList.setOpaque(false);
+			menuList.setCellRenderer(new ImageListCellRenderer());
+			menuList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			menuList.setLayoutOrientation(JList.VERTICAL);
+			menuList.setFixedCellHeight(25);
+			menuList.addMouseListener(new MouseAdapter() {
+    			@Override
+    			public void mouseClicked(MouseEvent e) {
+    				try {
+    					if (e.getClickCount() == 1 && colors.size() > 0) {
+        					JList<?> list = (JList<?>)e.getSource();
+        					int index = list.locationToIndex(e.getPoint());
+        					if (index >= 0) {
+        						Column col = logDataTable.getColumn(index);
+        						if (col.getHeaderRenderer() instanceof CheckboxHeaderRenderer) {
+        							CheckboxHeaderRenderer renderer = (CheckboxHeaderRenderer)col.getHeaderRenderer();
+	        			            JLabel label = (JLabel)list.getModel().getElementAt(index);
+	        			            CheckBoxIcon checkIcon = (CheckBoxIcon)label.getIcon();
+	        			            checkIcon.setChecked(!checkIcon.isChecked());
+				    				if (checkIcon.isChecked()) {
+				    					checkIcon.setColor(colors.pop());
+				    					JTable table = logDataTable.getTable();
+				    					TableModel model = table.getModel();
+				    					addXYSeries(model, index + 1, col.getHeaderValue().toString(), checkIcon.getColor());
+				    				}
+				    				else {
+				    					colors.push(checkIcon.getColor());
+				    					checkIcon.setColor(renderer.getDefaultColor());
+				    					removeXYSeries(index + 1);
+				    				}
+									list.repaint();
+        						}
+        					}
+    					}
+    				}
+    				catch (Exception ex) {
+    		    		ex.printStackTrace();
+    				}
+    			}
+    		});
+			
+	        headerScrollPane = new JScrollPane(menuList);
+	        GridBagConstraints gbl_headersTree = new GridBagConstraints();
+	        gbl_headersTree.insets = insets0;
+	        gbl_headersTree.anchor = GridBagConstraints.PAGE_START;
+	        gbl_headersTree.fill = GridBagConstraints.BOTH;
+	        gbl_headersTree.gridx = 0;
+	        gbl_headersTree.gridy = 1;
+			
+	        logViewPanel.add(headerScrollPane, gbl_headersTree);
+	        headerScrollPane.setVisible(false);
+			
 		}
     	catch (Exception e) {
 			e.printStackTrace();
@@ -447,81 +533,60 @@ public class LogView extends JTabbedPane implements ActionListener {
     
     private void createToolBar(JPanel panel)
     {
-		JToolBar toolBar = new JToolBar();
+		toolBar = new JToolBar();
 		panel.add(toolBar, BorderLayout.NORTH);
-		
-		Insets i1 = new Insets(0, 0, 0, 0);
-		
-		loadButton = new JButton(new ImageIcon(this.getClass().getResource("/open.png")));
-		loadButton.setToolTipText("Load Log File");
-		loadButton.setMargin(i1);
-		loadButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-		loadButton.addActionListener(this);
-		toolBar.add(loadButton);
-		
+
+		loadButton = addToolbarButton("Load Log File", "/open.png");
+		toolBar.addSeparator();
+		printButton = addToolbarButton("Print", "/print.png");
+		previewButton = addToolbarButton("Print Preview", "/print_preview.png");
+		previewButton = addToolbarButton("Find", "/find.png");
+		replaceButton = addToolbarButton("Replace", "/replace.png");
 		toolBar.addSeparator();
 		
-		printButton = new JButton(new ImageIcon(this.getClass().getResource("/print.png")));
-		printButton.setToolTipText("Print");
-		printButton.setMargin(i1);
-		printButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-		printButton.addActionListener(this);
-		toolBar.add(printButton);
-		
-		previewButton = new JButton(new ImageIcon(this.getClass().getResource("/print_preview.png")));
-		previewButton.setToolTipText("Print Preview");
-		previewButton.setMargin(i1);
-		previewButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-		previewButton.addActionListener(this);
-		toolBar.add(previewButton);
-		
-		findButton = new JButton(new ImageIcon(this.getClass().getResource("/find.png")));
-		findButton.setToolTipText("Find");
-		findButton.setMargin(i1);
-		findButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-		findButton.addActionListener(this);
-		toolBar.add(findButton);
-		
-		replaceButton = new JButton(new ImageIcon(this.getClass().getResource("/replace.png")));
-		replaceButton.setToolTipText("Replace");
-		replaceButton.setMargin(i1);
-		replaceButton.setAlignmentY(Component.CENTER_ALIGNMENT);
-		replaceButton.addActionListener(this);
-		toolBar.add(replaceButton);
-		
+		viewButton = new JButton("Headers View");
+		viewButton.setMargin(new Insets(2, 7, 2, 7));
+		viewButton.addActionListener(this);
+		toolBar.add(viewButton);
 		toolBar.addSeparator();
 		
-		JLabel filterLabel = new JLabel("Filter: ");
-		filterLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
-		toolBar.add(filterLabel);
+		toolBar.add(new JLabel("Filter "));
 		
+		JPanel filterPanel = new JPanel();
+        GridBagLayout gbl_filterPanel = new GridBagLayout();
+        gbl_filterPanel.columnWidths = new int[]{0, 0, 0, 0};
+        gbl_filterPanel.rowHeights = new int[]{0};
+        gbl_filterPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0};
+        gbl_filterPanel.rowWeights = new double[]{0.0};
+        filterPanel.setLayout(gbl_filterPanel);
+
+        GridBagConstraints gbc_filter = new GridBagConstraints();
+        gbc_filter.insets = insets3;
+        gbc_filter.anchor = GridBagConstraints.WEST;
+        gbc_filter.gridx = 0;
+        gbc_filter.gridy = 0;
+        
 		selectionCombo = new JComboBox<String>();
-		selectionCombo.setMaximumSize(new Dimension(210, 20));
-		selectionCombo.setAlignmentY(Component.CENTER_ALIGNMENT);
+		selectionCombo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
 		selectionCombo.addActionListener(this);
-		toolBar.add(selectionCombo);
-		
-		compareCombo = new JComboBox<String>();
-		compareCombo.addItem(">");
-		compareCombo.addItem(">=");
-		compareCombo.addItem("=");
-		compareCombo.addItem("<=");
-		compareCombo.addItem("<");
-		compareCombo.setMaximumSize(new Dimension(45, 20));
-		compareCombo.setAlignmentY(Component.CENTER_ALIGNMENT);
+        filterPanel.add(selectionCombo, gbc_filter);
+
+        gbc_filter.gridx++;
+		compareCombo = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
 		compareCombo.addActionListener(this);
-		toolBar.add(compareCombo);
-		
+        filterPanel.add(compareCombo, gbc_filter);
+
+        gbc_filter.gridx++;
 		filterText = new JTextField();
-		filterText.setMaximumSize(new Dimension(100, 20));
-		filterText.setAlignmentY(Component.CENTER_ALIGNMENT);
-		toolBar.add(filterText);
-		
+		filterText.setColumns(5);
+        filterPanel.add(filterText, gbc_filter);
+
+        gbc_filter.gridx++;
 		filterButton = new JButton("Set");
-		filterButton.setMargin(i1);
-		filterButton.setAlignmentY(Component.CENTER_ALIGNMENT);
 		filterButton.addActionListener(this);
-		toolBar.add(filterButton);
+        filterPanel.add(filterButton, gbc_filter);
+		
+		toolBar.add(filterPanel);
     }
     
     private void createGraghPanel() {
@@ -530,17 +595,10 @@ public class LogView extends JTabbedPane implements ActionListener {
 		chartPanel.setAutoscrolls(true);
 		chart.setBackgroundPaint(new Color(60, 60, 65));
 
-        //lineStroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
 		rpmDataset = new XYSeriesCollection();
 		rpmPlotRenderer = new XYLineAndShapeRenderer();		
 		dataset = new XYSeriesCollection();
 		plotRenderer = new XYLineAndShapeRenderer();
-/*
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
-                StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
-                new DecimalFormat("0.00"), new DecimalFormat("0.00")));
-*/
-		
 
 		NumberAxis xAxis = new NumberAxis();
         xAxis.setTickLabelsVisible(false);
@@ -645,8 +703,11 @@ public class LogView extends JTabbedPane implements ActionListener {
         		        if (col >= 0) {
 	        				chartPanel.repaint();
 	        				try {
+	        					int slectedCol = logDataTable.getTable().getSelectedColumn();
+	        					if (slectedCol < 0)
+	        						slectedCol = col;
 		        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
-		        				logDataTable.getTable().changeSelection((int)x, col, false, false);
+		        				logDataTable.getTable().changeSelection((int)x, slectedCol, false, false);
 	        				}
 	        				catch (Exception e) { /* ignore */ }
         		        }
@@ -678,7 +739,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 
         JPanel cntlPanel = new JPanel();
         GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
-        gbl_ctrlPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_ctrlPanel.insets = insets3;
         gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
         gbl_ctrlPanel.weightx = 1.0;
         gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
@@ -693,76 +754,45 @@ public class LogView extends JTabbedPane implements ActionListener {
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
-        JLabel xAxisLabel = new JLabel("X-Axis");
-        xAxisLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_xAxisLabel = new GridBagConstraints();
-        gbc_xAxisLabel.anchor = GridBagConstraints.EAST;
-        gbc_xAxisLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_xAxisLabel.gridx = 0;
-        gbc_xAxisLabel.gridy = 0;
-        cntlPanel.add(xAxisLabel, gbc_xAxisLabel);
+        GridBagConstraints gbc_label = new GridBagConstraints();
+        gbc_label.anchor = GridBagConstraints.EAST;
+        gbc_label.insets = new Insets(3, 3, 3, 0);
+        gbc_label.gridx = 0;
+        gbc_label.gridy = 0;
+        
+        GridBagConstraints gbc_column = new GridBagConstraints();
+        gbc_column.anchor = GridBagConstraints.WEST;
+        gbc_column.insets = insets3;
+        gbc_column.gridx = 1;
+        gbc_column.gridy = 0;
+        
+        cntlPanel.add(new JLabel("X-Axis"), gbc_label);
         
         xAxisColumn = new JComboBox<String>();
-        GridBagConstraints gbc_xAxisColumn = new GridBagConstraints();
-        gbc_xAxisColumn.anchor = GridBagConstraints.WEST;
-        gbc_xAxisColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_xAxisColumn.gridx = 1;
-        gbc_xAxisColumn.gridy = 0;
         xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(xAxisColumn, gbc_xAxisColumn);
+        cntlPanel.add(xAxisColumn, gbc_column);
     	
-        JLabel yAxisLabel = new JLabel("Y-Axis");
-        yAxisLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_yAxisLabel = new GridBagConstraints();
-        gbc_yAxisLabel.anchor = GridBagConstraints.EAST;
-        gbc_yAxisLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_yAxisLabel.gridx = 2;
-        gbc_yAxisLabel.gridy = 0;
-        cntlPanel.add(yAxisLabel, gbc_yAxisLabel);
-        
+        gbc_label.gridx += 2;
+        cntlPanel.add(new JLabel("Y-Axis"), gbc_label);
+
+        gbc_column.gridx += 2;
         yAxisColumn = new JComboBox<String>();
-        GridBagConstraints gbc_yAxisColumn = new GridBagConstraints();
-        gbc_yAxisColumn.anchor = GridBagConstraints.WEST;
-        gbc_yAxisColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_yAxisColumn.gridx = 3;
-        gbc_yAxisColumn.gridy = 0;
         yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-        cntlPanel.add(yAxisColumn, gbc_yAxisColumn);
-    	
-        JLabel datasLabel = new JLabel("Plots");
-        datasLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_datasLabel = new GridBagConstraints();
-        gbc_datasLabel.anchor = GridBagConstraints.EAST;
-        gbc_datasLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_datasLabel.gridx = 4;
-        gbc_datasLabel.gridy = 0;
-        cntlPanel.add(datasLabel, gbc_datasLabel);
-        
-        plotsColumn = new JMultiSelectionBox(" ");
-        plotsColumn.setIcon(new ImageIcon(getClass().getResource("/down.gif")));
-        plotsColumn.setMargin(new Insets(3, 3, 3, 3));
-        plotsColumn.setVerticalTextPosition(SwingConstants.CENTER);
-        plotsColumn.setHorizontalAlignment(SwingConstants.RIGHT);
-        plotsColumn.setHorizontalTextPosition(SwingConstants.LEFT);
-        plotsColumn.setIconTextGap(3);
-        plotsColumn.setPreferredSize(new Dimension(190, 22));
-        plotsColumn.setMaximumSize(new Dimension(190, 22));
-        GridBagConstraints gbc_plotsColumn = new GridBagConstraints();
-        gbc_plotsColumn.anchor = GridBagConstraints.PAGE_START;
-        gbc_plotsColumn.insets = new Insets(3, 3, 3, 3);
-        gbc_plotsColumn.gridx = 5;
-        gbc_plotsColumn.gridy = 0;
-        cntlPanel.add(plotsColumn, gbc_plotsColumn);
-        
+        cntlPanel.add(yAxisColumn, gbc_column);
+
+        gbc_label.gridx += 2;
+        cntlPanel.add(new JLabel("Plots"), gbc_label);
+
+        gbc_column.gridx += 2;
+        plotsColumn = new JMultiSelectionBox();
+        plotsColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(plotsColumn, gbc_column);
+
+        gbc_label.gridx = 7;
         JButton btnGoButton = new JButton("View");
-        GridBagConstraints gbc_btnGoButton = new GridBagConstraints();
-        gbc_btnGoButton.anchor = GridBagConstraints.EAST;
-        gbc_btnGoButton.insets = new Insets(3, 3, 3, 3);
-        gbc_btnGoButton.gridx = 7;
-        gbc_btnGoButton.gridy = 0;
         btnGoButton.setActionCommand("view");
         btnGoButton.addActionListener(this);
-        cntlPanel.add(btnGoButton, gbc_btnGoButton);
+        cntlPanel.add(btnGoButton, gbc_label);
         
         plot3d = new Plot3DPanel("SOUTH") {
 			private static final long serialVersionUID = 7914951068593204419L;
@@ -784,7 +814,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
-        gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_chartPanel.insets = insets3;
         gbl_chartPanel.weightx = 1.0;
         gbl_chartPanel.weighty = 1.0;
         gbl_chartPanel.fill = GridBagConstraints.BOTH;
@@ -907,6 +937,16 @@ public class LogView extends JTabbedPane implements ActionListener {
         colors.push(Color.decode("#1D8BD1"));
         */
     }
+	
+	private JButton addToolbarButton(String tooltip, String image) {
+		JButton button = new JButton(new ImageIcon(this.getClass().getResource(image)));
+		button.setToolTipText(tooltip);
+		button.setMargin(insets0);
+		button.setAlignmentY(Component.CENTER_ALIGNMENT);
+		button.addActionListener(this);
+		toolBar.add(button);
+		return button;
+	}
     
     private void addXYSeries(TableModel model, int column, String name, Color color) {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
@@ -971,7 +1011,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         	String colName;
         	String lcColName;
 	        String val;
-        	TableCellRenderer renderer;
+	        CheckboxHeaderRenderer renderer;
         	Component comp;
         	XYSeries series;
             xAxisColumn.removeAllItems();
@@ -986,6 +1026,7 @@ public class LogView extends JTabbedPane implements ActionListener {
         	rpmCol = -1;
         	displCount = 0;
         	selectionCombo.removeAllItems();
+        	listModel.removeAllElements();
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
 				col = logDataTable.getColumn(i);
 				renderer = new CheckboxHeaderRenderer(i + 1, logDataTable.getTableHeader());
@@ -1000,13 +1041,12 @@ public class LogView extends JTabbedPane implements ActionListener {
 		    	series.setDescription(colName);
 		    	lcColName = colName.toLowerCase();
 				dataset.addSeries(series);
-//				plotRenderer.setSeriesStroke(i, lineStroke);
 				plotRenderer.setSeriesShapesVisible(i, false);
 				plotRenderer.setSeriesVisible(i, false);
 				selectionCombo.addItem(colName);
+	    		listModel.addElement(new JLabel(colName, renderer.getCheckIcon(), JLabel.LEFT));
 				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))) {
 					rpmDataset.addSeries(series);
-//					rpmPlotRenderer.setSeriesStroke(0, lineStroke);
 					rpmPlotRenderer.setSeriesShapesVisible(0, false);
 					rpmPlotRenderer.setSeriesVisible(0, false);
 					rpmCol = i;
@@ -1038,6 +1078,8 @@ public class LogView extends JTabbedPane implements ActionListener {
 	}
 	
 	private void updateChart() {
+		if (logDataTable.getColumnCount() != dataset.getSeriesCount())
+			return;
     	Column col;
     	String colName;
         String val;
@@ -1068,7 +1110,11 @@ public class LogView extends JTabbedPane implements ActionListener {
 	}
 
     private void view3dPlots() {
-    	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || plotsColumn.getSelectedItems() == null)
+    	if (xAxisColumn.getSelectedItem() == null ||
+    		xAxisColumn.getSelectedItem().toString().isEmpty() ||
+    		yAxisColumn.getSelectedItem() == null ||
+    		yAxisColumn.getSelectedItem().toString().isEmpty() ||
+    		plotsColumn.getSelectedItems() == null)
     		return;
         plot3d.removeAllPlots();
         String val;
@@ -1133,7 +1179,7 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	logDataTable.doFind();
 	    else if (e.getSource() == replaceButton)
 	    	logDataTable.doFindAndReplace();
-	    else if (e.getSource() == filterButton ) {
+	    else if (e.getSource() == filterButton) {
 	    	String filterString = filterText.getText();
 	    	if (filterString != null && !"".equals(filterString)) {
 	    		try {
@@ -1159,6 +1205,25 @@ public class LogView extends JTabbedPane implements ActionListener {
 	    	else {
 	    		logDataTable.filter(null);
 		    	updateChart();
+	    	}
+	    }
+	    else if (e.getSource() == viewButton) {
+		    GridBagLayout gbl = (GridBagLayout)logViewPanel.getLayout();
+	    	if (viewButton.getText().startsWith("Headers")) {
+	    		Dimension d = viewButton.getSize();
+	    		viewButton.setMinimumSize(d);
+	    		viewButton.setPreferredSize(d);
+	    		viewButton.setMaximumSize(d);
+		        gbl.rowWeights = new double[]{0.0, 1.0};
+		        logDataTable.setVisible(false);
+		        headerScrollPane.setVisible(true);
+	    		viewButton.setText("Grid View");
+	    	}
+	    	else {
+		        gbl.rowWeights = new double[]{1.0, 0.0};
+		        logDataTable.setVisible(true);
+		        headerScrollPane.setVisible(false);
+	    		viewButton.setText("Headers View");
 	    	}
 	    }
 		else if ("view".equals(e.getActionCommand()))

@@ -20,7 +20,6 @@ package com.vgi.mafscaling;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -40,10 +39,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
-
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.BorderFactory;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -52,12 +49,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
-import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
@@ -77,7 +69,6 @@ import org.jfree.util.ShapeUtilities;
 public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListener {
 	private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(Rescale.class);
-    private static final int MafTableColumnCount = 50;
     private static final int ColumnWidth = 50;
     private static final int CellsPerSection = 2;
     private static final String OrigMafTableName = "Original MAF Scaling";
@@ -95,6 +86,8 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
 	private JFormattedTextField maxVUnchangedFmtTextBox = null;
 	private JFormattedTextField minVFmtTextBox = null;
 	private JFormattedTextField modeDeltaVFmtTextBox = null;
+    private Insets insets0 = new Insets(0, 0, 0, 0);
+    private Insets insets3 = new Insets(3, 3, 3, 3);
 	
 	private MafChartPanel mafChartPanel = null;
     private ExcelAdapter excelAdapter = null;
@@ -169,7 +162,7 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
     private void createControlPanel(JPanel dataPanel) {
         JPanel cntlPanel = new JPanel();
         GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
-        gbl_ctrlPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_ctrlPanel.insets = insets3;
         gbl_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
         gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
         gbl_ctrlPanel.weightx = 1.0;
@@ -199,18 +192,23 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
         scaleDoubleFmt.setMaximumFractionDigits(8);
         scaleDoubleFmt.setMinimumFractionDigits(1);
         scaleDoubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+
+        GridBagConstraints gbc_cntlPanelLabel = new GridBagConstraints();
+        gbc_cntlPanelLabel.anchor = GridBagConstraints.EAST;
+        gbc_cntlPanelLabel.insets = new Insets(2, 3, 2, 1);
+        gbc_cntlPanelLabel.gridx = 0;
+        gbc_cntlPanelLabel.gridy = 0;
+
+        GridBagConstraints gbc_cntlPanelInput = new GridBagConstraints();
+        gbc_cntlPanelInput.anchor = GridBagConstraints.WEST;
+        gbc_cntlPanelInput.insets = new Insets(2, 1, 2, 3);
+        gbc_cntlPanelInput.gridx = 1;
+        gbc_cntlPanelInput.gridy = 0;
         
-        JLabel newMaxVLabel = new JLabel("New Max V");
-        newMaxVLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_newMaxVLabel = new GridBagConstraints();
-        gbc_newMaxVLabel.anchor = GridBagConstraints.EAST;
-        gbc_newMaxVLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_newMaxVLabel.gridx = 0;
-        gbc_newMaxVLabel.gridy = 0;
-        cntlPanel.add(newMaxVLabel, gbc_newMaxVLabel);
+        cntlPanel.add(new JLabel("New Max V"), gbc_cntlPanelLabel);
         
         newMaxVFmtTextBox = new JFormattedTextField(doubleFmt);
-        newMaxVFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        newMaxVFmtTextBox.setColumns(7);
         newMaxVFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {
 	            Object source = e.getSource();
@@ -218,24 +216,13 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
 	                updateNewMafScale();
 			}
         });
-        GridBagConstraints gbc_newMaxV = new GridBagConstraints();
-        gbc_newMaxV.anchor = GridBagConstraints.WEST;
-        gbc_newMaxV.insets = new Insets(3, 3, 3, 3);
-        gbc_newMaxV.gridx = 1;
-        gbc_newMaxV.gridy = 0;
-        cntlPanel.add(newMaxVFmtTextBox, gbc_newMaxV);
+        cntlPanel.add(newMaxVFmtTextBox, gbc_cntlPanelInput);
         
-        JLabel minVLabel = new JLabel("Min V");
-        minVLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_minVLabel = new GridBagConstraints();
-        gbc_minVLabel.anchor = GridBagConstraints.EAST;
-        gbc_minVLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_minVLabel.gridx = 2;
-        gbc_minVLabel.gridy = 0;
-        cntlPanel.add(minVLabel, gbc_minVLabel);
+        gbc_cntlPanelLabel.gridx += 2;
+        cntlPanel.add(new JLabel("Min V"), gbc_cntlPanelLabel);
         
         minVFmtTextBox = new JFormattedTextField(doubleFmt);
-        minVFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        minVFmtTextBox.setColumns(7);
         minVFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {
 	            Object source = e.getSource();
@@ -243,24 +230,14 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
 	                updateNewMafScale();
 			}
         });
-        GridBagConstraints gbc_minVFmtTextBox = new GridBagConstraints();
-        gbc_minVFmtTextBox.anchor = GridBagConstraints.WEST;
-        gbc_minVFmtTextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_minVFmtTextBox.gridx = 3;
-        gbc_minVFmtTextBox.gridy = 0;
-        cntlPanel.add(minVFmtTextBox, gbc_minVFmtTextBox);
-        
-        JLabel maxVUnchangedLabel = new JLabel("Max Unchanged");
-        maxVUnchangedLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_maxVUnchangedLabel = new GridBagConstraints();
-        gbc_maxVUnchangedLabel.anchor = GridBagConstraints.EAST;
-        gbc_maxVUnchangedLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_maxVUnchangedLabel.gridx = 4;
-        gbc_maxVUnchangedLabel.gridy = 0;
-        cntlPanel.add(maxVUnchangedLabel, gbc_maxVUnchangedLabel);
+        gbc_cntlPanelInput.gridx += 2;
+        cntlPanel.add(minVFmtTextBox, gbc_cntlPanelInput);
+
+        gbc_cntlPanelLabel.gridx += 2;
+        cntlPanel.add(new JLabel("Max Unchanged"), gbc_cntlPanelLabel);
         
         maxVUnchangedFmtTextBox = new JFormattedTextField(doubleFmt);
-        maxVUnchangedFmtTextBox.setPreferredSize(new Dimension(50, 18));
+        maxVUnchangedFmtTextBox.setColumns(7);
         maxVUnchangedFmtTextBox.addPropertyChangeListener("value", new PropertyChangeListener() {
 			public void propertyChange(PropertyChangeEvent e) {
 	            Object source = e.getSource();
@@ -268,51 +245,22 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
 	                updateNewMafScale();
 			}
         });
-        GridBagConstraints gbc_maxVUnchangedFmtTextBox = new GridBagConstraints();
-        gbc_maxVUnchangedFmtTextBox.anchor = GridBagConstraints.WEST;
-        gbc_maxVUnchangedFmtTextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_maxVUnchangedFmtTextBox.gridx = 5;
-        gbc_maxVUnchangedFmtTextBox.gridy = 0;
-        cntlPanel.add(maxVUnchangedFmtTextBox, gbc_maxVUnchangedFmtTextBox);
+        gbc_cntlPanelInput.gridx += 2;
+        cntlPanel.add(maxVUnchangedFmtTextBox, gbc_cntlPanelInput);
         
-        JLabel modeDeltaVChangeLabel = new JLabel("Mode deltaV");
-        modeDeltaVChangeLabel.setHorizontalAlignment(LEFT);
-        GridBagConstraints gbc_modeDeltaVChangeLabel = new GridBagConstraints();
-        gbc_modeDeltaVChangeLabel.anchor = GridBagConstraints.EAST;
-        gbc_modeDeltaVChangeLabel.insets = new Insets(3, 3, 3, 0);
-        gbc_modeDeltaVChangeLabel.gridx = 6;
-        gbc_modeDeltaVChangeLabel.gridy = 0;
-        cntlPanel.add(modeDeltaVChangeLabel, gbc_modeDeltaVChangeLabel);
+        gbc_cntlPanelLabel.gridx += 2;
+        cntlPanel.add(new JLabel("Mode deltaV"), gbc_cntlPanelLabel);
         
         modeDeltaVFmtTextBox = new JFormattedTextField(scaleDoubleFmt);
-        modeDeltaVFmtTextBox.setPreferredSize(new Dimension(80, 18));
+        modeDeltaVFmtTextBox.setColumns(7);
         modeDeltaVFmtTextBox.setEditable(false);
         modeDeltaVFmtTextBox.setBackground(new Color(210,210,210));
-        GridBagConstraints gbc_modeDeltaVFmtTextBox = new GridBagConstraints();
-        gbc_modeDeltaVFmtTextBox.anchor = GridBagConstraints.WEST;
-        gbc_modeDeltaVFmtTextBox.insets = new Insets(3, 3, 3, 3);
-        gbc_modeDeltaVFmtTextBox.gridx = 7;
-        gbc_modeDeltaVFmtTextBox.gridy = 0;
-        cntlPanel.add(modeDeltaVFmtTextBox, gbc_modeDeltaVFmtTextBox);
+        gbc_cntlPanelInput.gridx += 2;
+        cntlPanel.add(modeDeltaVFmtTextBox, gbc_cntlPanelInput);
     }
 
     private void createMafScalesScrollPane(JPanel dataPanel) {
         JPanel mafPanel = new JPanel();
-        
-        JScrollPane mafScrollPane = new JScrollPane(mafPanel);
-        mafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-        GridBagConstraints gbl_mafScrollPane = new GridBagConstraints();
-        gbl_mafScrollPane.insets = new Insets(3, 3, 3, 3);
-        gbl_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbl_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbl_mafScrollPane.ipady = 110;
-        gbl_mafScrollPane.weightx = 1.0;
-        gbl_mafScrollPane.gridx = 0;
-        gbl_mafScrollPane.gridy = 1;
-        
-        dataPanel.add(mafScrollPane, gbl_mafScrollPane);
-        
         GridBagLayout gbl_mafPanelLayout = new GridBagLayout();
         gbl_mafPanelLayout.columnWidths = new int[]{0};
         gbl_mafPanelLayout.rowHeights = new int[]{0, 0};
@@ -320,138 +268,43 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
         gbl_mafPanelLayout.rowWeights = new double[]{0.0, 1.0};
         mafPanel.setLayout(gbl_mafPanelLayout);
         
-        JScrollPane origMafScrollPane = new JScrollPane();
-        origMafScrollPane.setBorder(BorderFactory.createEmptyBorder());
-        origMafScrollPane.setViewportBorder(new TitledBorder(null, OrigMafTableName, TitledBorder.LEADING, TitledBorder.TOP, null, null));
-        origMafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
-        origMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        GridBagConstraints gbc_origMafScrollPane = new GridBagConstraints();
-        gbc_origMafScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_origMafScrollPane.weightx = 1.0;
-        gbc_origMafScrollPane.insets = new Insets(0, 0, 0, 0);
-        gbc_origMafScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbc_origMafScrollPane.gridx = 0;
-        gbc_origMafScrollPane.gridy = 0;
-        mafPanel.add(origMafScrollPane, gbc_origMafScrollPane);
+        JScrollPane mafScrollPane = new JScrollPane(mafPanel);
+        mafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+        GridBagConstraints gbl_mafScrollPane = new GridBagConstraints();
+        gbl_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbl_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbl_mafScrollPane.insets = insets0;
+        gbl_mafScrollPane.weightx = 1.0;
+        gbl_mafScrollPane.gridx = 0;
+        gbl_mafScrollPane.gridy = 1;
+        gbl_mafScrollPane.ipady = 120;
+        dataPanel.add(mafScrollPane, gbl_mafScrollPane);
         
-        JPanel origDataMafPanel = new JPanel();
-        origMafScrollPane.setViewportView(origDataMafPanel);
-        GridBagLayout gbl_origDataMafPanel = new GridBagLayout();
-        gbl_origDataMafPanel.columnWidths = new int[]{0, 0, 0};
-        gbl_origDataMafPanel.rowHeights = new int[] {0, 0};
-        gbl_origDataMafPanel.columnWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
-        gbl_origDataMafPanel.rowWeights = new double[]{0.0, 0.0};
-        origDataMafPanel.setLayout(gbl_origDataMafPanel);
+        GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
+        gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafScrollPane.weightx = 1.0;
+        gbc_mafScrollPane.weighty = 1.0;
+        gbc_mafScrollPane.insets = insets0;
+        gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_mafScrollPane.gridx = 0;
+        gbc_mafScrollPane.gridy = 0;
         
-        JLabel origVoltLabel = new JLabel("volt");
-        GridBagConstraints gbc_origVoltLabel = new GridBagConstraints();
-        gbc_origVoltLabel.anchor = GridBagConstraints.PAGE_START;
-        gbc_origVoltLabel.insets = new Insets(1, 1, 1, 5);
-        gbc_origVoltLabel.weightx = 0;
-        gbc_origVoltLabel.weighty = 0;
-        gbc_origVoltLabel.gridx = 0;
-        gbc_origVoltLabel.gridy = 0;
-        origDataMafPanel.add(origVoltLabel, gbc_origVoltLabel);
-        
-        JLabel origGSLabel = new JLabel(" g/s");
-        GridBagConstraints gbc_origGSLabel = new GridBagConstraints();
-        gbc_origGSLabel.anchor = GridBagConstraints.PAGE_START;
-        gbc_origGSLabel.insets = new Insets(1, 1, 1, 5);
-        gbc_origGSLabel.weightx = 0;
-        gbc_origGSLabel.weighty = 0;
-        gbc_origGSLabel.gridx = 0;
-        gbc_origGSLabel.gridy = 1;
-        origDataMafPanel.add(origGSLabel, gbc_origGSLabel);
-
-        origMafTable = new JTable();
-        origMafTable.setColumnSelectionAllowed(true);
-        origMafTable.setCellSelectionEnabled(true);
-        origMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
-        origMafTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        origMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        origMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount) {
-			private static final long serialVersionUID = -2179977830999030022L;
-			public boolean isCellEditable(int row, int column) { return false; };
-        });
-        origMafTable.setTableHeader(null);
-        Utils.initializeTable(origMafTable, ColumnWidth);
-        GridBagConstraints gbc_origMafTable = new GridBagConstraints();
-        gbc_origMafTable.insets = new Insets(0, 0, 0, 0);
-        gbc_origMafTable.fill = GridBagConstraints.BOTH;
-        gbc_origMafTable.weightx = 1.0;
-        gbc_origMafTable.weighty = 1.0;
-        gbc_origMafTable.gridx = 1;
-        gbc_origMafTable.gridy = 0;
-        gbc_origMafTable.gridheight = 2;
-        origDataMafPanel.add(origMafTable, gbc_origMafTable);
+		MafTablePane origMafScrollPane = new MafTablePane(ColumnWidth, OrigMafTableName, false, false);
+		origMafScrollPane.setBorder(null);
+		origMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		origMafTable = origMafScrollPane.getJTable();
         excelAdapter.addTable(origMafTable, false, false, false, false, false, false, false, false, true);
-
-        JScrollPane newMafScrollPane = new JScrollPane();
-        newMafScrollPane.setBorder(BorderFactory.createEmptyBorder());
-        newMafScrollPane.setViewportBorder(new TitledBorder(null, NewMafTableName, TitledBorder.LEADING, TitledBorder.TOP, null, null));
-        newMafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        mafPanel.add(origMafScrollPane, gbc_mafScrollPane);
+        
+        MafTablePane newMafScrollPane = new MafTablePane(ColumnWidth, NewMafTableName, false, true);
+        newMafScrollPane.setBorder(null);
         newMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        GridBagConstraints gbc_newMafScrollPane = new GridBagConstraints();
-        gbc_newMafScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_newMafScrollPane.weightx = 1.0;
-        gbc_newMafScrollPane.insets = new Insets(0, 0, 0, 0);
-        gbc_newMafScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbc_newMafScrollPane.gridx = 0;
-        gbc_newMafScrollPane.gridy = 1;
-        mafPanel.add(newMafScrollPane, gbc_newMafScrollPane);
-        
-        JPanel newDataMafPanel = new JPanel();
-        newMafScrollPane.setViewportView(newDataMafPanel);
-        GridBagLayout gbl_newDataMafPanel = new GridBagLayout();
-        gbl_newDataMafPanel.columnWidths = new int[]{0, 0, 0};
-        gbl_newDataMafPanel.rowHeights = new int[] {0, 0};
-        gbl_newDataMafPanel.columnWeights = new double[]{0.0, 1.0, Double.MIN_VALUE};
-        gbl_newDataMafPanel.rowWeights = new double[]{0.0, 0.0};
-        newDataMafPanel.setLayout(gbl_newDataMafPanel);
-        
-        JLabel newVoltLabel = new JLabel("volt");
-        GridBagConstraints gbc_newVoltLabel = new GridBagConstraints();
-        gbc_newVoltLabel.anchor = GridBagConstraints.PAGE_START;
-        gbc_newVoltLabel.insets = new Insets(1, 1, 1, 5);
-        gbc_newVoltLabel.weightx = 0;
-        gbc_newVoltLabel.weighty = 0;
-        gbc_newVoltLabel.gridx = 0;
-        gbc_newVoltLabel.gridy = 0;
-        newDataMafPanel.add(newVoltLabel, gbc_newVoltLabel);
-        
-        JLabel newGSLabel = new JLabel(" g/s");
-        GridBagConstraints gbc_newGSLabel = new GridBagConstraints();
-        gbc_newGSLabel.anchor = GridBagConstraints.PAGE_START;
-        gbc_newGSLabel.insets = new Insets(1, 1, 1, 5);
-        gbc_newGSLabel.weightx = 0;
-        gbc_newGSLabel.weighty = 0;
-        gbc_newGSLabel.gridx = 0;
-        gbc_newGSLabel.gridy = 1;
-        newDataMafPanel.add(newGSLabel, gbc_newGSLabel);
-
-        newMafTable = new JTable() {
-			private static final long serialVersionUID = 7749582128758153892L;
-			public boolean isCellEditable(int row, int column) { if (row == 1) return false; return true; };
-        };
-        newMafTable.setColumnSelectionAllowed(true);
-        newMafTable.setCellSelectionEnabled(true);
-        newMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
-        newMafTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-        newMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        newMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount));
-        newMafTable.setTableHeader(null);
-        Utils.initializeTable(newMafTable, ColumnWidth);
-        GridBagConstraints gbc_newMafTable = new GridBagConstraints();
-        gbc_newMafTable.insets = new Insets(0, 0, 0, 0);
-        gbc_newMafTable.fill = GridBagConstraints.BOTH;
-        gbc_newMafTable.weightx = 1.0;
-        gbc_newMafTable.weighty = 1.0;
-        gbc_newMafTable.gridx = 1;
-        gbc_newMafTable.gridy = 0;
-        gbc_newMafTable.gridheight = 2;
-        newDataMafPanel.add(newMafTable, gbc_newMafTable);
+        newMafTable = newMafScrollPane.getJTable();
         newMafExcelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
-
+        gbc_mafScrollPane.gridy++;
+        mafPanel.add(newMafScrollPane, gbc_mafScrollPane);
+        
         Action action = new AbstractAction() {
 			private static final long serialVersionUID = 1L;
 			public void actionPerformed(ActionEvent e) {
@@ -469,7 +322,7 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.PAGE_START;
-        gbl_chartPanel.insets = new Insets(3, 3, 3, 3);
+        gbl_chartPanel.insets = insets0;
         gbl_chartPanel.fill = GridBagConstraints.BOTH;
         gbl_chartPanel.weightx = 1.0;
         gbl_chartPanel.weighty = 1.0;

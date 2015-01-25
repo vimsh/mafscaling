@@ -28,7 +28,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -56,7 +55,6 @@ import javax.swing.Timer;
 import javax.swing.UIDefaults;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import org.apache.log4j.Logger;
 import quick.dbtable.Column;
@@ -287,11 +285,14 @@ public class LogPlay extends JTabbedPane implements ActionListener {
     				logDataTable.getTable().setRowSelectionInterval(row, row);
     				logDataTable.getTable().changeSelection(row, 0, false, false);
 	                double x, y;
+	                int origXCol, origYCol;
 	        		synchronized (lock) {
 		                for (TableHolder tableHolder : tables) {
 							try {
-			                	x = Double.valueOf(logDataTable.getValueAt(row, tableHolder.xColIdx).toString());
-			                	y = Double.valueOf(logDataTable.getValueAt(row, tableHolder.yColIdx).toString());
+								origXCol = logDataTable.getCurrentIndexForOriginalColumn(tableHolder.xColIdx);
+								origYCol = logDataTable.getCurrentIndexForOriginalColumn(tableHolder.yColIdx);
+			                	x = Double.valueOf(logDataTable.getValueAt(row, origXCol).toString());
+			                	y = Double.valueOf(logDataTable.getValueAt(row, origYCol).toString());
 			                	tableHolder.table.setCurrentPoint(x, y);
 							}
 							catch (Exception ex) {
@@ -413,9 +414,6 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         prop.put("firstRowHasColumnNames", "true");
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-        	JTableHeader header = logDataTable.getTableHeader();
-        	for (MouseListener listener : header.getMouseListeners())
-        		header.removeMouseListener(listener);
         	logDataTable.refresh(file.toURI().toURL(), prop);
         	TableCellRenderer renderer;
         	Component comp;

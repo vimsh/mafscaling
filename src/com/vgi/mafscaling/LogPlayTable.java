@@ -58,6 +58,7 @@ public class LogPlayTable extends JDialog {
     private ArrayList<Double> yaxis = new ArrayList<Double>();
     private Color highlight = new Color(255, 0, 255, 128);
     private Color cellHighlight = new Color(96, 96, 96, 128);
+    private Color borderHighlight = new Color(255, 239, 213);
     private Insets insetsText = new Insets(3, 3, 3, 3);
     private Insets insetsLabel = new Insets(3, 3, 3, 0);
     private Object lock = new Object();
@@ -261,19 +262,28 @@ public class LogPlayTable extends JDialog {
     				x0y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x0Idx + 1).toString());
     				x1y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x1Idx + 1).toString());
     				
-    				val = Utils.table3DInterpolation(xVal, yVal, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
+    				val = Utils.table3DInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
     		        
     		        xText.setText(String.format("%.2f", x));
     		        yText.setText(String.format("%.2f", y));
     		        valueText.setText(String.format("%.2f", val));
 
+    		        // mark cells used in interpolation
     				g.setColor(cellHighlight);
     				g.fillRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
     				g.setColor(Color.BLACK);
     				g.drawRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
-    				g.setColor(highlight);
+    				// mark most significant cell
     				Graphics2D g2 = (Graphics2D)g;
-    				Ellipse2D.Double circle = new Ellipse2D.Double(r.getCenterX() - radius, r.getCenterY() - radius, diameter, diameter);
+    				g2.setColor(borderHighlight);
+    				g2.draw(r);
+    				// drow current value point
+    				x = (x0 == x1) ? 0 : (x - x0) / (x1 - x0); // calculate % of x change
+    				y = (y0 == y1) ? 0 : (y - y0) / (y1 - y0); // calculate % of y change
+    				x = (xPos - radius + cellWidth / 2) + cellWidth * x; // calculate x
+    				y = yPos + diameter * y; // calculate y
+    				Ellipse2D.Double circle = new Ellipse2D.Double(x, y, diameter, diameter);
+    				g2.setColor(highlight);
     				g2.fill(circle);
     				g2.setColor(Color.BLACK);
     				g2.draw(circle);

@@ -54,6 +54,8 @@ public class LogPlayTable extends JDialog {
     private JTable playTable = null;
     private JPanel glasspanel = null;
     private JPanel dataPanel = null;
+    private volatile boolean showInterpolationCells = false;
+    private volatile boolean showSiginficantCell = false;
     private ArrayList<Double> xaxis = new ArrayList<Double>();
     private ArrayList<Double> yaxis = new ArrayList<Double>();
     private Color highlight = new Color(255, 0, 255, 128);
@@ -160,6 +162,14 @@ public class LogPlayTable extends JDialog {
         
         Utils.colorTable(table);
         return true;
+    }
+    
+    public void setShowInterpolationCells(boolean flag) {
+    	showInterpolationCells = flag;
+    }
+    
+    public void setShowSignificantCell(boolean flag) {
+    	showSiginficantCell = flag;
     }
     
     public void setCurrentPoint(double x, double y) {
@@ -269,14 +279,18 @@ public class LogPlayTable extends JDialog {
     		        valueText.setText(String.format("%.2f", val));
 
     		        // mark cells used in interpolation
-    				g.setColor(cellHighlight);
-    				g.fillRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
-    				g.setColor(Color.BLACK);
-    				g.drawRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
-    				// mark most significant cell
+    		        if (showInterpolationCells) {
+	    				g.setColor(cellHighlight);
+	    				g.fillRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
+	    				g.setColor(Color.BLACK);
+	    				g.drawRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
+    		        }
     				Graphics2D g2 = (Graphics2D)g;
-    				g2.setColor(borderHighlight);
-    				g2.draw(r);
+    				// mark most significant cell
+    		        if (showSiginficantCell) {
+	    				g2.setColor(borderHighlight);
+	    				g2.draw(r);
+    		        }
     				// drow current value point
     				x = (x0 == x1) ? 0 : (x - x0) / (x1 - x0); // calculate % of x change
     				y = (y0 == y1) ? 0 : (y - y0) / (y1 - y0); // calculate % of y change

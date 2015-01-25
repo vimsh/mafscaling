@@ -37,6 +37,7 @@ import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -151,9 +152,11 @@ public class LogPlay extends JTabbedPane implements ActionListener {
     private JButton stopButton = null;
     private JButton ffwButton = null;
     private JButton rewButton = null;
-    private JButton btnGoButton = null;
+    private JButton newPlayButton = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
+    private JCheckBox showIntepCells = null;
+    private JCheckBox showSignifCells = null;
     private JSlider progressBar = null;
     private HashSet<TableHolder> tables = new HashSet<TableHolder>();
     private Object lock = new Object();
@@ -251,9 +254,9 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         selectionPanel.add(yAxisColumn, gbc_selection);
 
         gbc_selection.gridx++;
-        btnGoButton = new JButton("New Play Table");
-        btnGoButton.addActionListener(this);
-        selectionPanel.add(btnGoButton, gbc_selection);
+        newPlayButton = new JButton("New Play Table");
+        newPlayButton.addActionListener(this);
+        selectionPanel.add(newPlayButton, gbc_selection);
         
         toolBar.add(selectionPanel);
     }
@@ -261,9 +264,9 @@ public class LogPlay extends JTabbedPane implements ActionListener {
     private void createPlayer(JPanel panel) {
     	playerPanel = new JPanel();
 	    GridBagLayout gbl_playerPanel = new GridBagLayout();
-	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0};
+	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0};
 	    gbl_playerPanel.rowHeights = new int[] {0, 0, 0, 0};
-	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 1.0};
+	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
 	    gbl_playerPanel.rowWeights = new double[]{0.0, 0.0};
 	    playerPanel.setLayout(gbl_playerPanel);
 
@@ -275,7 +278,7 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         gbl_progressBar.gridx = 0;
         gbl_progressBar.gridy = 0;
         gbl_progressBar.weightx = 1.0;
-        gbl_progressBar.gridwidth = 4;
+        gbl_progressBar.gridwidth = 6;
         playerPanel.add(progressBar, gbl_progressBar);
         
         progressBar.addChangeListener(new ChangeListener() {
@@ -311,6 +314,8 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         rewButton = addPlayerButton(1, new ImageIcon(getClass().getResource("/rew.png")));
         playButton = addPlayerButton(2, playIcon);
         ffwButton = addPlayerButton(3, new ImageIcon(getClass().getResource("/ffw.png")));
+        showIntepCells = addCheckBox(4, "Show interpolation cells");
+        showSignifCells = addCheckBox(5, "Show significant cell");
         
         GridBagConstraints gbc_playerPanel = new GridBagConstraints();
         gbc_playerPanel.insets = insets0;
@@ -492,6 +497,18 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         return button;
 	}
 	
+	private JCheckBox addCheckBox(int column, String text) {
+		JCheckBox check = new JCheckBox(text);
+		check.addActionListener(this);
+        GridBagConstraints gbl_check = new GridBagConstraints();
+        gbl_check.insets = insets0;
+        gbl_check.anchor = GridBagConstraints.WEST;
+        gbl_check.gridx = column;
+        gbl_check.gridy = 1;
+        playerPanel.add(check, gbl_check);
+        return check;
+	}
+	
 	private void play() {
 		// no need to lock yet
 		if (tables.size() == 0) {
@@ -505,7 +522,7 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         playing = true;
         timer.start();
 		playButton.setIcon(pauseIcon);
-		btnGoButton.setEnabled(false);
+		newPlayButton.setEnabled(false);
 		logDataTable.setEditable(false);
 	}
 	
@@ -517,7 +534,7 @@ public class LogPlay extends JTabbedPane implements ActionListener {
         playing = false;
         timer.stop();
 		playButton.setIcon(playIcon);
-		btnGoButton.setEnabled(true);
+		newPlayButton.setEnabled(true);
 		logDataTable.setEditable(true);
 	}
 	
@@ -538,6 +555,20 @@ public class LogPlay extends JTabbedPane implements ActionListener {
 		if (timer.getDelay() > 0)
 			timer.setDelay(timer.getDelay() - step);
 	}
+	
+	private void setShowInterpolationCells() {
+		synchronized (lock) {
+			for (TableHolder t : tables)
+				t.table.setShowInterpolationCells(showIntepCells.isSelected());
+		}
+	}
+	
+	private void setShowSignificantCell() {
+		synchronized (lock) {
+			for (TableHolder t : tables)
+				t.table.setShowSignificantCell(showSignifCells.isSelected());
+		}
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -547,7 +578,7 @@ public class LogPlay extends JTabbedPane implements ActionListener {
 	    	logDataTable.doFind();
 	    else if (e.getSource() == replaceButton)
 	    	logDataTable.doFindAndReplace();
-		else if (e.getSource() == btnGoButton)
+		else if (e.getSource() == newPlayButton)
 			createPlayTable();
 		else if (e.getSource() == playButton) {
 			if (playing)
@@ -563,6 +594,12 @@ public class LogPlay extends JTabbedPane implements ActionListener {
 		}
 		else if (e.getSource() == stopButton) {
 			reset();
+		}
+		else if (e.getSource() == showIntepCells) {
+			setShowInterpolationCells();
+		}
+		else if (e.getSource() == showSignifCells) {
+			setShowSignificantCell();
 		}
 	}
 

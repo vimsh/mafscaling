@@ -618,6 +618,7 @@ public abstract class AMafScaling extends JTabbedPane implements IMafChartHolder
             double Y2 = X2 * valueY - X1 * valueY + Y1;
             yarr.set(itemIndex + 1, Y2);
             mafSmoothingTable.setValueAt(Y2, 1, itemIndex + 1);
+            mafSmoothingTable.changeSelection(1, itemIndex + 1, false, false);
             corrMafData.updateByIndex(itemIndex + 1, Y2);
             if (itemIndex + 1 < series.getItemCount()) {
                 X1 = X2;

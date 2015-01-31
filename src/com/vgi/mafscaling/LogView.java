@@ -58,7 +58,6 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -98,10 +97,9 @@ import quick.dbtable.PrintProperties;
 import quick.dbtable.Skin;
 import quick.dbtable.Filter;
 
-public class LogView extends JTabbedPane implements ActionListener {
+public class LogView extends FCTabbedPane implements ActionListener {
 	private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(LogView.class);
-    private final JFileChooser fileChooser = new JFileChooser();
     
     public class XYZ {
         @Override
@@ -397,7 +395,6 @@ public class LogView extends JTabbedPane implements ActionListener {
     }
 
     private void initialize() {
-        fileChooser.setCurrentDirectory(new File("."));
         createDataTab();
         createChartTab();
         createUsageTab();
@@ -993,6 +990,7 @@ public class LogView extends JTabbedPane implements ActionListener {
     }
 
 	private void loadLogFile() {
+    	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();

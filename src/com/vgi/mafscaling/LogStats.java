@@ -55,7 +55,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
@@ -69,7 +68,7 @@ import org.apache.log4j.Logger;
 import org.math.plot.Plot3DPanel;
 import org.math.plot.plots.HistogramPlot3D;
 
-public class LogStats extends JTabbedPane implements ActionListener {
+public class LogStats extends FCTabbedPane implements ActionListener {
 	private enum Statistics {COUNT, MINIMUM, MAXIMUM, MEAN, MEDIAN, MODE, RANGE, VARIANCE, STDDEV};
 	private enum Plot3D {GRID, HIST, BAR, LINE, SCATTER};
 	private enum DataFilter {NONE, LESS, LESS_EQUAL, EQUAL, GREATER_EQUAL, GREATER};
@@ -99,7 +98,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
         }  
     };
 
-    private final JFileChooser fileChooser = new JFileChooser();
     private File logFile = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
@@ -151,8 +149,6 @@ public class LogStats extends JTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createDataTab() {
-        fileChooser.setCurrentDirectory(new File("."));
-        
         JPanel dataPanel = new JPanel();
         add(dataPanel, "<html><div style='text-align: center;'>D<br>a<br>t<br>a</div></html>");
         GridBagLayout gbl_dataPanel = new GridBagLayout();
@@ -493,6 +489,7 @@ public class LogStats extends JTabbedPane implements ActionListener {
     }
 
     private void getLogColumns() {
+    	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         xAxisColumn.removeAllItems();

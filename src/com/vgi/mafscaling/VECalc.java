@@ -331,6 +331,7 @@ public class VECalc extends ACompCalc {
     }
     
     protected void loadLogFile() {
+    	fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File[] files = fileChooser.getSelectedFiles();

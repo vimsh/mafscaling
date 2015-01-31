@@ -13,25 +13,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.io.File;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
-
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
@@ -44,7 +40,6 @@ import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -67,7 +62,7 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 import org.math.plot.Plot3DPanel;
 
-public abstract class ACompCalc extends JTabbedPane implements ActionListener, IMafChartHolder {
+public abstract class ACompCalc extends FCTabbedPane implements ActionListener, IMafChartHolder {
 	private static final long serialVersionUID = 5944026307547635365L;
 	private static final Logger logger = Logger.getLogger(ACompCalc.class);
 	protected static final String dvdtAxisName = "dV / dt";
@@ -87,7 +82,6 @@ public abstract class ACompCalc extends JTabbedPane implements ActionListener, I
 	protected Plot3DPanel plot3d = null;
 	protected ExcelAdapter otExcelAdapter = null;
 	protected ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
-	protected JFileChooser fileChooser = new JFileChooser();
 	protected ArrayList<Double> xAxisArray = null;
 	protected ArrayList<Double> yAxisArray = null;
 	protected ArrayList<ArrayList<Double>> savedNewTable = new ArrayList<ArrayList<Double>>();
@@ -120,8 +114,6 @@ public abstract class ACompCalc extends JTabbedPane implements ActionListener, I
 
 
     protected void initialize(String[] logColumns) {
-    	fileChooser.setMultiSelectionEnabled(true);
-        fileChooser.setCurrentDirectory(new File("."));
         otExcelAdapter = new ExcelAdapter() {
     	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
     	    	super.onPaste(table, extendRows, extendCols);

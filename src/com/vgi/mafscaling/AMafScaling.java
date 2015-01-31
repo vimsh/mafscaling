@@ -13,7 +13,6 @@ import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -22,13 +21,11 @@ import java.util.regex.Pattern;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.UIDefaults;
@@ -52,7 +49,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public abstract class AMafScaling extends JTabbedPane implements IMafChartHolder, ActionListener {
+public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolder, ActionListener {
 	private static final long serialVersionUID = -1494227355521802829L;
 	protected static final int ColumnWidth = 55;
 	protected static final String MafTableName = "Current MAF Scaling";
@@ -64,7 +61,6 @@ public abstract class AMafScaling extends JTabbedPane implements IMafChartHolder
     protected static final String smoothedSlopeDataName = "Smoothed Maf Slope";
     protected static final String XAxisName = "MAF Sensor (Voltage)";
     protected static final String Y1AxisName = "Mass Airflow (g/s)";
-	protected final JFileChooser fileChooser = new JFileChooser();
 	protected final ExcelAdapter excelAdapter = new ExcelAdapter();
 	protected PrimaryOpenLoopFuelingTable polfTable = null;
 	protected MafCompare mafCompare = null;
@@ -105,8 +101,6 @@ public abstract class AMafScaling extends JTabbedPane implements IMafChartHolder
     }
     
     protected void initialize() {
-    	fileChooser.setMultiSelectionEnabled(true);
-        fileChooser.setCurrentDirectory(new File("."));
         createDataTab();
         createGraghTab();
         createUsageTab();

@@ -924,6 +924,7 @@ public class ClosedLoop extends AMafScaling {
     }
    
     public void loadData() {
+    	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();
@@ -1041,6 +1042,7 @@ public class ClosedLoop extends AMafScaling {
     }
     
     protected void loadLogFile() {
+    	fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         boolean isPolSet = polfTable.isSet();

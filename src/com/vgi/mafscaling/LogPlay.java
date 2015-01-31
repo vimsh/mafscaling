@@ -45,7 +45,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
-import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
@@ -62,7 +61,7 @@ import quick.dbtable.Column;
 import quick.dbtable.DBTable;
 import quick.dbtable.Skin;
 
-public class LogPlay extends JTabbedPane implements ActionListener {
+public class LogPlay extends FCTabbedPane implements ActionListener {
 	private static final long serialVersionUID = -1614821051358033847L;
 	private static final Logger logger = Logger.getLogger(LogPlay.class);
 
@@ -138,7 +137,6 @@ public class LogPlay extends JTabbedPane implements ActionListener {
 
     }
 
-    private final JFileChooser fileChooser = new JFileChooser();
     private final int step = 20;
     private Timer timer = null;
     private JPanel logViewPanel = null;
@@ -176,7 +174,6 @@ public class LogPlay extends JTabbedPane implements ActionListener {
 
     private void initialize() {
     	playNext = new AtomicInteger(1);
-        fileChooser.setCurrentDirectory(new File("."));
         playIcon = new ImageIcon(getClass().getResource("/play.png"));
         pauseIcon = new ImageIcon(getClass().getResource("/pause.png"));
         zeroInsets.put("Button.contentMargins", insets0);
@@ -411,6 +408,7 @@ public class LogPlay extends JTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
 
 	private void loadLogFile() {
+    	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();

@@ -114,7 +114,6 @@ public class LogPlayTable extends JDialog {
 	        pack();
 	        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	        setIconImage(null);
-	        setAlwaysOnTop(true);
 	        setVisible(true);
 	        setResizable(false);
     	}

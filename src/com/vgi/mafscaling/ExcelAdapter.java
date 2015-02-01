@@ -201,6 +201,9 @@ public class ExcelAdapter implements ActionListener {
             tableHolders.remove(th);
         for (ExcelAdapterMenuItem mi : removeMenu)
             menuItems.remove(mi);
+        table.setComponentPopupMenu(null);
+        for (KeyStroke ks : table.getRegisteredKeyStrokes())
+        	table.unregisterKeyboardAction(ks);
     }
     
     /**

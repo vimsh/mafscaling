@@ -42,7 +42,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Stack;
-
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -368,6 +367,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JPanel logViewPanel = null;
     private JToolBar toolBar = null;
     private DBTable logDataTable = null;
+    private DBTFindFrame findWindow = null;
     private JScrollPane headerScrollPane = null;
     private DefaultListModel<JLabel> listModel = null;
     private JButton loadButton = null;
@@ -443,7 +443,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			logDataTable.getTable().setCellSelectionEnabled(true);
 			logDataTable.getTable().setColumnSelectionAllowed(true);
 			logDataTable.getTable().setRowSelectionAllowed(true);
-			logDataTable.getTable().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			logDataTable.getTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			JTextField rowTextField = ((JTextField)logDataTable.getControlPanel().getComponent(3));
 			rowTextField.setPreferredSize(null);
 			rowTextField.setColumns(5);
@@ -537,7 +537,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		toolBar.addSeparator();
 		printButton = addToolbarButton("Print", "/print.png");
 		previewButton = addToolbarButton("Print Preview", "/print_preview.png");
-		previewButton = addToolbarButton("Find", "/find.png");
+		findButton = addToolbarButton("Find", "/find.png");
 		replaceButton = addToolbarButton("Replace", "/replace.png");
 		toolBar.addSeparator();
 		
@@ -1173,10 +1173,16 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			logDataTable.print(new PrintProperties());
 	    else if (e.getSource() == previewButton)
 	    	logDataTable.printPreview(new PrintProperties());
-	    else if (e.getSource() == findButton)
-	    	logDataTable.doFind();
-	    else if (e.getSource() == replaceButton)
-	    	logDataTable.doFindAndReplace();
+	    else if (e.getSource() == findButton) {
+	    	if (findWindow != null)
+	    		findWindow.dispose();
+	    	findWindow = new DBTFindFrame(SwingUtilities.windowForComponent(this), logDataTable, true);
+	    }
+	    else if (e.getSource() == replaceButton) {
+	    	if (findWindow != null)
+	    		findWindow.dispose();
+			findWindow = new DBTFindFrame(SwingUtilities.windowForComponent(this), logDataTable, false);
+	    }
 	    else if (e.getSource() == filterButton) {
 	    	String filterString = filterText.getText();
 	    	if (filterString != null && !"".equals(filterString)) {

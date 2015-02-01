@@ -46,6 +46,11 @@ public class LogPlayTable extends JDialog {
 	private static final long serialVersionUID = 3534186983281827915L;
 	private static final Logger logger = Logger.getLogger(LogPlayTable.class);
 	
+	class LinePoint {
+		public double x = 0;
+		public double y = 0;
+		public LinePoint(double x, double y) { this.x = x; this.y = y; }
+	}
     private static final int ColumnWidth = 50;
     private ExcelAdapter excelAdapter = null;
     private JTextField xText = null;
@@ -56,17 +61,22 @@ public class LogPlayTable extends JDialog {
     private JPanel dataPanel = null;
     private volatile boolean showInterpolationCells = false;
     private volatile boolean showSiginficantCell = false;
+    private volatile boolean showTraceLine = false;
     private ArrayList<Double> xaxis = new ArrayList<Double>();
     private ArrayList<Double> yaxis = new ArrayList<Double>();
     private Color highlight = new Color(255, 0, 255, 128);
+    private Color traceHighlight = new Color(44, 53, 57);
     private Color cellHighlight = new Color(96, 96, 96, 128);
     private Color borderHighlight = new Color(255, 239, 213);
     private Insets insetsText = new Insets(3, 3, 3, 3);
     private Insets insetsLabel = new Insets(3, 3, 3, 0);
     private Object lock = new Object();
     private Rectangle r;
+    private ArrayList<LinePoint> tracePoints = new ArrayList<LinePoint>();
+    private ArrayList<LinePoint> linePoints = null;
     private Double xVal = null;
     private Double yVal = null;
+    private LinePoint pt = null;
     private double diameter;
     private double cellWidth;
     private double radius;
@@ -100,11 +110,11 @@ public class LogPlayTable extends JDialog {
     		createDataPanel();
 	        
 	        pack();
-	        setVisible(true);
-	        setResizable(false);
-	        setAlwaysOnTop(true);
 	        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	        setIconImage(null);
+	        setAlwaysOnTop(true);
+	        setVisible(true);
+	        setResizable(false);
     	}
     	catch (Exception e) {
             logger.error(e);
@@ -163,6 +173,16 @@ public class LogPlayTable extends JDialog {
         Utils.colorTable(table);
         return true;
     }
+	public void setEditable(boolean flag) {
+		playTable.setEnabled(flag);
+		playTable.setFocusable(flag);
+		if (flag)
+	        excelAdapter.addTable(playTable, true, true, false, false, true, false, true, true, true);
+		else {
+			playTable.clearSelection();
+			excelAdapter.removeTable(playTable);
+		}
+	}
     
     public void setShowInterpolationCells(boolean flag) {
     	showInterpolationCells = flag;
@@ -172,10 +192,21 @@ public class LogPlayTable extends JDialog {
     	showSiginficantCell = flag;
     }
     
+    public void setShowTraceLine(boolean flag) {
+    	showTraceLine = flag;
+    	if (!flag) {
+    		synchronized (lock) {
+    			tracePoints.clear();
+    		}
+    	}
+    }
+    
     public void setCurrentPoint(double x, double y) {
 		synchronized (lock) {
 	    	xVal = x;
 	    	yVal = y;
+	    	if (showTraceLine && pt != null)
+	    		tracePoints.add(pt);
 		}
     	glasspanel.repaint();
     }
@@ -189,6 +220,7 @@ public class LogPlayTable extends JDialog {
 					synchronized (lock) {
 						x = xVal;
 						y = yVal;
+						linePoints = new ArrayList<LinePoint>(tracePoints);
 					}
 					xIdx = Utils.closestValueIndex(x, xaxis);
 					yIdx = Utils.closestValueIndex(y, yaxis);
@@ -278,6 +310,13 @@ public class LogPlayTable extends JDialog {
     		        yText.setText(String.format("%.2f", y));
     		        valueText.setText(String.format("%.2f", val));
 
+    		        // draw trace line
+    		        if (showTraceLine && linePoints.size() > 1) {
+	    				g.setColor(traceHighlight);
+	    				int sz = linePoints.size() - 1;
+	    				for (int i = 0; i < sz; ++i)
+	    					g.drawLine((int)linePoints.get(i).x, (int)linePoints.get(i).y, (int)linePoints.get(i + 1).x, (int)linePoints.get(i + 1).y);
+    		        }
     		        // mark cells used in interpolation
     		        if (showInterpolationCells) {
 	    				g.setColor(cellHighlight);
@@ -285,17 +324,18 @@ public class LogPlayTable extends JDialog {
 	    				g.setColor(Color.BLACK);
 	    				g.drawRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
     		        }
-    				Graphics2D g2 = (Graphics2D)g;
     				// mark most significant cell
+    				Graphics2D g2 = (Graphics2D)g;
     		        if (showSiginficantCell) {
 	    				g2.setColor(borderHighlight);
 	    				g2.draw(r);
     		        }
-    				// drow current value point
+    				// draw current value point
     				x = (x0 == x1) ? 0 : (x - x0) / (x1 - x0); // calculate % of x change
     				y = (y0 == y1) ? 0 : (y - y0) / (y1 - y0); // calculate % of y change
     				x = (xPos - radius + cellWidth / 2) + cellWidth * x; // calculate x
     				y = yPos + diameter * y; // calculate y
+    				pt = new LinePoint(x + radius, y + radius);
     				Ellipse2D.Double circle = new Ellipse2D.Double(x, y, diameter, diameter);
     				g2.setColor(highlight);
     				g2.fill(circle);

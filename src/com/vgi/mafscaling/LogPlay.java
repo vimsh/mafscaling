@@ -142,6 +142,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private JPanel logViewPanel = null;
     private JPanel playerPanel = null;
     private JToolBar toolBar = null;
+    private DBTFindFrame findWindow = null;
     private DBTable logDataTable = null;
     private JButton loadButton = null;
     private JButton findButton = null;
@@ -155,6 +156,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private JComboBox<String> yAxisColumn = null;
     private JCheckBox showIntepCells = null;
     private JCheckBox showSignifCells = null;
+    private JCheckBox showTraceLine = null;
     private JSlider progressBar = null;
     private HashSet<TableHolder> tables = new HashSet<TableHolder>();
     private Object lock = new Object();
@@ -261,9 +263,9 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private void createPlayer(JPanel panel) {
     	playerPanel = new JPanel();
 	    GridBagLayout gbl_playerPanel = new GridBagLayout();
-	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0};
+	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0, 0};
 	    gbl_playerPanel.rowHeights = new int[] {0, 0, 0, 0};
-	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
 	    gbl_playerPanel.rowWeights = new double[]{0.0, 0.0};
 	    playerPanel.setLayout(gbl_playerPanel);
 
@@ -275,7 +277,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
         gbl_progressBar.gridx = 0;
         gbl_progressBar.gridy = 0;
         gbl_progressBar.weightx = 1.0;
-        gbl_progressBar.gridwidth = 6;
+        gbl_progressBar.gridwidth = gbl_playerPanel.columnWidths.length;
         playerPanel.add(progressBar, gbl_progressBar);
         
         progressBar.addChangeListener(new ChangeListener() {
@@ -313,6 +315,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
         ffwButton = addPlayerButton(3, new ImageIcon(getClass().getResource("/ffw.png")));
         showIntepCells = addCheckBox(4, "Show interpolation cells");
         showSignifCells = addCheckBox(5, "Show significant cell");
+        showTraceLine = addCheckBox(6, "Show trace line");
         
         GridBagConstraints gbc_playerPanel = new GridBagConstraints();
         gbc_playerPanel.insets = insets0;
@@ -345,7 +348,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 			logDataTable.getTable().setCellSelectionEnabled(true);
 			logDataTable.getTable().setColumnSelectionAllowed(true);
 			logDataTable.getTable().setRowSelectionAllowed(true);
-			logDataTable.getTable().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+			logDataTable.getTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 			JTextField rowTextField = ((JTextField)logDataTable.getControlPanel().getComponent(3));
 			rowTextField.setPreferredSize(null);
 			rowTextField.setColumns(5);
@@ -515,6 +518,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 		if (playing)
 			return;
+        progressBar.setValue(logDataTable.getSelectedRow());
 		timer.setDelay(timerDelay);
 		playNext.set(1);
         playing = true;
@@ -522,6 +526,10 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		playButton.setIcon(pauseIcon);
 		newPlayButton.setEnabled(false);
 		logDataTable.setEditable(false);
+		synchronized (lock) {
+			for (TableHolder t : tables)
+				t.table.setEditable(false);
+		}
 	}
 	
 	private void stop() {
@@ -534,6 +542,10 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		playButton.setIcon(playIcon);
 		newPlayButton.setEnabled(true);
 		logDataTable.setEditable(true);
+		synchronized (lock) {
+			for (TableHolder t : tables)
+				t.table.setEditable(true);
+		}
 	}
 	
 	private void reset() {
@@ -567,15 +579,28 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 				t.table.setShowSignificantCell(showSignifCells.isSelected());
 		}
 	}
+	
+	private void setShowTraceLine() {
+		synchronized (lock) {
+			for (TableHolder t : tables)
+				t.table.setShowTraceLine(showTraceLine.isSelected());
+		}
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == loadButton)
 			loadLogFile();
-	    else if (e.getSource() == findButton)
-	    	logDataTable.doFind();
-	    else if (e.getSource() == replaceButton)
-	    	logDataTable.doFindAndReplace();
+	    else if (e.getSource() == findButton) {
+	    	if (findWindow != null)
+	    		findWindow.dispose();
+	    	findWindow = new DBTFindFrame(SwingUtilities.windowForComponent(this), logDataTable, true);
+	    }
+	    else if (e.getSource() == replaceButton) {
+	    	if (findWindow != null)
+	    		findWindow.dispose();
+			findWindow = new DBTFindFrame(SwingUtilities.windowForComponent(this), logDataTable, false);
+	    }
 		else if (e.getSource() == newPlayButton)
 			createPlayTable();
 		else if (e.getSource() == playButton) {
@@ -598,6 +623,9 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 		else if (e.getSource() == showSignifCells) {
 			setShowSignificantCell();
+		}
+		else if (e.getSource() == showTraceLine) {
+			setShowTraceLine();
 		}
 	}
 

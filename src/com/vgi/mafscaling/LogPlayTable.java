@@ -55,6 +55,7 @@ public class LogPlayTable extends JDialog {
     private ExcelAdapter excelAdapter = null;
     private JTextField xText = null;
     private JTextField yText = null;
+    private JTextField zText = null;
     private JTextField valueText = null;
     private JTable playTable = null;
     private JPanel glasspanel = null;
@@ -68,19 +69,20 @@ public class LogPlayTable extends JDialog {
     private Color traceHighlight = new Color(44, 53, 57);
     private Color cellHighlight = new Color(96, 96, 96, 128);
     private Color borderHighlight = new Color(255, 239, 213);
-    private Insets insetsText = new Insets(3, 3, 3, 3);
-    private Insets insetsLabel = new Insets(3, 3, 3, 0);
+    private Insets insetsText = new Insets(1, 5, 5, 3);
+    private Insets insetsLabel = new Insets(5, 5, 1, 3);
     private Object lock = new Object();
     private Rectangle r;
     private ArrayList<LinePoint> tracePoints = new ArrayList<LinePoint>();
     private ArrayList<LinePoint> linePoints = null;
     private Double xVal = null;
     private Double yVal = null;
+    private Double zVal = null;
     private LinePoint pt = null;
     private double diameter;
     private double cellWidth;
     private double radius;
-    private double x, y, xPos, yPos, val, xCellVal, yCellVal;
+    private double x, y, z, xPos, yPos, val, xCellVal, yCellVal;
     private double x0, x1, y0, y1, x0y0, x1y0, x0y1, x1y1;
     private int xIdx, yIdx, x0Idx, x1Idx, y0Idx, y1Idx, xMult, yMult;
     
@@ -201,10 +203,11 @@ public class LogPlayTable extends JDialog {
     	}
     }
     
-    public void setCurrentPoint(double x, double y) {
+    public void setCurrentPoint(double x, double y, double z) {
 		synchronized (lock) {
 	    	xVal = x;
 	    	yVal = y;
+	    	zVal = z;
 	    	if (showTraceLine && pt != null)
 	    		tracePoints.add(pt);
 		}
@@ -220,6 +223,7 @@ public class LogPlayTable extends JDialog {
 					synchronized (lock) {
 						x = xVal;
 						y = yVal;
+						z = zVal;
 						linePoints = new ArrayList<LinePoint>(tracePoints);
 					}
 					xIdx = Utils.closestValueIndex(x, xaxis);
@@ -309,6 +313,8 @@ public class LogPlayTable extends JDialog {
     		        xText.setText(String.format("%.2f", x));
     		        yText.setText(String.format("%.2f", y));
     		        valueText.setText(String.format("%.2f", val));
+    		        if (!Double.isNaN(z))
+    		        	zText.setText(String.format("%.2f", z));
 
     		        // draw trace line
     		        if (showTraceLine && linePoints.size() > 1) {
@@ -352,20 +358,22 @@ public class LogPlayTable extends JDialog {
     private void createDataPanel() {
         dataPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
-        gbl_dataPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0};
-        gbl_dataPanel.rowHeights = new int[] {0, 0};
-        gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-        gbl_dataPanel.rowWeights = new double[]{1.0, 0.0};
+        gbl_dataPanel.columnWidths = new int[] {0, 0};
+        gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataPanel.columnWeights = new double[]{1.0, 0.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         dataPanel.setLayout(gbl_dataPanel);
         getContentPane().add(dataPanel);
         
         addTable();
-        addLabel(0, "X:");
+        addLabel(0, "X-Axis");
         xText = addTextBox(1);
-        addLabel(2, "Y:");
+        addLabel(2, "Y-Axis");
         yText = addTextBox(3);
-        addLabel(4, "Value:");
+        addLabel(4, "Calc Value");
         valueText = addTextBox(5);
+        addLabel(6, "Log Value");
+        zText = addTextBox(7);
     }
     
     private void addTable() {
@@ -388,31 +396,32 @@ public class LogPlayTable extends JDialog {
         gbc_playTable.weighty = 1.0;
         gbc_playTable.gridx = 0;
         gbc_playTable.gridy = 0;
-        gbc_playTable.gridwidth = 6;
+        gbc_playTable.gridheight = 8;
         dataPanel.add(playTable, gbc_playTable);
     }
     
-    private void addLabel(int column, String text) {
+    private void addLabel(int row, String text) {
         JLabel label = new JLabel(text);
         GridBagConstraints gbc_label = new GridBagConstraints();
-        gbc_label.anchor = GridBagConstraints.WEST;
+        gbc_label.anchor = GridBagConstraints.SOUTHWEST;
         gbc_label.insets = insetsLabel;
-        gbc_label.gridx = column;
-        gbc_label.gridy = 1;
+        gbc_label.gridx = 1;
+        gbc_label.gridy = row;
         dataPanel.add(label, gbc_label);
     }
     
-    private JTextField addTextBox(int column) {
+    private JTextField addTextBox(int row) {
     	JTextField text = new JTextField();
+    	text.setBackground(Color.WHITE);
     	text.setColumns(6);
     	text.setEditable(false);
     	text.setText("0");
     	text.setHorizontalAlignment(SwingConstants.RIGHT);
         GridBagConstraints gbc_text = new GridBagConstraints();
-        gbc_text.anchor = GridBagConstraints.WEST;
+        gbc_text.anchor = GridBagConstraints.NORTHWEST;
         gbc_text.insets = insetsText;
-        gbc_text.gridx = column;
-        gbc_text.gridy = 1;
+        gbc_text.gridx = 1;
+        gbc_text.gridy = row;
         dataPanel.add(text, gbc_text);
         return text;
     }

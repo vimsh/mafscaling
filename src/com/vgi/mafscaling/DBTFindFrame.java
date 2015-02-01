@@ -290,7 +290,5 @@ class DBTFindFrame extends JDialog implements ActionListener
 			doWork(false, true);
 		else if (e.getSource() == closeButton)
 			setVisible(false);
-		//else if (e.getSource() == searchRow || e.getSource() == searchColumn)
-		//	lastLoc = new Point(0, 0);
 	}
 } 

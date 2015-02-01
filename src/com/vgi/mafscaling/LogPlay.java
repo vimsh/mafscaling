@@ -68,17 +68,19 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     public class TableHolder {
 		public int xColIdx;
 		public int yColIdx;
+		public int zColIdx;
 		public LogPlayTable table;
 
-		TableHolder(int x, int y, LogPlayTable t) {
+		TableHolder(int x, int y, int z, LogPlayTable t) {
         	xColIdx = x;
         	yColIdx = y;
+        	zColIdx = z;
         	table = t;
         	table.addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
         			int size;
 	        		synchronized (lock) {
-	                	tables.remove(new TableHolder(xColIdx, yColIdx, table));
+	                	tables.remove(new TableHolder(xColIdx, yColIdx, zColIdx, table));
 	                	size = tables.size();
 	        		}
                 	if (size == 0)
@@ -154,6 +156,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private JButton newPlayButton = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
+    private JComboBox<String> zAxisColumn = null;
     private JCheckBox showIntepCells = null;
     private JCheckBox showSignifCells = null;
     private JCheckBox showTraceLine = null;
@@ -225,9 +228,9 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 	private void createSelectionPanel() {
 		JPanel selectionPanel = new JPanel();
         GridBagLayout gbl_selectionPanel = new GridBagLayout();
-        gbl_selectionPanel.columnWidths = new int[]{0, 0, 0, 0, 0};
+        gbl_selectionPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0};
         gbl_selectionPanel.rowHeights = new int[]{0};
-        gbl_selectionPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_selectionPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_selectionPanel.rowWeights = new double[]{0.0};
         selectionPanel.setLayout(gbl_selectionPanel);
 
@@ -241,7 +244,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		
         gbc_selection.gridx++;
         xAxisColumn = new JComboBox<String>();
-        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXX");
         selectionPanel.add(xAxisColumn, gbc_selection);
 
         gbc_selection.gridx++;
@@ -249,8 +252,16 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 
         gbc_selection.gridx++;
         yAxisColumn = new JComboBox<String>();
-        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXX");
         selectionPanel.add(yAxisColumn, gbc_selection);
+
+        gbc_selection.gridx++;
+        selectionPanel.add(new JLabel("Data*"), gbc_selection);
+
+        gbc_selection.gridx++;
+        zAxisColumn = new JComboBox<String>();
+        zAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXX");
+        selectionPanel.add(zAxisColumn, gbc_selection);
 
         gbc_selection.gridx++;
         newPlayButton = new JButton("New Play Table");
@@ -286,16 +297,21 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
                 if (logDataTable != null) {
     				logDataTable.getTable().setRowSelectionInterval(row, row);
     				logDataTable.getTable().changeSelection(row, 0, false, false);
-	                double x, y;
-	                int origXCol, origYCol;
+	                double x, y, z;
+	                int origXCol, origYCol, origZCol;
 	        		synchronized (lock) {
 		                for (TableHolder tableHolder : tables) {
 							try {
 								origXCol = logDataTable.getCurrentIndexForOriginalColumn(tableHolder.xColIdx);
 								origYCol = logDataTable.getCurrentIndexForOriginalColumn(tableHolder.yColIdx);
+								origZCol = logDataTable.getCurrentIndexForOriginalColumn(tableHolder.zColIdx);
 			                	x = Double.valueOf(logDataTable.getValueAt(row, origXCol).toString());
 			                	y = Double.valueOf(logDataTable.getValueAt(row, origYCol).toString());
-			                	tableHolder.table.setCurrentPoint(x, y);
+			                	if (origZCol > 0)
+			                		z = Double.valueOf(logDataTable.getValueAt(row, origZCol).toString());
+			                	else
+			                		z = Double.NaN;
+			                	tableHolder.table.setCurrentPoint(x, y, z);
 							}
 							catch (Exception ex) {
 					            JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + (tableHolder.xColIdx + 1) + ", row " + (row + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
@@ -427,8 +443,10 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
         	String colName;
             xAxisColumn.removeAllItems();
             yAxisColumn.removeAllItems();
+            zAxisColumn.removeAllItems();
             xAxisColumn.addItem("");
             yAxisColumn.addItem("");
+            zAxisColumn.addItem("Optional");
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
 				col = logDataTable.getColumn(i);
 				colName = col.getHeaderValue().toString();
@@ -439,7 +457,9 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		    	col.setPreferredWidth(Math.max(comp.getPreferredSize().width, 60));
                 xAxisColumn.addItem(colName);
                 yAxisColumn.addItem(colName);
+                zAxisColumn.addItem(colName);
 			}
+			zAxisColumn.setSelectedIndex(0);
 			if (logDataTable.getControlPanel().getComponentCount() > 7)
 				logDataTable.getControlPanel().remove(7);
 			logDataTable.getControlPanel().add(new JLabel("   [" + file.getName() + "]"));
@@ -457,7 +477,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 	}
 	
 	void createPlayTable() {
-		int x, y;
+		int x, y, z;
 		x = xAxisColumn.getSelectedIndex() - 1;
 		if (x < 0) {
             JOptionPane.showMessageDialog(null, "Please select 'X-Axis column' from drop-down list", "Error", JOptionPane.ERROR_MESSAGE);
@@ -468,8 +488,10 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
             JOptionPane.showMessageDialog(null, "Please select 'X-Axis column' from drop-down list", "Error", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
+		z = zAxisColumn.getSelectedIndex() - 1;
 		// no need to lock as og isn't being played yet
-		tables.add(new TableHolder(x, y, new LogPlayTable(SwingUtilities.windowForComponent(this), "X-Axis: " + xAxisColumn.getSelectedItem() + "; Y-Axis: " + yAxisColumn.getSelectedItem())));
+		TableHolder th = new TableHolder(x, y, z, new LogPlayTable(SwingUtilities.windowForComponent(this), "X-Axis: " + xAxisColumn.getSelectedItem() + "; Y-Axis: " + yAxisColumn.getSelectedItem()));
+		tables.add(th);
 	}
 	
 	private JButton addToolbarButton(String tooltip, String image) {

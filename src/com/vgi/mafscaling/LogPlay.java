@@ -296,7 +296,8 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
                 int row = progressBar.getValue();
                 if (logDataTable != null) {
     				logDataTable.getTable().setRowSelectionInterval(row, row);
-    				logDataTable.getTable().changeSelection(row, 0, false, false);
+    				int col = logDataTable.getSelectedColumn();
+    				logDataTable.getTable().changeSelection(row, (col > 0 ? col : 0), false, false);
 	                double x, y, z;
 	                int origXCol, origYCol, origZCol;
 	        		synchronized (lock) {

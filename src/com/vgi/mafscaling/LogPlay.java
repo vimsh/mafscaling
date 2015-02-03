@@ -490,7 +490,11 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 		z = zAxisColumn.getSelectedIndex() - 1;
 		// no need to lock as og isn't being played yet
-		TableHolder th = new TableHolder(x, y, z, new LogPlayTable(SwingUtilities.windowForComponent(this), "X-Axis: " + xAxisColumn.getSelectedItem() + "; Y-Axis: " + yAxisColumn.getSelectedItem()));
+		LogPlayTable lpt = new LogPlayTable(SwingUtilities.windowForComponent(this), "X-Axis: " + xAxisColumn.getSelectedItem() + "; Y-Axis: " + yAxisColumn.getSelectedItem());
+		lpt.setShowInterpolationCells(showIntepCells.isSelected());
+		lpt.setShowSignificantCell(showSignifCells.isSelected());
+		lpt.setShowTraceLine(showTraceLine.isSelected());
+		TableHolder th = new TableHolder(x, y, z, lpt);
 		tables.add(th);
 	}
 	

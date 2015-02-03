@@ -23,8 +23,7 @@ import org.apache.log4j.Logger;
 
 import quick.dbtable.DBTable;
 
-class DBTFindFrame extends JDialog implements ActionListener
-{
+class DBTFindFrame extends JDialog implements ActionListener {
 	private static final long serialVersionUID = 1513208156777653811L;
 	private static final Logger logger = Logger.getLogger(DBTFindFrame.class);
 
@@ -49,7 +48,8 @@ class DBTFindFrame extends JDialog implements ActionListener
 				cb.addItem(text);
 		}
 	}
-	
+
+    private Window parent = null;
 	private JPanel mainPanel = null;
 	private JComboBox<String> findCombo = null;
 	private JComboBox<String> replaceCombo = null;
@@ -68,10 +68,10 @@ class DBTFindFrame extends JDialog implements ActionListener
 
 	DBTFindFrame(Window owner, DBTable table, boolean isFind) {
 		super(owner, (isFind ? "Find Dialog" : "Replace Dialog"));
+		parent = owner;
 		dbTable = table;
 		find = isFind;
 		initialize();
-        setLocationRelativeTo(owner);
 	}
 
 	private void initialize() {
@@ -110,8 +110,9 @@ class DBTFindFrame extends JDialog implements ActionListener
 	        pack();
 	        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	        setIconImage(null);
-	        setVisible(true);
 	        setResizable(false);
+	        setLocationRelativeTo(parent);
+	        setVisible(true);
 		}
 		catch (Exception e) {
 			e.printStackTrace();

@@ -52,29 +52,6 @@ import javax.swing.table.DefaultTableModel;
 import org.apache.log4j.Logger;
 
 public class PrimaryOpenLoopFuelingTable implements ActionListener {
-	class RestrictedFileSystemView extends FileSystemView {
-	    private final File rootDirectory;
-	    RestrictedFileSystemView(File rootDirectory) {
-	        this.rootDirectory = rootDirectory;
-	    }
-	    @Override
-	    public File createNewFolder(File dir) {
-			return null;
-		}
-	    public File getParentDirectory(File dir) {
-	    	return new File(".");
-	    }
-	    @Override
-	    public File[] getRoots() {
-	        return new File[] {rootDirectory};
-	    }
-	    @Override
-	    public boolean isRoot(File file) {
-	    	if (file.equals(rootDirectory))
-	    		return true;
-	        return false;
-	    }
-	}
     private static final Logger logger = Logger.getLogger(PrimaryOpenLoopFuelingTable.class);
     private final static int ColumnWidth = 45;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
@@ -91,7 +68,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     	File appdir = new File(".");
     	FileSystemView fsv = new RestrictedFileSystemView(appdir);
     	fileChooser = new JFileChooser(fsv);
-    	fileChooser.setCurrentDirectory(appdir);
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
     	if (!fileName.isEmpty()) {
     		fuelingTable = loadPolFueling(fuelingTable, fileName);
     		if (fuelingTable == null) {

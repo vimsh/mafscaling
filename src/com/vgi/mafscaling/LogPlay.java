@@ -18,6 +18,7 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -26,10 +27,16 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Stroke;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Properties;
@@ -39,7 +46,9 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -57,6 +66,23 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.TableCellRenderer;
 import org.apache.log4j.Logger;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartMouseEvent;
+import org.jfree.chart.ChartMouseListener;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.labels.StandardXYSeriesLabelGenerator;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.ValueMarker;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
+import org.jfree.ui.RectangleEdge;
+
 import quick.dbtable.Column;
 import quick.dbtable.DBTable;
 import quick.dbtable.Skin;
@@ -138,6 +164,227 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 
     }
+    
+    public class PlayAreaSelector extends JDialog {
+    	private static final long serialVersionUID = 8151299923726511132L;
+    	private JDialog dialog;
+    	private LogPlay logPlay;
+        private JComboBox<String> columnSelection = new JComboBox<String>();
+        private JButton cancelButton = new JButton("Cancel");
+        private JButton setButton = new JButton("Set");
+        private Window parent = null;
+        private ChartPanel chartPanel = null;
+        private XYSeries series = new XYSeries("");
+        private Stroke stroke = new BasicStroke(1.5f);
+        private ValueMarker startMarker = null;
+        private ValueMarker endMarker = null;
+        private int columnIdx = 0;
+    	
+    	public PlayAreaSelector(LogPlay sp) {
+        	super(SwingUtilities.windowForComponent(sp), "Select play area");
+        	logPlay = sp;
+        	dialog = this;
+        	parent = SwingUtilities.windowForComponent(sp);
+        	initialize();
+    	}
+    	
+    	private void initialize() {
+            JPanel dataPanel = new JPanel();
+            GridBagLayout gbl_dataPanel = new GridBagLayout();
+            gbl_dataPanel.columnWidths = new int[] {0, 0, 0, 0};
+            gbl_dataPanel.rowHeights = new int[] {0, 0};
+            gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 1.0, 0.0};
+            gbl_dataPanel.rowWeights = new double[]{0.0, 1.0};
+            dataPanel.setLayout(gbl_dataPanel);
+            getContentPane().add(dataPanel);
+            
+            GridBagConstraints gbc = new GridBagConstraints();
+            gbc.anchor = GridBagConstraints.EAST;
+            gbc.insets = new Insets(3, 10, 3, 0);
+            gbc.gridx = 0;
+            gbc.gridy = 0;
+            
+            dataPanel.add(new JLabel("Select Column to View"), gbc);
+            
+    		columnSelection.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXX");
+    		for (int i = 0; i < xAxisColumn.getItemCount(); ++i)
+    			columnSelection.addItem(xAxisColumn.getItemAt(i));
+    		columnSelection.addItemListener(new ItemListener() {
+    		    @Override
+    		    public void itemStateChanged(ItemEvent event) {
+    		    	if (event.getStateChange() == ItemEvent.SELECTED) {
+    		    		columnIdx = columnSelection.getSelectedIndex() - 1;
+    		    		if (columnIdx >= 0) {
+				    		columnIdx = logDataTable.getCurrentIndexForOriginalColumn(columnIdx);
+				    		series.clear();
+				    		chartPanel.getChart().getXYPlot().clearDomainMarkers();
+				    		startMarker = null;
+				    		endMarker = null;
+					    	series.setDescription((String)event.getItem());
+				    		double val;
+				    		for (int i = 0; i < logDataTable.getRowCount(); ++i) {
+				    			val = Double.valueOf(logDataTable.getValueAt(i, columnIdx).toString());
+								series.add(i, val, false);
+				    		}
+							series.fireSeriesChanged();
+    		    		}
+    		       }
+    		    }       
+    		});
+            gbc.insets = insets3;
+    		gbc.gridx = 1;
+            dataPanel.add(columnSelection, gbc);
+
+            cancelButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent event) {
+					dialog.dispose();
+				}
+            });
+    		gbc.gridx = 2;
+            dataPanel.add(cancelButton, gbc);
+
+            setButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent event) {
+					int start = (startMarker == null ? -1 : (int)startMarker.getValue());
+					int end = (endMarker == null ? -1 : (int)endMarker.getValue());
+					logPlay.setStartEndArea(start, end);
+					dialog.dispose();
+				}
+            });
+    		gbc.gridx = 3;
+            gbc.insets = new Insets(3, 0, 3, 10);
+            dataPanel.add(setButton, gbc);
+
+            JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
+            chartPanel = new ChartPanel(chart, false, false, false, true, false);
+    		chartPanel.setAutoscrolls(true);
+    		chartPanel.setPopupMenu(null);
+    		XYLineAndShapeRenderer plotRenderer = new XYLineAndShapeRenderer();		
+			plotRenderer.setSeriesShapesVisible(0, false);
+			plotRenderer.setSeriesPaint(0, Color.BLUE);
+			plotRenderer.setLegendItemLabelGenerator(
+        		new StandardXYSeriesLabelGenerator() {
+					private static final long serialVersionUID = -2037811005529575231L;
+					public String generateLabel(XYDataset dataset, int seriesid) {
+						return (series.getItemCount() > 0 ? series.getDescription() : "");
+					}
+        		}
+	        );
+	        
+			NumberAxis xAxis = new NumberAxis("Time");
+	        xAxis.setAutoRangeIncludesZero(false);
+	        NumberAxis yAxis = new NumberAxis("Value");
+	        yAxis.setAutoRangeIncludesZero(false);
+
+            final XYPlot plot = chart.getXYPlot();
+            plot.setRangePannable(true);
+            plot.setDomainPannable(true);
+            plot.setDomainGridlinePaint(Color.DARK_GRAY);
+            plot.setRangeGridlinePaint(Color.DARK_GRAY);
+            plot.setBackgroundPaint(new Color(224, 224, 224));
+            plot.setDataset(0, new XYSeriesCollection(series));
+            plot.setRenderer(0, plotRenderer);
+            plot.setDomainAxis(0, xAxis);
+            plot.setRangeAxis(0, yAxis);
+            plot.mapDatasetToDomainAxis(0, 0);
+            plot.mapDatasetToRangeAxis(0, 0);
+
+	        LegendTitle legend = new LegendTitle(plot.getRenderer()); 
+	        legend.setItemFont(new Font("Arial", 0, 10));
+	        legend.setPosition(RectangleEdge.TOP);
+	        chart.addLegend(legend);
+
+	        chartPanel.addChartMouseListener(
+	        	new ChartMouseListener() {
+	    			@Override
+	        		public void chartMouseMoved(ChartMouseEvent event) {
+        				if (columnIdx < 0)
+        					return;
+	        			try {
+	        				int x = resetMarker(event);
+	        				if (x >= 0 && x < logDataTable.getRowCount()) {
+		        				logDataTable.getTable().setRowSelectionInterval(x, x);
+		        				logDataTable.getTable().changeSelection(x, columnIdx, false, false);
+	        				}
+	        			}
+	        			catch (Exception e) {
+	        	    		e.printStackTrace();
+	        			}
+	    			}
+					@Override
+					public void chartMouseClicked(ChartMouseEvent event) {
+        				if (columnIdx < 0)
+        					return;
+						if (SwingUtilities.isLeftMouseButton(event.getTrigger())) {
+							if (startMarker == null) {
+								startMarker = new ValueMarker(getXFromMousePosition(event));
+								startMarker.setPaint(Color.GREEN);
+								startMarker.setStroke(stroke);
+								resetMarker(event);
+							}
+							else {
+								startMarker = null;
+								resetMarker(event);
+							}
+						}
+						else if (SwingUtilities.isRightMouseButton(event.getTrigger())) {
+							if (endMarker == null) {
+								endMarker = new ValueMarker(getXFromMousePosition(event));
+								endMarker.setPaint(Color.GREEN);
+								endMarker.setStroke(stroke);
+								resetMarker(event);
+							}
+							else {
+								endMarker = null;
+								resetMarker(event);
+							}
+						}
+					}
+	        	}
+	        );
+
+    		gbc.gridx = 0;
+    		gbc.gridy = 1;
+    		gbc.gridwidth = 4;
+            gbc.weightx = 1.0;
+            gbc.weighty = 1.0;
+            gbc.fill = GridBagConstraints.BOTH;
+            dataPanel.add(chartPanel, gbc);
+            
+	        pack();
+	        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	        setIconImage(null);
+	        setLocationRelativeTo(parent);
+	        setVisible(true);
+    	}
+
+		public int resetMarker(ChartMouseEvent event) {
+			XYPlot plot = chartPanel.getChart().getXYPlot();
+			plot.clearDomainMarkers();
+			double x = getXFromMousePosition(event);
+	        if (x >= 0 && series.getItemCount() > (int)x) {
+	        	ValueMarker marker = new ValueMarker(x);
+		        marker.setPaint(Color.RED);
+		        marker.setStroke(stroke);
+				plot.addDomainMarker(marker);
+	        }
+			if (startMarker != null)
+				plot.addDomainMarker(startMarker);
+			if (endMarker != null)
+				plot.addDomainMarker(endMarker);
+			chartPanel.repaint();
+			return (int)x;
+		}
+		
+		public double getXFromMousePosition(ChartMouseEvent event) {
+            Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+	        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
+			XYPlot plot = chartPanel.getChart().getXYPlot();
+            return plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
+		}
+    }
 
     private final int step = 20;
     private Timer timer = null;
@@ -154,6 +401,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private JButton ffwButton = null;
     private JButton rewButton = null;
     private JButton newPlayButton = null;
+    private JButton setPlayAreaButton = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JComboBox<String> zAxisColumn = null;
@@ -162,8 +410,11 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private JCheckBox showTraceLine = null;
     private JSlider progressBar = null;
     private HashSet<TableHolder> tables = new HashSet<TableHolder>();
+    private PlayAreaSelector playAreaSelector = null;
     private Object lock = new Object();
     private volatile boolean playing = false;
+    private int startPlay = -1;
+    private int endPlay = -1;
     private int timerDelay = 200;
     private AtomicInteger playNext = null;
     private ImageIcon playIcon = null;
@@ -274,26 +525,29 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
     private void createPlayer(JPanel panel) {
     	playerPanel = new JPanel();
 	    GridBagLayout gbl_playerPanel = new GridBagLayout();
-	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0, 0};
+	    gbl_playerPanel.columnWidths = new int[] {0, 0, 0, 0, 0, 0, 0, 0};
 	    gbl_playerPanel.rowHeights = new int[] {0, 0, 0, 0};
-	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+	    gbl_playerPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
 	    gbl_playerPanel.rowWeights = new double[]{0.0, 0.0};
 	    playerPanel.setLayout(gbl_playerPanel);
+	    
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = insets0;
+        gbc.anchor = GridBagConstraints.PAGE_START;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
 
 	    progressBar = new JSlider(0, 0, 0);
-        GridBagConstraints gbl_progressBar = new GridBagConstraints();
-        gbl_progressBar.insets = insets0;
-        gbl_progressBar.anchor = GridBagConstraints.PAGE_START;
-        gbl_progressBar.fill = GridBagConstraints.HORIZONTAL;
-        gbl_progressBar.gridx = 0;
-        gbl_progressBar.gridy = 0;
-        gbl_progressBar.weightx = 1.0;
-        gbl_progressBar.gridwidth = gbl_playerPanel.columnWidths.length;
-        playerPanel.add(progressBar, gbl_progressBar);
-        
         progressBar.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 int row = progressBar.getValue();
+                if (endPlay >= 0 && endPlay < row) {
+                	startPlay = -1;
+                	endPlay = -1;
+                	stop();
+                	return;
+                }
                 if (logDataTable != null) {
     				logDataTable.getTable().setRowSelectionInterval(row, row);
     				int col = logDataTable.getSelectedColumn();
@@ -325,6 +579,9 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
                 }
             }
         });
+        gbc.weightx = 1.0;
+        gbc.gridwidth = gbl_playerPanel.columnWidths.length;
+        playerPanel.add(progressBar, gbc);
 	    
         stopButton = addPlayerButton(0, new ImageIcon(getClass().getResource("/stop.png")));
         rewButton = addPlayerButton(1, new ImageIcon(getClass().getResource("/rew.png")));
@@ -333,14 +590,19 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
         showIntepCells = addCheckBox(4, "Show interpolation cells");
         showSignifCells = addCheckBox(5, "Show significant cell");
         showTraceLine = addCheckBox(6, "Show trace line");
-        
-        GridBagConstraints gbc_playerPanel = new GridBagConstraints();
-        gbc_playerPanel.insets = insets0;
-        gbc_playerPanel.anchor = GridBagConstraints.PAGE_START;
-        gbc_playerPanel.fill = GridBagConstraints.HORIZONTAL;
-        gbc_playerPanel.gridx = 0;
-        gbc_playerPanel.gridy = 0;
-        panel.add(playerPanel, gbc_playerPanel);
+
+		setPlayAreaButton = new JButton("Set Play Area");
+		setPlayAreaButton.addActionListener(this);
+        GridBagConstraints gbc_setPlayAreaButton = new GridBagConstraints();
+        gbc_setPlayAreaButton.insets = insets0;
+        gbc_setPlayAreaButton.anchor = GridBagConstraints.WEST;
+        gbc_setPlayAreaButton.gridx = 7;
+        gbc_setPlayAreaButton.gridy = 1;
+        playerPanel.add(setPlayAreaButton, gbc_setPlayAreaButton);
+
+        gbc.weightx = 0.0;
+        gbc.gridwidth = 0;
+        panel.add(playerPanel, gbc);
     }
 
     private void createLogDataPanel(JPanel panel) {
@@ -376,13 +638,13 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 				col.setHeaderRenderer(new TableHeaderRenderer());
 			}
 			
-	        GridBagConstraints gbl_logDataTable = new GridBagConstraints();
-	        gbl_logDataTable.insets = insets0;
-	        gbl_logDataTable.anchor = GridBagConstraints.PAGE_START;
-	        gbl_logDataTable.fill = GridBagConstraints.BOTH;
-	        gbl_logDataTable.gridx = 0;
-	        gbl_logDataTable.gridy = 0;
-	        logViewPanel.add(logDataTable, gbl_logDataTable);
+	        GridBagConstraints gbc_logDataTable = new GridBagConstraints();
+	        gbc_logDataTable.insets = insets0;
+	        gbc_logDataTable.anchor = GridBagConstraints.PAGE_START;
+	        gbc_logDataTable.fill = GridBagConstraints.BOTH;
+	        gbc_logDataTable.gridx = 0;
+	        gbc_logDataTable.gridy = 0;
+	        logViewPanel.add(logDataTable, gbc_logDataTable);
 	        
 	        GridBagConstraints gbc_logViewPanel = new GridBagConstraints();
 	        gbc_logViewPanel.insets = insets0;
@@ -516,24 +778,24 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		button.setBorderPainted(false);
 		button.setContentAreaFilled(false);
 		button.addActionListener(this);
-        GridBagConstraints gbl_button = new GridBagConstraints();
-        gbl_button.insets = insets0;
-        gbl_button.anchor = GridBagConstraints.WEST;
-        gbl_button.gridx = column;
-        gbl_button.gridy = 1;
-        playerPanel.add(button, gbl_button);
+        GridBagConstraints gbc_button = new GridBagConstraints();
+        gbc_button.insets = insets0;
+        gbc_button.anchor = GridBagConstraints.WEST;
+        gbc_button.gridx = column;
+        gbc_button.gridy = 1;
+        playerPanel.add(button, gbc_button);
         return button;
 	}
 	
 	private JCheckBox addCheckBox(int column, String text) {
 		JCheckBox check = new JCheckBox(text);
 		check.addActionListener(this);
-        GridBagConstraints gbl_check = new GridBagConstraints();
-        gbl_check.insets = insets0;
-        gbl_check.anchor = GridBagConstraints.WEST;
-        gbl_check.gridx = column;
-        gbl_check.gridy = 1;
-        playerPanel.add(check, gbl_check);
+        GridBagConstraints gbc_check = new GridBagConstraints();
+        gbc_check.insets = insets0;
+        gbc_check.anchor = GridBagConstraints.WEST;
+        gbc_check.gridx = column;
+        gbc_check.gridy = 1;
+        playerPanel.add(check, gbc_check);
         return check;
 	}
 	
@@ -545,12 +807,18 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 		if (playing)
 			return;
+    	if (startPlay >= 0) {
+			logDataTable.getTable().setRowSelectionInterval(startPlay, startPlay);
+			int col = logDataTable.getSelectedColumn();
+			logDataTable.getTable().changeSelection(startPlay, (col > 0 ? col : 0), false, false);
+    	}
         progressBar.setValue(logDataTable.getSelectedRow());
 		timer.setDelay(timerDelay);
 		playNext.set(1);
         playing = true;
         timer.start();
 		playButton.setIcon(pauseIcon);
+		setPlayAreaButton.setEnabled(false);
 		newPlayButton.setEnabled(false);
 		logDataTable.setEditable(false);
 		synchronized (lock) {
@@ -567,6 +835,7 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
         playing = false;
         timer.stop();
 		playButton.setIcon(playIcon);
+		setPlayAreaButton.setEnabled(true);
 		newPlayButton.setEnabled(true);
 		logDataTable.setEditable(true);
 		synchronized (lock) {
@@ -613,6 +882,11 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 				t.table.setShowTraceLine(showTraceLine.isSelected());
 		}
 	}
+	
+	public void setStartEndArea(int start, int end) {
+    	startPlay = Math.min(start, end);
+    	endPlay = Math.max(start, end);
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -653,6 +927,11 @@ public class LogPlay extends FCTabbedPane implements ActionListener {
 		}
 		else if (e.getSource() == showTraceLine) {
 			setShowTraceLine();
+		}
+		else if (e.getSource() == setPlayAreaButton) {
+	    	if (playAreaSelector != null)
+	    		playAreaSelector.dispose();
+			playAreaSelector = new PlayAreaSelector(this);
 		}
 	}
 

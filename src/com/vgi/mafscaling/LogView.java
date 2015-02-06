@@ -448,13 +448,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			rowTextField.setPreferredSize(null);
 			rowTextField.setColumns(5);
 
-	        GridBagConstraints gbl_logDataTable = new GridBagConstraints();
-	        gbl_logDataTable.insets = insets0;
-	        gbl_logDataTable.anchor = GridBagConstraints.PAGE_START;
-	        gbl_logDataTable.fill = GridBagConstraints.BOTH;
-	        gbl_logDataTable.gridx = 0;
-	        gbl_logDataTable.gridy = 0;
-	        logViewPanel.add(logDataTable, gbl_logDataTable);
+	        GridBagConstraints gbc_logDataTable = new GridBagConstraints();
+	        gbc_logDataTable.insets = insets0;
+	        gbc_logDataTable.anchor = GridBagConstraints.PAGE_START;
+	        gbc_logDataTable.fill = GridBagConstraints.BOTH;
+	        gbc_logDataTable.gridx = 0;
+	        gbc_logDataTable.gridy = 0;
+	        logViewPanel.add(logDataTable, gbc_logDataTable);
 	        listModel = new DefaultListModel<JLabel>(); 
 	        
 	    	selectionCombo.removeAllItems();
@@ -511,14 +511,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
     		});
 			
 	        headerScrollPane = new JScrollPane(menuList);
-	        GridBagConstraints gbl_headersTree = new GridBagConstraints();
-	        gbl_headersTree.insets = insets0;
-	        gbl_headersTree.anchor = GridBagConstraints.PAGE_START;
-	        gbl_headersTree.fill = GridBagConstraints.BOTH;
-	        gbl_headersTree.gridx = 0;
-	        gbl_headersTree.gridy = 1;
+	        GridBagConstraints gbc_headersTree = new GridBagConstraints();
+	        gbc_headersTree.insets = insets0;
+	        gbc_headersTree.anchor = GridBagConstraints.PAGE_START;
+	        gbc_headersTree.fill = GridBagConstraints.BOTH;
+	        gbc_headersTree.gridx = 0;
+	        gbc_headersTree.gridy = 1;
 			
-	        logViewPanel.add(headerScrollPane, gbl_headersTree);
+	        logViewPanel.add(headerScrollPane, gbc_headersTree);
 	        headerScrollPane.setVisible(false);
 			
 		}
@@ -703,8 +703,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        					int slectedCol = logDataTable.getTable().getSelectedColumn();
 	        					if (slectedCol < 0)
 	        						slectedCol = col;
-		        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
-		        				logDataTable.getTable().changeSelection((int)x, slectedCol, false, false);
+		        				if (x >= 0 && x < logDataTable.getRowCount()) {
+			        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
+			        				logDataTable.getTable().changeSelection((int)x, slectedCol, false, false);
+		        				}
 	        				}
 	        				catch (Exception e) { /* ignore */ }
         		        }
@@ -735,14 +737,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plotPanel.setLayout(gbl_plotPanel);
 
         JPanel cntlPanel = new JPanel();
-        GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
-        gbl_ctrlPanel.insets = insets3;
-        gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
-        gbl_ctrlPanel.weightx = 1.0;
-        gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
-        gbl_ctrlPanel.gridx = 0;
-        gbl_ctrlPanel.gridy = 0;
-        plotPanel.add(cntlPanel, gbl_ctrlPanel);
+        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
+        gbc_ctrlPanel.insets = insets3;
+        gbc_ctrlPanel.anchor = GridBagConstraints.NORTH;
+        gbc_ctrlPanel.weightx = 1.0;
+        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbc_ctrlPanel.gridx = 0;
+        gbc_ctrlPanel.gridy = 0;
+        plotPanel.add(cntlPanel, gbc_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
         gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
@@ -809,15 +811,15 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plot3d.getAxis(1).setColor(Color.BLACK);
         plot3d.getAxis(2).setColor(Color.BLACK);
         
-        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
-        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
-        gbl_chartPanel.insets = insets3;
-        gbl_chartPanel.weightx = 1.0;
-        gbl_chartPanel.weighty = 1.0;
-        gbl_chartPanel.fill = GridBagConstraints.BOTH;
-        gbl_chartPanel.gridx = 0;
-        gbl_chartPanel.gridy = 1;
-        plotPanel.add(plot3d, gbl_chartPanel);
+        GridBagConstraints gbc_chartPanel = new GridBagConstraints();
+        gbc_chartPanel.anchor = GridBagConstraints.CENTER;
+        gbc_chartPanel.insets = insets3;
+        gbc_chartPanel.weightx = 1.0;
+        gbc_chartPanel.weighty = 1.0;
+        gbc_chartPanel.fill = GridBagConstraints.BOTH;
+        gbc_chartPanel.gridx = 0;
+        gbc_chartPanel.gridy = 1;
+        plotPanel.add(plot3d, gbc_chartPanel);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////

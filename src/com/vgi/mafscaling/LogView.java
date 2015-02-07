@@ -32,7 +32,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -77,7 +76,6 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.StandardTickUnitSource;
-import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
@@ -384,7 +382,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox plotsColumn = null;
+    private ValueMarker rpmMarker = null;
+    private ArrayList<ValueMarker> markers = new ArrayList<ValueMarker>();
     private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
+	private int offset = 0;
     private Stack<Color> colors = new Stack<Color>();
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
@@ -482,7 +483,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
         					JList<?> list = (JList<?>)e.getSource();
         					int index = list.locationToIndex(e.getPoint());
         					if (index >= 0) {
-        						Column col = logDataTable.getColumn(index);
+        						int colIdx = logDataTable.getCurrentIndexForOriginalColumn(index);
+        						Column col = logDataTable.getColumn(colIdx);
         						if (col.getHeaderRenderer() instanceof CheckboxHeaderRenderer) {
         							CheckboxHeaderRenderer renderer = (CheckboxHeaderRenderer)col.getHeaderRenderer();
 	        			            JLabel label = (JLabel)list.getModel().getElementAt(index);
@@ -645,68 +647,47 @@ public class LogView extends FCTabbedPane implements ActionListener {
                         Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
         		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
                         double x = plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
-                        double midX = (dataArea.getMaxX() - dataArea.getMinX()) / 2;
-        				int offset = 0;
-        				int col = -1;
-        				RectangleAnchor rectangleAnchor = null;
-        				TextAnchor textAnchor = null;
-        		        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0) && x >= 0 && rpmDataset.getSeries(0).getItemCount() > (int)x) {
-        		        	if (p.getX() < midX) {
-	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
-	        		        	textAnchor = TextAnchor.TOP_LEFT;
-        		        	}
-        		        	else {
-            		        	rectangleAnchor = RectangleAnchor.TOP_LEFT;
-	        		        	textAnchor = TextAnchor.TOP_RIGHT;
-        		        	}
-        		        	col = rpmCol;
-            		        Marker xMarker = new ValueMarker(x);
-            				xMarker.setLabelAnchor(rectangleAnchor);
-            				xMarker.setLabelTextAnchor(textAnchor);
-            				xMarker.setPaint(Color.WHITE);
-            				xMarker.setLabelFont(curveLabelFont);
-            				xMarker.setLabelPaint(rpmPlotRenderer.getSeriesPaint(0));
-            				xMarker.setLabel(rpmDataset.getSeries(0).getDescription() + ": " + rpmDataset.getSeries(0).getY((int)x));
-            				xMarker.setLabelOffset(new RectangleInsets(2, 5, 2, 5));
+        				int seriesLength = logDataTable.getRowCount();
+                        if (x < 0 || (int)x >= seriesLength)
+                        	return;
+                        offset = 0;
+                        boolean addedMarkers = false;
+        				RectangleAnchor rectangleAnchor = RectangleAnchor.TOP_LEFT;
+        				TextAnchor textAnchor = TextAnchor.TOP_RIGHT;
+    		        	if (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) {
+        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
+        		        	textAnchor = TextAnchor.TOP_LEFT;
+    		        	}
+        		        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0)) {
+        		        	addedMarkers = true;
+            				rpmMarker.setValue(x);
+            				rpmMarker.setLabelAnchor(rectangleAnchor);
+            				rpmMarker.setLabelTextAnchor(textAnchor);
+            				rpmMarker.setLabel(rpmDataset.getSeries(0).getDescription() + ": " + rpmDataset.getSeries(0).getY((int)x));
             				offset += 20;
-            				plot.addDomainMarker(xMarker);
+            				plot.addDomainMarker(rpmMarker);
         		        }
         		        for (int i = 0; i < dataset.getSeriesCount(); ++i) {
-        		        	if (rectangleAnchor == null) {
-            		        	if (p.getX() < midX) {
-    	        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
-    	        		        	textAnchor = TextAnchor.TOP_LEFT;
-            		        	}
-            		        	else {
-                		        	rectangleAnchor = RectangleAnchor.TOP_LEFT;
-    	        		        	textAnchor = TextAnchor.TOP_RIGHT;
-            		        	}
-        		        	}
-	        		        if (plotRenderer.isSeriesVisible(i) && x >= 0 && dataset.getSeries(i).getItemCount() > (int)x) {
-	        		        	if (col == -1)
-	        		        		col = i;
-	            		        Marker xMarker = new ValueMarker(x);
+	        		        if (plotRenderer.isSeriesVisible(i)) {
+	        		        	addedMarkers = true;
+	            		        ValueMarker xMarker = markers.get(i);
+	            		        xMarker.setValue(x);
 	            				xMarker.setLabelAnchor(rectangleAnchor);
 	            				xMarker.setLabelTextAnchor(textAnchor);
-	            				xMarker.setPaint(Color.WHITE);
-	            				xMarker.setLabelFont(curveLabelFont);
-		        				xMarker.setLabelPaint(plotRenderer.getSeriesPaint(i));
 		        				xMarker.setLabel(dataset.getSeries(i).getDescription() + ": " + dataset.getSeries(i).getY((int)x));
 	            				xMarker.setLabelOffset(new RectangleInsets(2 + offset, 5, 2, 5));	            				
 	            				offset += 20;
 		        				plot.addDomainMarker(xMarker);
 	        		        }
         		        }
-        		        if (col >= 0) {
+        		        if (addedMarkers) {
 	        				chartPanel.repaint();
 	        				try {
-	        					int slectedCol = logDataTable.getTable().getSelectedColumn();
-	        					if (slectedCol < 0)
-	        						slectedCol = col;
-		        				if (x >= 0 && x < logDataTable.getRowCount()) {
-			        				logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
-			        				logDataTable.getTable().changeSelection((int)x, slectedCol, false, false);
-		        				}
+	        					int selectedCol = logDataTable.getTable().getSelectedColumn();
+	        					if (selectedCol < 0)
+	        						selectedCol = 0;
+	        					logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
+	        					logDataTable.getTable().changeSelection((int)x, selectedCol, false, false);
 	        				}
 	        				catch (Exception e) { /* ignore */ }
         		        }
@@ -950,6 +931,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private void addXYSeries(TableModel model, int column, String name, Color color) {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
     	try {
+			markers.get(column - 1).setLabelPaint(color);
 			if ((column - 1) == rpmCol) {
 		        ((NumberAxis)plot.getRangeAxis(0)).setStandardTickUnits(NumberAxis.createIntegerTickUnits());
 		        plot.getRangeAxis(0).setTickLabelsVisible(true);
@@ -1003,9 +985,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		logDataTable.filter(null);
 		filterText.setText("");
         try {
-        	JTableHeader header = logDataTable.getTableHeader();
-        	for (MouseListener listener : header.getMouseListeners())
-        		header.removeMouseListener(listener);
         	logDataTable.refresh(file.toURI().toURL(), prop);
         	Column col;
         	String colName;
@@ -1014,6 +993,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        CheckboxHeaderRenderer renderer;
         	Component comp;
         	XYSeries series;
+        	markers.clear();
             xAxisColumn.removeAllItems();
             yAxisColumn.removeAllItems();
             plotsColumn.removeAllItems();
@@ -1045,11 +1025,16 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				plotRenderer.setSeriesVisible(i, false);
 				selectionCombo.addItem(colName);
 	    		listModel.addElement(new JLabel(colName, renderer.getCheckIcon(), JLabel.LEFT));
+				ValueMarker marker = new ValueMarker(0);
+				marker.setPaint(Color.WHITE);
+				marker.setLabelFont(curveLabelFont);
+				markers.add(marker);
 				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))) {
 					rpmDataset.addSeries(series);
 					rpmPlotRenderer.setSeriesShapesVisible(0, false);
 					rpmPlotRenderer.setSeriesVisible(0, false);
 					rpmCol = i;
+					rpmMarker = marker;
 				}
 				for (int j = 0; j < logDataTable.getRowCount(); ++j) {
 					try {
@@ -1086,17 +1071,18 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	XYSeries series;
 		int seriesIdx = 0;
 		for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
-			col = logDataTable.getColumn(i);
+			int colIdx = logDataTable.getCurrentIndexForOriginalColumn(i);
+			col = logDataTable.getColumn(colIdx);
 			colName = col.getHeaderValue().toString();
 	    	series = dataset.getSeries(seriesIdx++);
 			if (!series.getDescription().equals(colName)) {
-	            JOptionPane.showMessageDialog(null, "Invalid series found for the column index " + i + ": series name " + series.getDescription() + " doesn't match column name " + colName, "Invalid value", JOptionPane.ERROR_MESSAGE);
+	            JOptionPane.showMessageDialog(null, "Invalid series found for the column index " + colIdx + ": series name " + series.getDescription() + " doesn't match column name " + colName, "Invalid value", JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 			series.clear();
 			for (int j = 0; j < logDataTable.getRowCount(); ++j) {
 				try {
-					val = (String)logDataTable.getValueAt(j, i);
+					val = (String)logDataTable.getValueAt(j, colIdx);
 					series.add(j, Double.valueOf(val), false);
 				}
 				catch (Exception e) {
@@ -1127,7 +1113,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	}
 
         int xColIdx = logDataTable.getColumnByHeaderName(xAxisColName).getModelIndex() - 1;
+        xColIdx = logDataTable.getCurrentIndexForOriginalColumn(xColIdx);
         int yColIdx = logDataTable.getColumnByHeaderName(yAxisColName).getModelIndex() - 1;
+        yColIdx = logDataTable.getCurrentIndexForOriginalColumn(yColIdx);
     	ArrayList<Color> colorsArray = new ArrayList<Color>();
     	colorsArray.add(Color.BLUE);
     	colorsArray.add(Color.RED);
@@ -1139,6 +1127,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	for (int j = 0; j < dataColNames.size(); ++j) {
     		HashSet<XYZ> uniqueXYZ = new HashSet<XYZ>();
 	        int zColIdx = logDataTable.getColumnByHeaderName(dataColNames.get(j)).getModelIndex() - 1;
+	        zColIdx = logDataTable.getCurrentIndexForOriginalColumn(zColIdx);
 	        int count = 0;
 	        double[][] xyzArrayTemp = new double[logDataTable.getRowCount()][3];
 	        for (int i = 0; i < logDataTable.getRowCount(); ++i) {

@@ -18,6 +18,7 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -32,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
@@ -85,7 +87,6 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
 import org.jfree.ui.RectangleEdge;
-import org.jfree.ui.RectangleInsets;
 import org.jfree.ui.TextAnchor;
 import org.math.plot.Plot3DPanel;
 import quick.dbtable.Column;
@@ -293,11 +294,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
     
     public class CheckboxHeaderRenderer implements TableCellRenderer {
     	private final CheckBoxIcon checkIcon = new CheckBoxIcon();
-    	private int colId;
+    	private int colId = -1;
+    	MouseListener mouseListener = null;
     	private Color defaultColor = checkIcon.getColor();
     	public CheckboxHeaderRenderer(int col, JTableHeader header) {
     		colId = col;
-    		header.addMouseListener(new MouseAdapter() {
+    		mouseListener = new MouseAdapter() {
     			@Override
     			public void mouseClicked(MouseEvent e) {
     				try {
@@ -313,12 +315,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		    					defaultColor = checkIcon.getColor();
 		    					checkIcon.setColor(colors.pop());
 		    					TableModel model = table.getModel();
-		    					addXYSeries(model, colId, columnModel.getColumn(viewColumn).getHeaderValue().toString(), checkIcon.getColor());
+		    					addXYSeries(model, colId - 1, columnModel.getColumn(viewColumn).getHeaderValue().toString(), checkIcon.getColor());
 		    				}
 		    				else {
 		    					colors.push(checkIcon.getColor());
 		    					checkIcon.setColor(defaultColor);
-		    					removeXYSeries(colId);
+		    					removeXYSeries(colId - 1);
 		    				}
 							((JTableHeader) e.getSource()).repaint();
 	    				}
@@ -331,7 +333,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     		    		ex.printStackTrace();
     				}
     			}
-    		});
+    		};
+    		header.addMouseListener(mouseListener);
     	}
     	@Override
     	public Component getTableCellRendererComponent(JTable tbl, Object val, boolean isS, boolean hasF, int row, int col) {
@@ -343,6 +346,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	
     	public CheckBoxIcon getCheckIcon() { return checkIcon; }
     	public Color getDefaultColor() { return defaultColor; }
+		public MouseListener getMouseListener() { return mouseListener; }
     }
     
     class ImageListCellRenderer implements ListCellRenderer<Object> {
@@ -366,6 +370,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JToolBar toolBar = null;
     private DBTable logDataTable = null;
     private DBTFindFrame findWindow = null;
+    private LogPlay logPlayWindow = null;
     private JScrollPane headerScrollPane = null;
     private DefaultListModel<JLabel> listModel = null;
     private JButton loadButton = null;
@@ -378,14 +383,15 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JTextField  filterText;
     private JButton filterButton;
     private JButton viewButton;
+    private JButton logPlayButton;
     private Plot3DPanel plot3d = null;
+    private ChartMouseListener chartMouseListener = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox plotsColumn = null;
-    private ValueMarker rpmMarker = null;
-    private ArrayList<ValueMarker> markers = new ArrayList<ValueMarker>();
-    private Font curveLabelFont = new Font("Verdana", Font.BOLD, 11);
-	private int offset = 0;
+    private ValueMarker startMarker = null;
+    private ValueMarker endMarker = null;
+    private XYDomainMutilineAnnotation xyMarker = null;
     private Stack<Color> colors = new Stack<Color>();
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
@@ -399,6 +405,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
         createDataTab();
         createChartTab();
         createUsageTab();
+    }
+    
+    public DBTable getLogDataTable() {
+    	return logDataTable;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -460,10 +470,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        
 	    	selectionCombo.removeAllItems();
 	    	String name;
+	    	JTableHeader tableHeader = logDataTable.getTableHeader();
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
 				Column col = logDataTable.getColumn(i);
 				col.setNullable(true);
-				col.setHeaderRenderer(new CheckboxHeaderRenderer(i + 1, logDataTable.getTableHeader()));
+				col.setHeaderRenderer(new CheckboxHeaderRenderer(i + 1, tableHeader));
 				name = col.getHeaderValue().toString();
 				selectionCombo.addItem(name);
 	    		listModel.addElement(new JLabel(name, new CheckBoxIcon(), JLabel.LEFT));
@@ -494,12 +505,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				    					checkIcon.setColor(colors.pop());
 				    					JTable table = logDataTable.getTable();
 				    					TableModel model = table.getModel();
-				    					addXYSeries(model, index + 1, col.getHeaderValue().toString(), checkIcon.getColor());
+				    					addXYSeries(model, index, col.getHeaderValue().toString(), checkIcon.getColor());
 				    				}
 				    				else {
 				    					colors.push(checkIcon.getColor());
 				    					checkIcon.setColor(renderer.getDefaultColor());
-				    					removeXYSeries(index + 1);
+				    					removeXYSeries(index);
 				    				}
 									list.repaint();
         						}
@@ -549,6 +560,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		toolBar.add(viewButton);
 		toolBar.addSeparator();
 		
+		logPlayButton = new JButton("Log Play");
+		logPlayButton.setMargin(new Insets(2, 7, 2, 7));
+		logPlayButton.addActionListener(this);
+		toolBar.add(logPlayButton);
+		toolBar.addSeparator();
+		
 		toolBar.add(new JLabel("Filter "));
 		
 		JPanel filterPanel = new JPanel();
@@ -591,7 +608,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private void createGraghPanel() {
         JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
-		chartPanel.setAutoscrolls(true);
+        chartPanel.setAutoscrolls(true);
+        chartPanel.setPopupMenu(null);
 		chart.setBackgroundPaint(new Color(60, 60, 65));
 
 		rpmDataset = new XYSeriesCollection();
@@ -638,69 +656,80 @@ public class LogView extends FCTabbedPane implements ActionListener {
         legend.setItemPaint(Color.WHITE);
         chart.addLegend(legend);
         
-        chartPanel.addChartMouseListener(
-        	new ChartMouseListener() {
-    			@Override
-        		public void chartMouseMoved(ChartMouseEvent event) {
-        			try {
-        				plot.clearDomainMarkers();
-                        Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
-        		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
-                        double x = plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
-        				int seriesLength = logDataTable.getRowCount();
-                        if (x < 0 || (int)x >= seriesLength)
-                        	return;
-                        offset = 0;
-                        boolean addedMarkers = false;
-        				RectangleAnchor rectangleAnchor = RectangleAnchor.TOP_LEFT;
-        				TextAnchor textAnchor = TextAnchor.TOP_RIGHT;
-    		        	if (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) {
-        		        	rectangleAnchor = RectangleAnchor.TOP_RIGHT;
-        		        	textAnchor = TextAnchor.TOP_LEFT;
-    		        	}
-        		        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0)) {
-        		        	addedMarkers = true;
-            				rpmMarker.setValue(x);
-            				rpmMarker.setLabelAnchor(rectangleAnchor);
-            				rpmMarker.setLabelTextAnchor(textAnchor);
-            				rpmMarker.setLabel(rpmDataset.getSeries(0).getDescription() + ": " + rpmDataset.getSeries(0).getY((int)x));
-            				offset += 20;
-            				plot.addDomainMarker(rpmMarker);
-        		        }
-        		        for (int i = 0; i < dataset.getSeriesCount(); ++i) {
-	        		        if (plotRenderer.isSeriesVisible(i)) {
-	        		        	addedMarkers = true;
-	            		        ValueMarker xMarker = markers.get(i);
-	            		        xMarker.setValue(x);
-	            				xMarker.setLabelAnchor(rectangleAnchor);
-	            				xMarker.setLabelTextAnchor(textAnchor);
-		        				xMarker.setLabel(dataset.getSeries(i).getDescription() + ": " + dataset.getSeries(i).getY((int)x));
-	            				xMarker.setLabelOffset(new RectangleInsets(2 + offset, 5, 2, 5));	            				
-	            				offset += 20;
-		        				plot.addDomainMarker(xMarker);
-	        		        }
-        		        }
-        		        if (addedMarkers) {
-	        				chartPanel.repaint();
-	        				try {
-	        					int selectedCol = logDataTable.getTable().getSelectedColumn();
-	        					if (selectedCol < 0)
-	        						selectedCol = 0;
-	        					logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
-	        					logDataTable.getTable().changeSelection((int)x, selectedCol, false, false);
-	        				}
-	        				catch (Exception e) { /* ignore */ }
-        		        }
-        			}
-        			catch (Exception e) {
-        	    		e.printStackTrace();
-        			}
+        xyMarker = new XYDomainMutilineAnnotation();
+        plot.addAnnotation(xyMarker);
+        
+        chartMouseListener = new ChartMouseListener() {
+			@Override
+    		public void chartMouseMoved(ChartMouseEvent event) {
+    			try {
+                    Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+    		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
+                    double x = plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
+                    boolean isLeft = (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) ? true : false;
+		        	if (setMarkers(x, isLeft)) {
+		    			try {
+		    				int selectedCol = logDataTable.getTable().getSelectedColumn();
+		    				if (selectedCol < 0)
+		    					selectedCol = 0;
+		    				if (logPlayWindow == null || startMarker != null || endMarker != null) {
+		    					logDataTable.getTable().setRowSelectionInterval((int)x, (int)x);
+		    					logDataTable.getTable().changeSelection((int)x, selectedCol, false, false);
+		    				}
+		    				else {
+		    					logPlayWindow.setProgressBar((int)x);
+		    				}
+		    			}
+		    			catch (Exception e) {
+		    	    		e.printStackTrace();
+		    			}
+		        	}
     			}
-				@Override
-				public void chartMouseClicked(ChartMouseEvent arg0) {
+    			catch (Exception e) {
+    	    		e.printStackTrace();
+    			}
+			}
+			@Override
+			public void chartMouseClicked(ChartMouseEvent event) {
+				if (logPlayWindow == null)
+					return;
+				if (xyMarker.count() == 0)
+					return;
+                Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
+                double x = plot.getDomainAxis().java2DToValue(p.getX(), dataArea, plot.getDomainAxisEdge());
+                if (x < 0 || (int)x >= logDataTable.getRowCount())
+                	return;
+				if (SwingUtilities.isLeftMouseButton(event.getTrigger())) {
+					if (startMarker == null) {
+						startMarker = new ValueMarker(x);
+						startMarker.setPaint(Color.GREEN);
+						startMarker.setStroke(new BasicStroke(1.5f));
+						plot.addDomainMarker(startMarker);
+					}
+					else {
+						plot.removeDomainMarker(startMarker);
+						startMarker = null;
+					}
 				}
-        	}
-        );
+				else if (SwingUtilities.isRightMouseButton(event.getTrigger())) {
+					if (endMarker == null) {
+						endMarker = new ValueMarker(x);
+						endMarker.setPaint(Color.GREEN);
+						endMarker.setStroke(new BasicStroke(1.5f));
+						plot.addDomainMarker(endMarker);
+					}
+					else {
+						plot.removeDomainMarker(endMarker);
+						endMarker = null;
+					}
+				}
+				chartPanel.repaint();
+				logPlayWindow.setStartEndArea(startMarker, endMarker);
+			}
+    	};
+        
+        chartPanel.addChartMouseListener(chartMouseListener);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -931,19 +960,23 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private void addXYSeries(TableModel model, int column, String name, Color color) {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
     	try {
-			markers.get(column - 1).setLabelPaint(color);
-			if ((column - 1) == rpmCol) {
+    		XYSeries series;
+			if (column == rpmCol) {
+				series = rpmDataset.getSeries(0);
 		        ((NumberAxis)plot.getRangeAxis(0)).setStandardTickUnits(NumberAxis.createIntegerTickUnits());
 		        plot.getRangeAxis(0).setTickLabelsVisible(true);
 		        rpmPlotRenderer.setSeriesPaint(0, color);
 		        rpmPlotRenderer.setSeriesVisible(0, true);
 			}
 			else {
+				series = dataset.getSeries(column);
 		        plot.getRangeAxis(1).setTickLabelsVisible(true);
-		        plotRenderer.setSeriesPaint(column - 1, color);
-				plotRenderer.setSeriesVisible(column - 1, true);
+		        plotRenderer.setSeriesPaint(column, color);
+				plotRenderer.setSeriesVisible(column, true);
 				displCount += 1;
 			}
+			if (xyMarker.count() > 0)
+				xyMarker.addLabel(series.getDescription() + ": " + series.getY((int) xyMarker.getValue()), color, true);
     	}
     	finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -952,16 +985,18 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     private void removeXYSeries(int column) {
-		if ((column - 1) == rpmCol) {
+		if (column == rpmCol) {
 	        ((NumberAxis)plot.getRangeAxis(0)).setStandardTickUnits(new StandardTickUnitSource());
 	        plot.getRangeAxis(0).setTickLabelsVisible(false);
 	        rpmPlotRenderer.setSeriesVisible(0, false);
+			xyMarker.removeLabel(rpmPlotRenderer.getSeriesPaint(0));
 		}
 		else {
 			displCount -= 1;
 			if (displCount == 0)
 				plot.getRangeAxis(1).setTickLabelsVisible(false);
-	        plotRenderer.setSeriesVisible(column - 1, false);
+	        plotRenderer.setSeriesVisible(column, false);
+			xyMarker.removeLabel(plotRenderer.getSeriesPaint(column));
 		}
     }
     
@@ -977,6 +1012,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
+        // close log player
+    	if (logPlayWindow != null)
+    		disposeLogView();
+    	// process log file
         File file = fileChooser.getSelectedFile();
         Properties prop = new Properties();
         prop.put("delimiter", ",");
@@ -985,6 +1024,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		logDataTable.filter(null);
 		filterText.setText("");
         try {
+			for (int i = 0; i < logDataTable.getColumnCount(); ++i)
+				logDataTable.getTableHeader().removeMouseListener(((CheckboxHeaderRenderer)logDataTable.getColumn(i).getHeaderRenderer()).getMouseListener());
         	logDataTable.refresh(file.toURI().toURL(), prop);
         	Column col;
         	String colName;
@@ -993,7 +1034,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        CheckboxHeaderRenderer renderer;
         	Component comp;
         	XYSeries series;
-        	markers.clear();
             xAxisColumn.removeAllItems();
             yAxisColumn.removeAllItems();
             plotsColumn.removeAllItems();
@@ -1003,13 +1043,15 @@ public class LogView extends FCTabbedPane implements ActionListener {
             plot3d.removeAllPlots();
         	rpmDataset.removeAllSeries();
         	dataset.removeAllSeries();
+			xyMarker.clearLabels(true);
         	rpmCol = -1;
         	displCount = 0;
         	selectionCombo.removeAllItems();
         	listModel.removeAllElements();
+	    	JTableHeader tableHeader = logDataTable.getTableHeader();
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
 				col = logDataTable.getColumn(i);
-				renderer = new CheckboxHeaderRenderer(i + 1, logDataTable.getTableHeader());
+				renderer = new CheckboxHeaderRenderer(i + 1, tableHeader);
 				col.setHeaderRenderer(renderer);
 				colName = col.getHeaderValue().toString();
                 xAxisColumn.addItem(colName);
@@ -1025,16 +1067,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				plotRenderer.setSeriesVisible(i, false);
 				selectionCombo.addItem(colName);
 	    		listModel.addElement(new JLabel(colName, renderer.getCheckIcon(), JLabel.LEFT));
-				ValueMarker marker = new ValueMarker(0);
-				marker.setPaint(Color.WHITE);
-				marker.setLabelFont(curveLabelFont);
-				markers.add(marker);
 				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))) {
 					rpmDataset.addSeries(series);
 					rpmPlotRenderer.setSeriesShapesVisible(0, false);
 					rpmPlotRenderer.setSeriesVisible(0, false);
 					rpmCol = i;
-					rpmMarker = marker;
 				}
 				for (int j = 0; j < logDataTable.getRowCount(); ++j) {
 					try {
@@ -1060,6 +1097,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     	}
+	}
+
+	public ChartPanel getChartPanel() {
+		return chartPanel;
 	}
 	
 	private void updateChart() {
@@ -1155,6 +1196,51 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plot3d.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
         plot3d.setAxisLabel(2, plotsColumn.getSelectedItemsString());
     }
+    
+    public boolean setMarkers(double x, boolean isLeft) {
+    	xyMarker.clearLabels(false);
+        if (x < 0 || x >= logDataTable.getRowCount())
+        	return false;
+        XYSeries series = null;
+    	if (isLeft) {
+    		xyMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
+    		xyMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
+    	}
+    	else {
+    		xyMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
+    		xyMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
+    	}
+        if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0)) {
+        	series = rpmDataset.getSeries(0);
+            xyMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), rpmPlotRenderer.getSeriesPaint(0), false);
+        }
+        for (int i = 0; i < dataset.getSeriesCount(); ++i) {
+	        if (plotRenderer.isSeriesVisible(i)) {
+	        	series = dataset.getSeries(i);
+	            xyMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), plotRenderer.getSeriesPaint(i), false);
+	        }
+        }
+        xyMarker.setValue(x);
+		return (series != null);
+    }
+    
+    public void disposeLogView() {
+    	logPlayWindow.dispose();
+    	logPlayWindow = null;
+    	startMarker = null;
+    	endMarker = null;
+		disableMouseListener();
+		enableMouseListener();
+		chartPanel.repaint();
+    }
+    
+    public void enableMouseListener() {
+        chartPanel.addChartMouseListener(chartMouseListener);
+    }
+    
+    public void disableMouseListener() {
+        chartPanel.removeChartMouseListener(chartMouseListener);
+    }
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -1220,6 +1306,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		        headerScrollPane.setVisible(false);
 	    		viewButton.setText("Headers View");
 	    	}
+	    }
+	    else if (e.getSource() == logPlayButton) {
+	        if (logDataTable.getRowCount() > 1) {
+		    	if (logPlayWindow != null)
+		    		disposeLogView();
+		    	logPlayWindow = new LogPlay(this);
+	        }
 	    }
 		else if ("view".equals(e.getActionCommand()))
 			view3dPlots();

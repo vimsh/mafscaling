@@ -90,9 +90,11 @@ public class LogPlayTable extends JDialog implements ActionListener {
     private Insets insetsText = new Insets(1, 5, 5, 3);
     private Insets insetsLabel = new Insets(5, 5, 1, 3);
     private Object lock = new Object();
-    private Rectangle r;
     private ArrayList<LinePoint> tracePoints = new ArrayList<LinePoint>();
     private ArrayList<LinePoint> linePoints = null;
+    private Ellipse2D.Double pointCircle = new Ellipse2D.Double();
+    private Rectangle interpRectangle = new Rectangle();
+    private Rectangle signifRectangle;
     private Double xVal = null;
     private Double yVal = null;
     private Double zVal = null;
@@ -100,7 +102,7 @@ public class LogPlayTable extends JDialog implements ActionListener {
     private double diameter;
     private double cellWidth;
     private double radius;
-    private double x, y, z, xPos, yPos, val, xCellVal, yCellVal;
+    private double x, y, z, px, py, xPos, yPos, val, xCellVal, yCellVal;
     private double x0, x1, y0, y1, x0y0, x1y0, x0y1, x1y1;
     private int xIdx, yIdx, x0Idx, x1Idx, y0Idx, y1Idx, xMult, yMult;
     
@@ -123,6 +125,7 @@ public class LogPlayTable extends JDialog implements ActionListener {
      */
     private void initialize() {
     	try {
+    		px = py = 0;
     		createFileChooser();
     		createGlassPanel();
     		createDataPanel();
@@ -262,127 +265,162 @@ public class LogPlayTable extends JDialog implements ActionListener {
 							z = zVal;
 							linePoints = new ArrayList<LinePoint>(tracePoints);
 						}
-						xIdx = Utils.closestValueIndex(x, xaxis);
-						yIdx = Utils.closestValueIndex(y, yaxis);
-						r = playTable.getCellRect(yIdx + 1, xIdx + 1, false);
-						
-	    				xCellVal = xaxis.get(xIdx);
-	    				xMult = 1;
-	    				if (x < xCellVal) {
-							x1Idx = xIdx;
-							x1 = xCellVal;
-	    					if (xIdx > 0) {
-	    						xPos = playTable.getCellRect(yIdx + 1, xIdx, false).getX();
-	    						xMult = 2;
-	    						x0Idx = xIdx - 1;
-	    						x0 = xaxis.get(x0Idx);
-	    					}
-	    					else {
-	    						xPos = r.getX();
-	    						x0Idx = x1Idx;
-	    						x0 = x1;
-	    					}
-	    				}
-	    				else if (x > xCellVal) {
-	    					x0Idx = xIdx;
-	    					x0 = xCellVal;
-							xPos = r.getX();
-	    					if (xIdx < xaxis.size() - 1) {
-	    						xMult = 2;
-	    						x1Idx = xIdx + 1;
-	    						x1 = xaxis.get(x1Idx);
-	    					}
-	    					else {
-	    						x1Idx = x0Idx;
-	    						x1 = x0;
-	    					}
-	    				}
-	    				else {
-	    					x0Idx = x1Idx = xIdx;
-	    					x0 = x1 = xCellVal;
-	    					xPos = r.getX();
-	    				}
-	    				yMult = 1;
-	    				yCellVal = yaxis.get(yIdx);
-	    				if (y < yCellVal) {
-							y1Idx = yIdx;
-							y1 = yCellVal;
-	    					if (yIdx > 0) {
-	    						yPos = playTable.getCellRect(yIdx, xIdx + 1, false).getY();
-	    						yMult = 2;
-	    						y0Idx = yIdx - 1;
-	    						y0 = yaxis.get(y0Idx);
-	    					}
-	    					else {
-	    						yPos = r.getY();
-	    						y0Idx = y1Idx;
-	    						y0 = y1;
-	    					}
-	    				}
-	    				else if (y > yCellVal) {
-							y0Idx = yIdx;
-	    					y0 = yCellVal;
-							yPos = r.getY();
-	    					if (yIdx < yaxis.size() - 1) {
-	    						yMult = 2;
-	    						y1Idx = yIdx + 1;
-	    						y1 = yaxis.get(y1Idx);
-	    					}
-	    					else {
-	    						y1Idx = y0Idx;
-	    						y1 = y0;
-	    					}
-	    				}
-	    				else {
-	    					y0Idx = y1Idx = yIdx;
-	    					y0 = y1 = yCellVal;
-	    					yPos = r.getY();
-	    				}
-	
-	    				x0y0 = Double.valueOf(playTable.getValueAt(y0Idx + 1, x0Idx + 1).toString());
-	    				x1y0 = Double.valueOf(playTable.getValueAt(y0Idx + 1, x1Idx + 1).toString());
-	    				x0y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x0Idx + 1).toString());
-	    				x1y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x1Idx + 1).toString());
-	    				
-	    				val = Utils.table3DInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
-	    		        
-	    		        xText.setText(String.format("%.2f", x));
-	    		        yText.setText(String.format("%.2f", y));
-	    		        valueText.setText(String.format("%.2f", val));
-	    		        if (!Double.isNaN(z))
-	    		        	zText.setText(String.format("%.2f", z));
-	
-	    		        // draw trace line
-	    		        if (showTraceLine && linePoints.size() > 1) {
-		    				g.setColor(traceHighlight);
-		    				int sz = linePoints.size() - 1;
-		    				for (int i = 0; i < sz; ++i)
-		    					g.drawLine((int)linePoints.get(i).x, (int)linePoints.get(i).y, (int)linePoints.get(i + 1).x, (int)linePoints.get(i + 1).y);
-	    		        }
-	    		        // mark cells used in interpolation
-	    		        if (showInterpolationCells) {
-		    				g.setColor(cellHighlight);
-		    				g.fillRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
-		    				g.setColor(Color.BLACK);
-		    				g.drawRect((int)xPos, (int)yPos, (int)(cellWidth * xMult), (int)(diameter * yMult));
-	    		        }
-	    				// mark most significant cell
-	    				Graphics2D g2 = (Graphics2D)g;
-	    		        if (showSiginficantCell) {
-		    				g2.setColor(borderHighlight);
-		    				g2.draw(r);
-	    		        }
-	    				// draw current value point
-	    				x = (x0 == x1) ? 0 : (x - x0) / (x1 - x0); // calculate % of x change
-	    				y = (y0 == y1) ? 0 : (y - y0) / (y1 - y0); // calculate % of y change
-	    				x = (xPos - radius + cellWidth / 2) + cellWidth * x; // calculate x
-	    				y = yPos + diameter * y; // calculate y
-	    				pt = new LinePoint(x + radius, y + radius);
-	    				Ellipse2D.Double circle = new Ellipse2D.Double(x, y, diameter, diameter);
-	    				g2.setColor(highlight);
-	    				g2.fill(circle);
-	    				g2.setColor(Color.BLACK);
-	    				g2.draw(circle);
+						if (px == x && py == y) {
+		    		        // draw trace line
+		    		        if (showTraceLine && linePoints.size() > 1) {
+			    				g.setColor(traceHighlight);
+			    				int sz = linePoints.size() - 1;
+			    				for (int i = 0; i < sz; ++i)
+			    					g.drawLine((int)linePoints.get(i).x, (int)linePoints.get(i).y, (int)linePoints.get(i + 1).x, (int)linePoints.get(i + 1).y);
+		    		        }
+		    		        // mark cells used in interpolation
+		    		        if (showInterpolationCells) {
+			    				g.setColor(cellHighlight);
+			    				g.fillRect(interpRectangle.x, interpRectangle.y, interpRectangle.width, interpRectangle.height);
+			    				g.setColor(Color.BLACK);
+			    				g.drawRect(interpRectangle.x, interpRectangle.y, interpRectangle.width, interpRectangle.height);
+		    		        }
+		    				// mark most significant cell
+		    				Graphics2D g2 = (Graphics2D)g;
+		    		        if (showSiginficantCell) {
+			    				g2.setColor(borderHighlight);
+			    				g2.draw(signifRectangle);
+		    		        }
+		    				// draw current value point
+		    				g2.setColor(highlight);
+		    				g2.fill(pointCircle);
+		    				g2.setColor(Color.BLACK);
+		    				g2.draw(pointCircle);
+						}
+						else {
+							px = x;
+							py = y;
+							xIdx = Utils.closestValueIndex(x, xaxis);
+							yIdx = Utils.closestValueIndex(y, yaxis);
+							signifRectangle = playTable.getCellRect(yIdx + 1, xIdx + 1, false);
+							
+		    				xCellVal = xaxis.get(xIdx);
+		    				xMult = 1;
+		    				if (x < xCellVal) {
+								x1Idx = xIdx;
+								x1 = xCellVal;
+		    					if (xIdx > 0) {
+		    						xPos = playTable.getCellRect(yIdx + 1, xIdx, false).getX();
+		    						xMult = 2;
+		    						x0Idx = xIdx - 1;
+		    						x0 = xaxis.get(x0Idx);
+		    					}
+		    					else {
+		    						xPos = signifRectangle.getX();
+		    						x0Idx = x1Idx;
+		    						x0 = x1;
+		    					}
+		    				}
+		    				else if (x > xCellVal) {
+		    					x0Idx = xIdx;
+		    					x0 = xCellVal;
+								xPos = signifRectangle.getX();
+		    					if (xIdx < xaxis.size() - 1) {
+		    						xMult = 2;
+		    						x1Idx = xIdx + 1;
+		    						x1 = xaxis.get(x1Idx);
+		    					}
+		    					else {
+		    						x1Idx = x0Idx;
+		    						x1 = x0;
+		    					}
+		    				}
+		    				else {
+		    					x0Idx = x1Idx = xIdx;
+		    					x0 = x1 = xCellVal;
+		    					xPos = signifRectangle.getX();
+		    				}
+		    				yMult = 1;
+		    				yCellVal = yaxis.get(yIdx);
+		    				if (y < yCellVal) {
+								y1Idx = yIdx;
+								y1 = yCellVal;
+		    					if (yIdx > 0) {
+		    						yPos = playTable.getCellRect(yIdx, xIdx + 1, false).getY();
+		    						yMult = 2;
+		    						y0Idx = yIdx - 1;
+		    						y0 = yaxis.get(y0Idx);
+		    					}
+		    					else {
+		    						yPos = signifRectangle.getY();
+		    						y0Idx = y1Idx;
+		    						y0 = y1;
+		    					}
+		    				}
+		    				else if (y > yCellVal) {
+								y0Idx = yIdx;
+		    					y0 = yCellVal;
+								yPos = signifRectangle.getY();
+		    					if (yIdx < yaxis.size() - 1) {
+		    						yMult = 2;
+		    						y1Idx = yIdx + 1;
+		    						y1 = yaxis.get(y1Idx);
+		    					}
+		    					else {
+		    						y1Idx = y0Idx;
+		    						y1 = y0;
+		    					}
+		    				}
+		    				else {
+		    					y0Idx = y1Idx = yIdx;
+		    					y0 = y1 = yCellVal;
+		    					yPos = signifRectangle.getY();
+		    				}
+		
+		    				x0y0 = Double.valueOf(playTable.getValueAt(y0Idx + 1, x0Idx + 1).toString());
+		    				x1y0 = Double.valueOf(playTable.getValueAt(y0Idx + 1, x1Idx + 1).toString());
+		    				x0y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x0Idx + 1).toString());
+		    				x1y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x1Idx + 1).toString());
+		    				
+		    				val = Utils.table3DInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
+		    		        
+		    		        xText.setText(String.format("%.2f", x));
+		    		        yText.setText(String.format("%.2f", y));
+		    		        valueText.setText(String.format("%.2f", val));
+		    		        if (!Double.isNaN(z))
+		    		        	zText.setText(String.format("%.2f", z));
+		
+		    		        // draw trace line
+		    		        if (showTraceLine && linePoints.size() > 1) {
+			    				g.setColor(traceHighlight);
+			    				int sz = linePoints.size() - 1;
+			    				for (int i = 0; i < sz; ++i)
+			    					g.drawLine((int)linePoints.get(i).x, (int)linePoints.get(i).y, (int)linePoints.get(i + 1).x, (int)linePoints.get(i + 1).y);
+		    		        }
+		    		        // mark cells used in interpolation
+		    		        if (showInterpolationCells) {
+		    		        	interpRectangle.x = (int)xPos;
+		    		        	interpRectangle.y = (int)yPos;
+		    		        	interpRectangle.width = (int)(cellWidth * xMult);
+		    		        	interpRectangle.height = (int)(diameter * yMult);
+			    				g.setColor(cellHighlight);
+			    				g.fillRect(interpRectangle.x, interpRectangle.y, interpRectangle.width, interpRectangle.height);
+			    				g.setColor(Color.BLACK);
+			    				g.drawRect(interpRectangle.x, interpRectangle.y, interpRectangle.width, interpRectangle.height);
+		    		        }
+		    				// mark most significant cell
+		    				Graphics2D g2 = (Graphics2D)g;
+		    		        if (showSiginficantCell) {
+			    				g2.setColor(borderHighlight);
+			    				g2.draw(signifRectangle);
+		    		        }
+		    				// draw current value point
+		    				x = (x0 == x1) ? 0 : (x - x0) / (x1 - x0); // calculate % of x change
+		    				y = (y0 == y1) ? 0 : (y - y0) / (y1 - y0); // calculate % of y change
+		    				pointCircle.x = (xPos - radius + cellWidth / 2) + cellWidth * x; // calculate x
+		    				pointCircle.y = yPos + diameter * y; // calculate y
+		    				pointCircle.width = pointCircle.height = diameter;
+		    				pt = new LinePoint(x + radius, y + radius);
+		    				g2.setColor(highlight);
+		    				g2.fill(pointCircle);
+		    				g2.setColor(Color.BLACK);
+		    				g2.draw(pointCircle);
+						}
 					}
 				}
 				catch (Exception e) {

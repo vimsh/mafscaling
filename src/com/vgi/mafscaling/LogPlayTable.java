@@ -37,8 +37,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -54,7 +54,7 @@ import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
 import org.apache.log4j.Logger;
 
-public class LogPlayTable extends JDialog implements ActionListener {
+public class LogPlayTable extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 3534186983281827915L;
 	private static final Logger logger = Logger.getLogger(LogPlayTable.class);
 	
@@ -107,9 +107,10 @@ public class LogPlayTable extends JDialog implements ActionListener {
     private int xIdx, yIdx, x0Idx, x1Idx, y0Idx, y1Idx, xMult, yMult;
     
     public LogPlayTable(Window owner, String tableName) {
-    	super(owner, tableName);
+//    	super(owner, tableName);
+    	super(tableName);
     	parent = owner;
-    	final JDialog frame = this;
+    	final JFrame frame = this;
     	excelAdapter = new ExcelAdapter() {
     	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
     	    	super.onPaste(table, extendRows, extendCols);
@@ -132,7 +133,7 @@ public class LogPlayTable extends JDialog implements ActionListener {
 	        
 	        pack();
 	        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-	        setIconImage(null);
+	        setIconImage((new ImageIcon(getClass().getResource("/table.jpg"))).getImage());
 	        setResizable(false);
 	        setLocationRelativeTo(parent);
 	        setVisible(true);

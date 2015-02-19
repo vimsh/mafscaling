@@ -32,7 +32,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -49,7 +48,7 @@ import org.jfree.chart.plot.XYPlot;
 
 import quick.dbtable.DBTable;
 
-public class LogPlay extends JDialog implements ActionListener {
+public class LogPlay extends JFrame implements ActionListener {
 	private static final long serialVersionUID = -1614821051358033847L;
 
     public class TableHolder {
@@ -139,7 +138,8 @@ public class LogPlay extends JDialog implements ActionListener {
     private UIDefaults zeroInsets = new UIDefaults();
 
 	public LogPlay(LogView logView) {
-        super(SwingUtilities.windowForComponent(logView));
+ //       super(SwingUtilities.windowForComponent(logView));
+		super("Log Play");
         this.logView = logView;
         logDataTable = logView.getLogDataTable();
         initialize();
@@ -183,7 +183,7 @@ public class LogPlay extends JDialog implements ActionListener {
     	
         pack();
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setIconImage(null);
+        setIconImage((new ImageIcon(getClass().getResource("/player.png"))).getImage());
         setResizable(false);
         setLocationRelativeTo(SwingUtilities.windowForComponent(logView));
         setVisible(true);

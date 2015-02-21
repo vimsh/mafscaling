@@ -571,7 +571,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         isMafIatInRatioBool = addFlag(filtrow);        
     }
     
-    private boolean validate() {
+    protected boolean validate() {
     	boolean ret = true;
     	StringBuffer error = new StringBuffer("");
     	ret = validate(error);    	

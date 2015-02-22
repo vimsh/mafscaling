@@ -508,7 +508,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
             String line = br.readLine();
             if (line != null) {
-                String [] elements = line.split(",", -1);
+            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
                 for (String item : elements) {
 	                xAxisColumn.addItem(item);
 	                yAxisColumn.addItem(item);

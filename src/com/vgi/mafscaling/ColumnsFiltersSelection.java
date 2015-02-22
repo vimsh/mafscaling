@@ -102,7 +102,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JTextField mafName = null;
 	protected JTextField wbAfrName = null;
 	protected JTextField stockAfrName = null;
-	protected JTextField rpmName = new JTextField();
+	protected JTextField rpmName = null;
 	protected JTextField loadName = null;
 	protected JTextField mpName = null;
 	protected JTextField commAfrName = null;
@@ -139,6 +139,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JCheckBox isMafIatInRatioBool = null;
 	protected JPanel columnsPanel = null;
 	protected JPanel filtersPanel = null;
+	protected Color background = null;
 	protected Border border = BorderFactory.createEtchedBorder();
 	protected Insets insets0 = new Insets(0, 0, 0, 0);
 	protected Insets insets2 = new Insets(2, 20, 2, 5);
@@ -152,8 +153,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected UIDefaults zeroInsets = new UIDefaults();
     protected final int windowHeight = 540;
     protected final int windowWidth = 670;
-	protected int colrow = 0;
-	protected int filtrow = 0;
+	protected int colrow;
+	protected int filtrow;
 	
 	public ColumnsFiltersSelection(boolean isPolfTableSet) {
 		this.isPolfTableSet = isPolfTableSet;
@@ -196,6 +197,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     abstract boolean processDefaultButton(ActionEvent e);
     
     protected void createColumnsPanel(String[] columns) {
+    	colrow = 0;
     	columnsPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0};
@@ -203,6 +205,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         gbl_dataPanel.columnWeights = new double[]{0.0, 1.0, 0.0, 1.0};
         gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         columnsPanel.setLayout(gbl_dataPanel);
+        background = columnsPanel.getBackground();
         
         // Optional Note
         addNote(columnsPanel, colrow, 4, "NOTE: Fields marked with asterisk (*) are optional");
@@ -358,6 +361,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
 
 	protected void createFiltersPanel() {
+		filtrow = 0;
 	    filtersPanel = new JPanel();
 	    GridBagLayout gbl_dataPanel = new GridBagLayout();
 	    gbl_dataPanel.columnWidths = new int[]{0, 0, 0};
@@ -623,8 +627,10 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     private JEditorPane createWrapLabel(String text) {
         JEditorPane label = new JEditorPane();
         label.setEditable(false);
+        label.setFocusable(false);
+        label.setOpaque(true);
         label.setForeground(Color.BLUE);
-        label.setBackground(new Color(0,0,0,0));
+        label.setBackground(background);
         label.setText(text);
         return label;
     }

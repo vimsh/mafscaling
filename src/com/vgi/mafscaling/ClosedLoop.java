@@ -1053,7 +1053,7 @@ public class ClosedLoop extends AMafScaling {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	                String [] elements = line.split(",", -1);
+	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
 	                getColumnsFilters(elements);
 	
 	                boolean resetColumns = false;

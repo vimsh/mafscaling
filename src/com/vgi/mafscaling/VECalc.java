@@ -78,25 +78,29 @@ public class VECalc extends ACompCalc {
 
     private static final String xAxisName = "RPM";
     private static final String yAxisName = "Estimated VE";
-    private int clValue = Config.getClOlStatusValue();
+    private int clValue = Config.getVEClOlStatusValue();
     private int afrRowOffset = Config.getWBO2RowOffset();
     private int thrtlMaxChange = Config.getVEThrottleChangeMaxValue();
     private int minCellHitCount = Config.getVEMinCellHitCount();
     private double thrtlMin = Config.getVEThrottleMinimumValue();
-    private double afrMax = Config.getVEAfrMaximumValue();
+    private double afrMax = Config.getVEOlAfrMaximumValue();
+    private double afrMin = Config.getVEAfrMinimumValue();
     private double rpmMin = Config.getVERPMMinimumValue();
     private double ffbMax = Config.getFFBMaximumValue();
     private double ffbMin = Config.getFFBMinimumValue();
     private double mpMin = Config.getVEMPMinimumValue();
     private double iatMax = Config.getVEIatMaximumValue();
+    private boolean isOl = Config.veOpenLoop();
     private int corrApplied = Config.getVECorrectionAppliedValue();
-
     private int logClOlStatusColIdx = -1;
     private int logThrottleAngleColIdx = -1;
     private int logRpmColIdx = -1;
     private int logMpColIdx = -1;
     private int logIatColIdx = -1;
-    private int logAfrColIdx = -1;
+    private int logWbAfrColIdx = -1;
+    private int logStockAfrColIdx = -1;
+    private int logAfLearningColIdx = -1;
+    private int logAfCorrectionColIdx = -1;
     private int logMafColIdx = -1;    
     private int logFfbColIdx = -1;    
     private int logSdColIdx = -1;
@@ -105,6 +109,7 @@ public class VECalc extends ACompCalc {
     private JComboBox<String> sdType = null;
     private JComboBox<String> mpType = null;
     private JComboBox<String> dataType = null;
+    private ArrayList<Double> trims = new ArrayList<Double>();
     private HashMap<Double, HashMap<Double, ArrayList<LogData>>> xData = null;
 
     public VECalc(int tabPlacement) {
@@ -293,29 +298,39 @@ public class VECalc extends ACompCalc {
         String logThrottleAngleColName = Config.getThrottleAngleColumnName();
         String logFfbColName = Config.getFinalFuelingBaseColumnName();
         String logSdColName = Config.getVEFlowColumnName();
-        String logAfrColName = Config.getWidebandAfrColumnName();
+        String logWbAfrColName = Config.getWidebandAfrColumnName();
+        String logStockAfrColName = Config.getAfrColumnName();
+        String logAfLearningColName = Config.getAfLearningColumnName();
+        String logAfCorrectionColName = Config.getAfCorrectionColumnName();
         String logRpmColName = Config.getRpmColumnName();
         String logMafColName = Config.getMassAirflowColumnName();
         String logIatColName = Config.getIatColumnName();
         String logMpColName = Config.getMpColumnName();
+        isOl = Config.veOpenLoop();
         logClOlStatusColIdx = columns.indexOf(logClOlStatusColName);
         logThrottleAngleColIdx = columns.indexOf(logThrottleAngleColName);
         logFfbColIdx = columns.indexOf(logFfbColName);
         logSdColIdx = columns.indexOf(logSdColName);
-        logAfrColIdx = columns.indexOf(logAfrColName);
+        logWbAfrColIdx = columns.indexOf(logWbAfrColName);
+        logStockAfrColIdx = columns.indexOf(logStockAfrColName);
+        logAfLearningColIdx = columns.indexOf(logAfLearningColName);
+        logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
         logRpmColIdx = columns.indexOf(logRpmColName);
         logMafColIdx = columns.indexOf(logMafColName);
         logIatColIdx = columns.indexOf(logIatColName);
         logMpColIdx = columns.indexOf(logMpColName);
-        if (logThrottleAngleColIdx == -1){ Config.setThrottleAngleColumnName(Config.NO_NAME);    ret = false; }
-        if (logFfbColIdx == -1)          { Config.setFinalFuelingBaseColumnName(Config.NO_NAME); ret = false; }
-        if (logSdColIdx == -1)           { Config.setVEFlowColumnName(Config.NO_NAME);           ret = false; }
-        if (logAfrColIdx == -1)          { Config.setWidebandAfrColumnName(Config.NO_NAME);      ret = false; }
-        if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);              ret = false; }
-        if (logMafColIdx == -1)          { Config.setMassAirflowColumnName(Config.NO_NAME);      ret = false; }
-        if (logMpColIdx == -1)           { Config.setMpColumnName(Config.NO_NAME);               ret = false; }
-        if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);              ret = false; }
-        clValue = Config.getClOlStatusValue();
+        if (logThrottleAngleColIdx == -1)        { Config.setThrottleAngleColumnName(Config.NO_NAME);    ret = false; }
+        if (logFfbColIdx == -1)                  { Config.setFinalFuelingBaseColumnName(Config.NO_NAME); ret = false; }
+        if (logSdColIdx == -1)                   { Config.setVEFlowColumnName(Config.NO_NAME);           ret = false; }
+        if (logWbAfrColIdx == -1 && isOl)        { Config.setWidebandAfrColumnName(Config.NO_NAME);      ret = false; }
+        if (logStockAfrColIdx == -1 && !isOl)    { Config.setAfrColumnName(Config.NO_NAME);              ret = false; }
+        if (logAfLearningColIdx == -1 && !isOl)  { Config.setAfLearningColumnName(Config.NO_NAME);       ret = false; }
+        if (logAfCorrectionColIdx == -1 && !isOl){ Config.setAfCorrectionColumnName(Config.NO_NAME);     ret = false; }
+        if (logRpmColIdx == -1)                  { Config.setRpmColumnName(Config.NO_NAME);              ret = false; }
+        if (logMafColIdx == -1)                  { Config.setMassAirflowColumnName(Config.NO_NAME);      ret = false; }
+        if (logMpColIdx == -1)                   { Config.setMpColumnName(Config.NO_NAME);               ret = false; }
+        if (logIatColIdx == -1)                  { Config.setIatColumnName(Config.NO_NAME);              ret = false; }
+        clValue = Config.getVEClOlStatusValue();
         rpmMin = Config.getVERPMMinimumValue();
         mpMin = Config.getVEMPMinimumValue();
         iatMax = Config.getVEIatMaximumValue();
@@ -324,7 +339,8 @@ public class VECalc extends ACompCalc {
         thrtlMaxChange = Config.getVEThrottleChangeMaxValue();
         minCellHitCount = Config.getVEMinCellHitCount();
         thrtlMin = Config.getVEThrottleMinimumValue();
-        afrMax = Config.getVEAfrMaximumValue();
+        afrMax = (isOl ? Config.getVEOlAfrMaximumValue() : Config.getVEClAfrMaximumValue());
+        afrMin = Config.getVEAfrMinimumValue();
         afrRowOffset = Config.getWBO2RowOffset();
         corrApplied = Config.getVECorrectionAppliedValue();
         return ret;
@@ -342,17 +358,19 @@ public class VECalc extends ACompCalc {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	                String [] elements = line.split(",", -1);
+	                String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
 	                getColumnsFilters(elements);
-	
+
 	                boolean resetColumns = false;
-	                if (logThrottleAngleColIdx >= 0 || logFfbColIdx >= 0 || logSdColIdx >= 0 || logAfrColIdx >= 0 ||
+	                if (logThrottleAngleColIdx >= 0 || logFfbColIdx >= 0 || logSdColIdx >= 0 || (logWbAfrColIdx >= 0 && isOl) ||
+	                	(logStockAfrColIdx >= 0 && !isOl) || (logAfLearningColIdx >= 0 && !isOl) || (logAfCorrectionColIdx >= 0 && !isOl) ||
 	                	logRpmColIdx >= 0 || logMafColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
 	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
 	                    	resetColumns = true;
 	                }
 	
-	                if (resetColumns || logThrottleAngleColIdx < 0 || logFfbColIdx < 0 || logSdColIdx < 0 || logAfrColIdx < 0 ||
+	                if (resetColumns || logThrottleAngleColIdx < 0 || logFfbColIdx < 0 || logSdColIdx < 0 || (logWbAfrColIdx < 0 && isOl) ||
+	                	(logStockAfrColIdx < 0 && !isOl) || (logAfLearningColIdx < 0 && !isOl) || (logAfCorrectionColIdx < 0 && !isOl) ||
 	                	logRpmColIdx < 0 || logMafColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
 	                	ColumnsFiltersSelection selectionWindow = new VEColumnsFiltersSelection(false);
 	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
@@ -375,6 +393,7 @@ public class VECalc extends ACompCalc {
 	                double afr = 0;
 	                double rpm;
 	                double ffb;
+	                double iat;
 	                clearRunTables();
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
@@ -400,16 +419,20 @@ public class VECalc extends ACompCalc {
 		                    	}
 		                    	else if (row <= 0 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
 		                            // Filters
-		                        	afr = Double.valueOf(afrflds[logAfrColIdx]);
+		                        	afr = (isOl ? Double.valueOf(afrflds[logWbAfrColIdx]) : Double.valueOf(afrflds[logStockAfrColIdx]));
 	                                rpm = Double.valueOf(flds[logRpmColIdx]);
 	                                ffb = Double.valueOf(flds[logFfbColIdx]);
+	                                iat = Double.valueOf(flds[logIatColIdx]);
 	    	                    	if (clValue != -1)
 	    	                    		clol = Integer.valueOf(flds[logClOlStatusColIdx]);
-		                        	if ((afr <= afrMax || throttle >= thrtlMin) && clol == clValue && rpmMin <= rpm && ffbMin <= ffb && ffb <= ffbMax && ffb <= iatMax) {
+	    	                    	boolean flag = isOl ? ((afr <= afrMax || throttle >= thrtlMin) && afr <= afrMax) : (afrMin <= afr);
+		                        	if (flag && clol == clValue && rpmMin <= rpm && ffbMin <= ffb && ffb <= ffbMax && iat <= iatMax) {
 			                    		removed = false;
+			                    		if (!isOl)
+			                    			trims.add(Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]));
 		                                Utils.ensureRowCount(row + 1, logDataTable);
 		                                logDataTable.setValueAt(rpm, row, 0);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logIatColIdx]), row, 1);
+		                                logDataTable.setValueAt(iat, row, 1);
 		                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 2);
 		                                logDataTable.setValueAt(ffb, row, 3);
 		                                logDataTable.setValueAt(afr, row, 4);
@@ -496,7 +519,10 @@ public class VECalc extends ACompCalc {
                 logData.afr = Double.valueOf(afrStr);
                 logData.ffb = Double.valueOf(ffbStr);
                 logData.sderr = ((logData.sd - logData.maf) / logData.maf) * 100.0;
-                logData.afrerr = ((logData.afr - logData.ffb) / logData.ffb) * 100.0;
+                if (isOl)
+                	logData.afrerr = ((logData.afr - logData.ffb) / logData.ffb) * 100.0;
+                else
+                	logData.afrerr = trims.get(i);// + ((14.7 - logData.ffb) / 14.7 * 100);
                 
                 yData = xData.get(logData.mp);
                 if (yData == null) {

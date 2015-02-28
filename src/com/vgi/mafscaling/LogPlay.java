@@ -71,7 +71,6 @@ public class LogPlay extends JFrame implements ActionListener {
 	        		}
                 	if (size == 0)
                 		stop();
-	                	
                 }
             });
         }

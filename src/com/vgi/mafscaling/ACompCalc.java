@@ -498,7 +498,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected boolean getAxisData() {
     	try {
     		if (Utils.isTableEmpty(origTable)) {
-                JOptionPane.showMessageDialog(null, "PLease paste current " + origTable.getName() + " table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "PLease paste " + origTable.getName() + " table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
                 return false;
     		}
     		xAxisArray = new ArrayList<Double>();

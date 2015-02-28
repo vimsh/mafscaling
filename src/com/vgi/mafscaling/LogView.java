@@ -1225,6 +1225,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     public void disposeLogView() {
+    	logPlayButton.setEnabled(true);
     	logPlayWindow.dispose();
     	logPlayWindow = null;
     	startMarker = null;
@@ -1312,6 +1313,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		    	if (logPlayWindow != null)
 		    		disposeLogView();
 		    	logPlayWindow = new LogPlay(this);
+		    	logPlayButton.setEnabled(false);
 	        }
 	    }
 		else if ("view".equals(e.getActionCommand()))

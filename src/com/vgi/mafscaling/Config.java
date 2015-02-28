@@ -71,7 +71,9 @@ public class Config {
 	public static final String DefaultAfrMaximum = "15.0";
 	public static final String DefaultLCAfrMaximum = "15.0";
 	public static final String DefaultLCAfrMinimum = "14.2";
-	public static final String DefaultVEAfrMaximum = "16.0";
+	public static final String DefaultVEOlAfrMaximum = "16.0";
+	public static final String DefaultVEClAfrMaximum = "15.0";
+	public static final String DefaultVEAfrMinimum = "13.7";
 	public static final String DefaultLoadMinimum = "0.2";
 	public static final String DefaultDvDtMaximum = "0.7";
 	public static final String DefaultMIAfrMaximum = "16.0";
@@ -79,6 +81,7 @@ public class Config {
 	private static final String CFG_FILE = "config.xml";
 	public static final String NO_NAME = "#$#";
 	private static Properties props = new Properties();
+	public static boolean veOpenLoop = true;
 
 	public static String getProperty(String name) {
 		return props.getProperty(name, "");
@@ -588,12 +591,28 @@ public class Config {
 		props.setProperty("LCAfrMaximum", Double.toString(v));
 	}
 
-	public static double getVEAfrMaximumValue() {
-		return Double.parseDouble(props.getProperty("VEAfrMaximum", DefaultVEAfrMaximum));
+	public static double getVEOlAfrMaximumValue() {
+		return Double.parseDouble(props.getProperty("VEOlAfrMaximum", DefaultVEOlAfrMaximum));
 	}
 
-	public static void setVEAfrMaximumValue(double v) {
-		props.setProperty("VEAfrMaximum", Double.toString(v));
+	public static void setVEOlAfrMaximumValue(double v) {
+		props.setProperty("VEOlAfrMaximum", Double.toString(v));
+	}
+
+	public static double getVEClAfrMaximumValue() {
+		return Double.parseDouble(props.getProperty("VEClAfrMaximum", DefaultVEClAfrMaximum));
+	}
+
+	public static void setVEClAfrMaximumValue(double v) {
+		props.setProperty("VEClAfrMaximum", Double.toString(v));
+	}
+
+	public static double getVEAfrMinimumValue() {
+		return Double.parseDouble(props.getProperty("VEAfrMinimum", DefaultVEAfrMinimum));
+	}
+
+	public static void setVEAfrMinimumValue(double v) {
+		props.setProperty("VEAfrMinimum", Double.toString(v));
 	}
 	
 	public static double getLoadMinimumValue() {
@@ -650,6 +669,14 @@ public class Config {
 
 	public static void setYAxisTemplates(String s) {
 		props.setProperty("YAxisTemplates", s);
+	}
+	
+	public static boolean veOpenLoop() {
+		return veOpenLoop;
+	}
+	
+	public static void veOpenLoop(boolean f) {
+		veOpenLoop = f;
 	}
 	
 	public static void load() {

@@ -416,7 +416,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
 		    				pointCircle.x = (xPos - radius + cellWidth / 2) + cellWidth * x; // calculate x
 		    				pointCircle.y = yPos + diameter * y; // calculate y
 		    				pointCircle.width = pointCircle.height = diameter;
-		    				pt = new LinePoint(x + radius, y + radius);
+		    				pt = new LinePoint(pointCircle.x + radius, pointCircle.y + radius);
 		    				g2.setColor(highlight);
 		    				g2.fill(pointCircle);
 		    				g2.setColor(Color.BLACK);

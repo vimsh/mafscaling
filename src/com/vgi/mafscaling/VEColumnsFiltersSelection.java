@@ -19,36 +19,119 @@
 package com.vgi.mafscaling;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JEditorPane;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 
 public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
+	private JScrollPane pane = null;
+	JPanel selectionPanel = null;
+	private String[] columns = null;
+	private boolean isOl = true;
 	
 	public VEColumnsFiltersSelection(boolean isPolfTableSet) {
 		super(isPolfTableSet);
 	}
+	
+	public boolean getUserSettings(String[] cols) {
+		columns = cols;
+		createScrollPane();
+
+		final JComboBox<String> clOlSelection = new JComboBox<String>(new String [] { "Open Loop", "Closed Loop" });
+		clOlSelection.addItemListener(new ItemListener() {
+	        public void itemStateChanged(ItemEvent e) {
+	        	if(e.getStateChange() == ItemEvent.SELECTED) {
+		        	isOl = (clOlSelection.getSelectedIndex() == 0? true: false);
+		        	selectionPanel.remove(columnsPanel);
+		        	selectionPanel.remove(filtersPanel);
+		        	createColumnsPanel(columns);
+		        	createFiltersPanel();
+		            selectionPanel.add(columnsPanel);
+		            selectionPanel.add(filtersPanel);
+		        	selectionPanel.revalidate();
+		        	selectionPanel.repaint();
+		            pane.setPreferredSize(new Dimension(windowWidth, windowHeight));
+		            SwingUtilities.invokeLater(new Runnable() { public void run() { pane.getVerticalScrollBar().setValue(0); } });
+	        	}
+	        }
+	    });
+		
+    	JComponent[] inputs = new JComponent[] {clOlSelection, pane};
+        // bring scroll pane to the start
+        SwingUtilities.invokeLater(new Runnable() { public void run() { pane.getVerticalScrollBar().setValue(0); } });
+        
+        do {
+            if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Columns / Filters Settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                return false;
+        }
+        while (!validate());
+        
+        return true;
+    }
+	
+	protected void createScrollPane() {
+    	createColumnsPanel(columns);
+    	createFiltersPanel();
+    	
+    	selectionPanel = new JPanel();
+        selectionPanel.setLayout(new BoxLayout(selectionPanel, BoxLayout.Y_AXIS));
+        selectionPanel.add(columnsPanel);
+        selectionPanel.add(filtersPanel);
+        selectionPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        
+        pane = new JScrollPane(selectionPanel);
+        pane.setPreferredSize(new Dimension(windowWidth, windowHeight));
+        pane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        pane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+	}
     
     protected void addColSelection() {
+    	if (isOl) {
+	        addWidebandAFRColSelection();
+    	}
+    	else {
+    		addStockAFRColSelection();
+    		addAFCorrectionColSelection();
+    		addAFLearningColSelection();
+    	}
         addRPMColSelection();
         addIATColSelection();
         addThrottleAngleColSelection();
     	addManifoldPressureColSelection();
-        addWidebandAFRColSelection();
         addFFBColSelection();
+        addClOlStatusColSelection();
         addMAFColSelection();
         addVEFlowColSelection();
-        addClOlStatusColSelection();
     }
     
     protected void addFilterSelection() {
         addThrottleChangeMaximumFilter();
         thrtlChangeMaxFilter.setValue(Config.getVEThrottleChangeMaxValue());
-        addThrottleMinimumFilter();
-        thrtlMinimumFilter.setValue(Config.getVEThrottleMinimumValue());
-        addAFRMaximumFilter();
-        maxAfrFilter.setText(String.valueOf(Config.getVEAfrMaximumValue()));
+        if (isOl) {
+            addThrottleMinimumFilter();
+            thrtlMinimumFilter.setValue(Config.getVEThrottleMinimumValue());
+            addAFRMaximumFilter();
+            maxAfrFilter.setText(String.valueOf(Config.getVEOlAfrMaximumValue()));
+        }
+        else {
+            addAFRMaximumFilter();
+            maxAfrFilter.setText(String.valueOf(Config.getVEClAfrMaximumValue()));
+            addAFRMinimumFilter();
+            minAfrFilter.setText(String.valueOf(Config.getVEAfrMinimumValue()));
+        }
     	addCLOLStatusFilter();
-    	clolStatusFilter.setValue(Config.getClOlStatusValue());
+    	clolStatusFilter.setValue(Config.getVEClOlStatusValue());
     	addIATMaximumFilter();
         maxIatFilter.setText(String.valueOf(Config.getVEIatMaximumValue()));
         addRPMMinimumFilter();
@@ -59,8 +142,10 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
         maxFFBFilter.setText(String.valueOf(Config.getFFBMaximumValue()));
         addFFBMinimumFilter();
         minFFBFilter.setText(String.valueOf(Config.getFFBMinimumValue()));
-        addWideBandAFRRowOffsetFilter();
-        wbo2RowOffsetField.setText(String.valueOf(Config.getWBO2RowOffset()));
+        if (isOl) {
+	        addWideBandAFRRowOffsetFilter();
+	        wbo2RowOffsetField.setText(String.valueOf(Config.getWBO2RowOffset()));
+        }
         addCellHitCountMinimumFilter();
     	minCellHitCountFilter.setText(String.valueOf(Config.getVEMinCellHitCount()));
     	addCorrectionAppliedValue();
@@ -71,7 +156,7 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     			JEditorPane label = (JEditorPane)c;
     			if (label.getText().startsWith("Remove data where Throttle Input is below"))
     				label.setText(label.getText() + " (*** works with AFR Maximum filter)");
-    			else if (label.getText().startsWith("Remove data where AFR is above"))
+    			else if (isOl && label.getText().startsWith("Remove data where AFR is above"))
     				label.setText(label.getText() + "(*** works with Throttle Input Minimum filter)");
     			else if (label.getText().startsWith("Remove data where RPM is below"))
     				label.setText(label.getText() + " (hint: check min RPM in SD table (y-axis)");
@@ -88,6 +173,52 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	String value;
     	String colName;
     	
+    	Config.veOpenLoop(isOl);
+
+    	if (isOl) {
+	    	// Wideband AFR
+	    	value = wbAfrName.getText().trim();
+	    	colName = wbAfrLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified\n");
+	    	}
+	    	else
+	    		Config.setWidebandAfrColumnName(value);
+    	}
+    	else {
+	    	// Stock AFR
+	    	value = stockAfrName.getText().trim();
+	    	colName = stockAfrLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified\n");
+	    	}
+	    	else
+	    		Config.setAfrColumnName(value);
+
+	    	// AFR Learning
+	    	value = afLearningName.getText().trim();
+	    	colName = afLearningLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified\n");
+	    	}
+	    	else
+	    		Config.setAfLearningColumnName(value);
+	    	
+	    	// AFR Correction
+	    	value = afCorrectionName.getText().trim();
+	    	colName = afCorrectionLabelText;
+	    	if (value.isEmpty()) {
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified\n");
+	    	}
+	    	else
+	    		Config.setAfCorrectionColumnName(value);
+    		
+    	}
+    	
     	// Engine Speed
     	value = rpmName.getText().trim();
     	colName = rpmLabelText;
@@ -97,6 +228,16 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	}
     	else
     		Config.setRpmColumnName(value);
+    	
+    	// Intake Air Temperature
+    	value = iatName.getText().trim();
+    	colName = iatLabelText;
+    	if (value.isEmpty()) {
+    		ret = false;
+    		error.append("\"").append(colName).append("\" column must be specified\n");
+    	}
+    	else
+    		Config.setIatColumnName(value);
     	
     	// Throttle Angle
     	value = thrtlAngleName.getText().trim();
@@ -118,15 +259,25 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	else
     		Config.setMpColumnName(value);
 
-    	// Wideband AFR
-    	value = wbAfrName.getText().trim();
-    	colName = wbAfrLabelText;
+    	// FFB
+    	value = ffbName.getText().trim();
+    	colName = ffbLabelText;
     	if (value.isEmpty()) {
     		ret = false;
     		error.append("\"").append(colName).append("\" column must be specified\n");
     	}
     	else
-    		Config.setWidebandAfrColumnName(value);
+    		Config.setFinalFuelingBaseColumnName(value);
+
+    	// CL/OL Status
+    	value = clolStatusName.getText().trim();
+    	colName = clolStatusLabelText;
+    	if (value.isEmpty()) {
+    		ret = false;
+    		error.append("\"").append(colName).append("\" column must be specified\n");
+    	}
+    	else
+    		Config.setClOlStatusColumnName(value);
 
     	// MAF
     	value = mafName.getText().trim();
@@ -138,16 +289,6 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	else
     		Config.setMassAirflowColumnName(value);
 
-    	// FFB
-    	value = ffbName.getText().trim();
-    	colName = ffbLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setFinalFuelingBaseColumnName(value);
-
     	// VE Flow
     	value = veFlowName.getText().trim();
     	colName = veFlowLabelText;
@@ -158,41 +299,42 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
     	else
     		Config.setVEFlowColumnName(value);
     	
-    	// Intake Air Temperature
-    	value = iatName.getText().trim();
-    	colName = iatLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setIatColumnName(value);
+    	// Throttle Change % Maximum
+    	Config.setVEThrottleChangeMaxValue(Integer.valueOf(thrtlChangeMaxFilter.getValue().toString()));
 
+    	if (isOl) {
+	    	// Throttle Minimum Input
+	    	Config.setVEThrottleMinimumValue(Integer.valueOf(thrtlMinimumFilter.getText()));
+	    	
+            // AFR Maximum
+        	Config.setVEOlAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
+        	
+	    	// WBO2 Row Offset
+	    	Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
+    	}
+    	else {
+            // AFR Maximum
+        	Config.setVEClAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
+        	
+            // AFR Minimum
+        	Config.setVEAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
+    	}
+    	
+		// CL/OL Status
+		Config.setVEClOlStatusValue(Integer.valueOf(clolStatusFilter.getValue().toString()));
+		
+    	// IAT filter
+    	Config.setVEIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
     	
     	// RPM Minimum
     	Config.setVERPMMinimumValue(Integer.valueOf(minRPMFilter.getText()));
     	
     	// MP Minimum
     	Config.setVEMPMinimumValue(Double.valueOf(minMPFilter.getText()));
-		
-    	// IAT filter
-    	Config.setVEIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
-    	
-    	// Throttle Change % Maximum
-    	Config.setVEThrottleChangeMaxValue(Integer.valueOf(thrtlChangeMaxFilter.getValue().toString()));
-
-    	// Throttle Minimum Input
-    	Config.setVEThrottleMinimumValue(Integer.valueOf(thrtlMinimumFilter.getText()));
     	
     	// FFB filters
     	Config.setFFBMaximumValue(Double.valueOf(maxFFBFilter.getText()));
     	Config.setFFBMinimumValue(Double.valueOf(minFFBFilter.getText()));
-        
-        // AFR Maximum
-    	Config.setVEAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
-    	
-    	// WBO2 Row Offset
-    	Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
     	
     	// Minimum Cell Hit Count Filter
 		Config.setVEMinCellHitCount(Integer.valueOf(minCellHitCountFilter.getText()));
@@ -220,8 +362,14 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
         	clolStatusFilter.setValue(Integer.valueOf(Config.DefaultClOlStatusValue));
     	else if ("minthrtl".equals(e.getActionCommand()))
     		thrtlMinimumFilter.setValue(Integer.valueOf(Config.DefaultVEThrottleMinimum));
-        else if ("maxafr".equals(e.getActionCommand()))
-        	maxAfrFilter.setText(Config.DefaultVEAfrMaximum);
+        else if ("maxafr".equals(e.getActionCommand())) {
+        	if (isOl)
+        		maxAfrFilter.setText(Config.DefaultVEOlAfrMaximum);
+        	else
+        		maxAfrFilter.setText(Config.DefaultVEClAfrMaximum);
+        }
+        else if ("minafr".equals(e.getActionCommand()))
+        	minAfrFilter.setText(Config.DefaultVEAfrMinimum);
         else if ("wbo2offset".equals(e.getActionCommand()))
         	wbo2RowOffsetField.setText(Config.DefaultWBO2RowOffset);
         else if ("minhitcnt".equals(e.getActionCommand()))

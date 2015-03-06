@@ -258,7 +258,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	        	}
     	        	else
     	        		rndVal = Math.round(value);
-    	    		if (rndVal == filter)
+    	    		if (Utils.equals(rndVal, filter))
     	    			list.add(i);
     	    		break;
     	    	}

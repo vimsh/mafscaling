@@ -76,12 +76,7 @@ public class LogPlay extends JFrame implements ActionListener {
         }
         @Override
 		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + table.hashCode();
-			result = prime * result + (int) (xColIdx ^ (xColIdx >>> 32));
-			result = prime * result + (int) (yColIdx ^ (yColIdx >>> 32));
-			return result;
+			return table.hashCode() ^ (31 * xColIdx) ^ (31 * yColIdx);
 		}
 		@Override
 		public boolean equals(Object obj) {

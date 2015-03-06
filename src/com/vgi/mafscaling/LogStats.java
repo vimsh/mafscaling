@@ -606,7 +606,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         	}
         	else
         		rndVal = Math.round(value);
-    		if (rndVal != filter)
+    		if (!Utils.equals(rndVal, filter))
     			ret = false;
     		break;
     	case GREATER_EQUAL:

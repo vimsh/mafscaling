@@ -38,7 +38,7 @@ public class JMultiSelectionBox extends JButton {
 	JScrollPane scroll = null;
 	WindowFocusListener windowFocusListener = null;
 	MouseListener mouseListener = null;
-	ActionListener actionListener = null;
+	ActionListener menuActionListener = null;
 	JButton button;
 	boolean mouseOver = false;
 	
@@ -118,7 +118,7 @@ public class JMultiSelectionBox extends JButton {
 		        menuFrame.requestFocus();
             }
         });
-        actionListener = new ActionListener() {
+        menuActionListener = new ActionListener() {
         	public void actionPerformed(ActionEvent event) {
         		button.setText(getSelectedItemsString());
         	}
@@ -138,7 +138,7 @@ public class JMultiSelectionBox extends JButton {
     
     public void addItem(String item) {
     	JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(item);
-    	menuItem.addActionListener(actionListener);
+    	menuItem.addActionListener(menuActionListener);
     	menuItem.setOpaque(false);
         menu.add(menuItem);
     }

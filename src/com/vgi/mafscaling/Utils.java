@@ -577,6 +577,16 @@ public final class Utils {
     public static int getRandomInRange(int min, int max) {
     	return (min + (int)(Math.random() * ((max - min) + 1)));
     }
+    
+    /**
+     * Methods compare two double values with 5 decimal points precision
+     * @param x
+     * @param y
+     * @return true if x is equal to y with up to 5 decimal points, false otherwise
+     */
+    public static boolean equals(double x, double y) {
+        return (Math.abs(x - y) < 0.00001);
+    }
 
     /**
      * Method calculates commanded afr from POL table

@@ -13,6 +13,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -303,6 +305,28 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                 afrColumn.setWidth(table.getWidth());
             }
         });
+        table.addMouseListener(new MouseAdapter() {
+        	public void mouseReleased(MouseEvent event) {
+        		JTable evenTable =(JTable)event.getSource();
+        		int[] cols = evenTable.getSelectedColumns();
+        		int[] rows = evenTable.getSelectedRows();
+        		int lastColIdx = cols.length - 1;
+        		int lastRowIdx = rows.length - 1;
+        		JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+        		for (JTable t : tables) {
+        			if (t == evenTable)
+        				continue;
+        			if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
+        				t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
+        				t.setRowSelectionInterval(rows[0], rows[lastRowIdx]);
+        			}
+        		}
+        	}
+        });
+        
+        
+        
+        
         table.setName(tableName);
         table.getTableHeader().setReorderingAllowed(false);
         table.setColumnSelectionAllowed(true);

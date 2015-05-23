@@ -11,6 +11,14 @@ public class FCTabbedPane extends JTabbedPane {
 	
 	public FCTabbedPane(int tabPlacement) {
         super(tabPlacement);
-        fileChooser.setCurrentDirectory(new File("."));
+        File logsPath = new File(Config.getLastLogFilesPath());
+        if (logsPath.exists() && logsPath.isDirectory())
+            fileChooser.setCurrentDirectory(logsPath);
+        else
+            fileChooser.setCurrentDirectory(new File("."));
     }
+	
+	public static String getLogFilesPath() {
+		return fileChooser.getCurrentDirectory().getAbsolutePath();
+	}
 }

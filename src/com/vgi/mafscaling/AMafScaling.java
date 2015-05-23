@@ -790,6 +790,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             calculateMafScaling();
         }
         else if ("compare".equals(e.getActionCommand())) {
+        	mafCompare.setReferenceMafTables(mafTable, mafSmoothingTable);
         	mafCompare.setVisible(true);
         }
         else if ("smooth".equals(e.getActionCommand())) {

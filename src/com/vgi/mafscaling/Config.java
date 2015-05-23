@@ -131,8 +131,16 @@ public class Config {
 		props.setProperty("CompareWindowPositionY", Integer.toString(p.y));
 	}
 	
+	public static String getLastLogFilesPath() {
+		return props.getProperty("LastLogFilesPath", ".");
+	}
+	
+	public static void setLastLogFilesPath(String name) {
+		props.setProperty("LastLogFilesPath", name);
+	}
+	
 	public static String getThrottleAngleColumnName() {
-		return props.getProperty("ThrottleAngleColumnName", "#$#");
+		return props.getProperty("ThrottleAngleColumnName", NO_NAME);
 	}
 	
 	public static void setThrottleAngleColumnName(String name) {
@@ -140,7 +148,7 @@ public class Config {
 	}
 
 	public static String getMafVoltageColumnName() {
-		return props.getProperty("MafVoltageColumnName", "#$#");
+		return props.getProperty("MafVoltageColumnName", NO_NAME);
 	}
 	
 	public static void setMafVoltageColumnName(String name) {
@@ -148,7 +156,7 @@ public class Config {
 	}
 
 	public static String getMassAirflowColumnName() {
-		return props.getProperty("MassAirflowColumnName", "#$#");
+		return props.getProperty("MassAirflowColumnName", NO_NAME);
 	}
 	
 	public static void setMassAirflowColumnName(String name) {
@@ -156,7 +164,7 @@ public class Config {
 	}
 
 	public static String getIatColumnName() {
-		return props.getProperty("IATColumnName", "#$#");
+		return props.getProperty("IATColumnName", NO_NAME);
 	}
 	
 	public static void setIatColumnName(String name) {
@@ -164,7 +172,7 @@ public class Config {
 	}
 	
 	public static String getFinalFuelingBaseColumnName() {
-		return props.getProperty("FFBColumnName", "#$#");
+		return props.getProperty("FFBColumnName", NO_NAME);
 	}
 	
 	public static void setFinalFuelingBaseColumnName(String name) {
@@ -172,7 +180,7 @@ public class Config {
 	}
 	
 	public static String getVEFlowColumnName() {
-		return props.getProperty("VEFlowColumnName", "#$#");
+		return props.getProperty("VEFlowColumnName", NO_NAME);
 	}
 	
 	public static void setVEFlowColumnName(String name) {
@@ -180,7 +188,7 @@ public class Config {
 	}
 
 	public static String getWidebandAfrColumnName() {
-		return props.getProperty("WidebandAfrColumnName", "#$#");
+		return props.getProperty("WidebandAfrColumnName", NO_NAME);
 	}
 	
 	public static void setWidebandAfrColumnName(String name) {
@@ -188,7 +196,7 @@ public class Config {
 	}
 
 	public static String getAfrColumnName() {
-		return props.getProperty("AfrColumnName", "#$#");
+		return props.getProperty("AfrColumnName", NO_NAME);
 	}
 	
 	public static void setAfrColumnName(String name) {
@@ -196,7 +204,7 @@ public class Config {
 	}
 
 	public static String getMpColumnName() {
-		return props.getProperty("MPColumnName", "#$#");
+		return props.getProperty("MPColumnName", NO_NAME);
 	}
 	
 	public static void setMpColumnName(String name) {
@@ -204,7 +212,7 @@ public class Config {
 	}
 
 	public static String getRpmColumnName() {
-		return props.getProperty("RpmColumnName", "#$#");
+		return props.getProperty("RpmColumnName", NO_NAME);
 	}
 	
 	public static void setRpmColumnName(String name) {
@@ -212,7 +220,7 @@ public class Config {
 	}
 
 	public static String getLoadColumnName() {
-		return props.getProperty("LoadColumnName", "#$#");
+		return props.getProperty("LoadColumnName", NO_NAME);
 	}
 	
 	public static void setLoadColumnName(String name) {
@@ -220,7 +228,7 @@ public class Config {
 	}
 	
 	public static String getCommandedAfrColumnName() {
-		return props.getProperty("CommandedAfrColumnName", "#$#");
+		return props.getProperty("CommandedAfrColumnName", NO_NAME);
 	}
 	
 	public static void setCommandedAfrColumnName(String name) {
@@ -228,7 +236,7 @@ public class Config {
 	}
 
 	public static String getTimeColumnName() {
-		return props.getProperty("TimeColumnName", "#$#");
+		return props.getProperty("TimeColumnName", NO_NAME);
 	}
 	
 	public static void setTimeColumnName(String name) {
@@ -236,7 +244,7 @@ public class Config {
 	}
 
 	public static String getClOlStatusColumnName() {
-		return props.getProperty("ClOlStatusColumnName", "#$#");
+		return props.getProperty("ClOlStatusColumnName", NO_NAME);
 	}
 	
 	public static void setClOlStatusColumnName(String name) {
@@ -244,7 +252,7 @@ public class Config {
 	}
 	
 	public static String getCruiseStatusColumnName() {
-		return props.getProperty("CruiseStatusColumnName", "#$#");
+		return props.getProperty("CruiseStatusColumnName", NO_NAME);
 	}
 	
 	public static void setCruiseStatusColumnName(String name) {
@@ -252,7 +260,7 @@ public class Config {
 	}
 
 	public static String getAfLearningColumnName() {
-		return props.getProperty("AfLearningColumnName", "#$#");
+		return props.getProperty("AfLearningColumnName", NO_NAME);
 	}
 	
 	public static void setAfLearningColumnName(String name) {
@@ -260,7 +268,7 @@ public class Config {
 	}
 
 	public static String getAfCorrectionColumnName() {
-		return props.getProperty("AfCorrectionColumnName", "#$#");
+		return props.getProperty("AfCorrectionColumnName", NO_NAME);
 	}
 	
 	public static void setAfCorrectionColumnName(String name) {

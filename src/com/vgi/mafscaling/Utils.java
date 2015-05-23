@@ -369,6 +369,20 @@ public final class Utils {
         }
         return isEmpty;
     }
+    
+    /**
+     * Methods copies table to another table
+     * @param fromTable
+     * @param toTable
+     */
+    public static void copyTable(JTable fromTable, JTable toTable) {
+    	ensureColumnCount(fromTable.getColumnCount(), toTable);
+    	ensureRowCount(fromTable.getRowCount(), toTable);
+        for (int i = 0; i < fromTable.getRowCount(); ++i) {
+            for (int j = 0; j < fromTable.getColumnCount(); ++j)
+            	toTable.setValueAt(fromTable.getValueAt(i, j), i, j);
+        }
+    }
 
     /**
      * Method calculates plotting z[][] based on provided x and y arrays and related table

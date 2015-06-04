@@ -162,7 +162,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
 	protected void createMafPanel(JPanel dataPanel) {
 		MafTablePane mafScrollPane = new MafTablePane(ColumnWidth, MafTableName, true, true);
 		mafTable = mafScrollPane.getJTable();
-	    excelAdapter.addTable(mafTable, false, false, false, false, true, false, true, false, true);
+	    excelAdapter.addTable(mafTable, false, false, false, false, false, false, false, false, true);
 	    GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
 	    gbc_mafScrollPane.ipady = 30;
 	    gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;

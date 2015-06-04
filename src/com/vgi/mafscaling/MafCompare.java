@@ -86,8 +86,6 @@ public class MafCompare extends JFrame {
     private JTable origMafTable = null;
     private JTable newMafTable = null;
     private JTable compMafTable = null;
-    private JTable origMafRefTable = null;
-    private JTable newMafRefTable = null;
     
     public MafCompare() {
     	compExcelAdapter = new ExcelAdapter() {
@@ -140,14 +138,6 @@ public class MafCompare extends JFrame {
 	                Config.setCompWindowLocation(getLocation());
 	                origMafData.clear();
 	                newMafData.clear();
-	                origMafRefTable = null;
-	                newMafRefTable = null;
-	        	}
-	        	public void windowOpened(WindowEvent e) {
-	        		if (null != origMafRefTable && !Utils.isTableEmpty(origMafRefTable))
-	        			Utils.copyTable(origMafRefTable, origMafTable);
-	        		if (null != newMafRefTable && !Utils.isTableEmpty(origMafRefTable))
-	        			Utils.copyTable(newMafRefTable, newMafTable);
 	        	}
 	        });
 	
@@ -508,8 +498,10 @@ public class MafCompare extends JFrame {
 		this.compMafCellListener = compMafCellListener;
 	}
 	
-	public void setReferenceMafTables(JTable origMafTable, JTable newMafTable) {
-        origMafRefTable = origMafTable;
-        newMafRefTable = newMafTable;
+	public void setReferenceMafTables(JTable origMafRefTable, JTable newMafRefTable) {
+		if (null != origMafRefTable && !Utils.isTableEmpty(origMafRefTable))
+			Utils.copyTable(origMafRefTable, origMafTable);
+		if (null != newMafRefTable && !Utils.isTableEmpty(newMafRefTable))
+			Utils.copyTable(newMafRefTable, newMafTable);
 	}
 }

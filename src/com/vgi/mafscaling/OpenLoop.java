@@ -708,7 +708,10 @@ public class OpenLoop extends AMafScaling {
 		                        if (wotFlag == false) {
 		                            wotFlag = true;
 		                            skipRowCount = 0;
-		                            if (foundWot) {
+		                            if (foundWot &&
+		                            	!runTables[i].getValueAt(0, 0).equals("") &&
+		                            	!runTables[i].getValueAt(1, 0).equals("") &&
+		                            	!runTables[i].getValueAt(2, 0).equals("")) {
 		                                i += 1;
 		                                if (i == runTables.length)
 		                                    return;

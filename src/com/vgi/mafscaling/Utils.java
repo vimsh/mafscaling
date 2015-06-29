@@ -42,6 +42,9 @@ public final class Utils {
      */
     public final static String fpRegex = "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
     //		("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
+    public final static String tmRegex = ".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*";
+    
+    private static long baseTime = 0;
 
     //////////////////////////////////////////////////////////////////////////////
     // COLORING METHODS
@@ -685,20 +688,33 @@ public final class Utils {
 
         return Utils.table3DInterpolation(load, rpm, loadLow, loadHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
+    
+    /**
+     * Method resets baseTime variable used for conversion from absolute time in hh:mm:ss.sss string format to relative time in msec
+     * @param s
+     */
+    public static void resetBaseTime(String s) {
+    	if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
+    		int tmZero = '0' * 11;
+    		baseTime = ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 + (s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 + s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000;
+        }
+    	else
+    		baseTime = 0;
+    }
 
     /**
      * Method used for parsing various time column formats and returns time in msec as long
      * @param s time as string from log file
      * @return time in msec as long
      */
-    public static long parseTime(String s, long base) {
+    public static long parseTime(String s) {
     	if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
     		int tmZero = '0' * 11;
     		int msZero = '0' * 111;
     		return ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 +
     				(s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 +
     				 s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000 +
-    				 (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - base;
+    				 (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - baseTime;
         }
     	if (s.indexOf('.') > 0)
     		return Long.valueOf(s) * 1000;

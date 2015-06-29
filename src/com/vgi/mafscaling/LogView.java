@@ -1236,6 +1236,40 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	logDataTable.sortByColumn(column, false) ;
     }
 
+    private void convertTimeToMsec() {
+    	String val;
+		boolean timeColFound = false;
+		for (int i = 0; i < logDataTable.getColumnCount() && !timeColFound; ++i) {
+			String colName = logDataTable.getColumn(i).getHeaderValue().toString();
+			if (colName.toLowerCase().matches(".*\\btime\\b.*")) {
+				if (logDataTable.getRowCount() > 0) {
+					val = (String)logDataTable.getValueAt(0, i);
+					if (val.matches(Utils.tmRegex)) {
+						long time = 0;
+						long tmbase = 0;
+						for (int j = 0; j < logDataTable.getRowCount(); ++j) {
+							try {
+								if (j == 0)
+									Utils.resetBaseTime((String)logDataTable.getValueAt(j, i));
+								time = Utils.parseTime((String)logDataTable.getValueAt(j, i));
+	                        	if (tmbase == 0) {
+	                        		tmbase = time;
+	                        		if (time > 1000)
+	                        			time = 0;
+	                        	}
+								logDataTable.setValueAt(String.valueOf(time), j, i);
+							}
+							catch (Exception e) {
+					            JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + colName + ", row " + (j + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
+					            return;
+							}
+						}
+					}
+				}
+			}
+		}
+    }
+    
 	private void loadLogFile() {
     	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
@@ -1261,34 +1295,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			try {
 				logDataTable.refresh(file.toURI().toURL(), prop);
 				// Below is a hack code to check and convert time column hh:mm:ss.sss to msec number
-				boolean timeColFound = false;
-				for (int i = 0; i < logDataTable.getColumnCount() && !timeColFound; ++i) {
-					colName = logDataTable.getColumn(i).getHeaderValue().toString();
-					if (colName.toLowerCase().matches(".*\\btime\\b.*")) {
-						if (logDataTable.getRowCount() > 0) {
-							val = (String)logDataTable.getValueAt(0, i);
-							if (val.matches(".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*")) {
-								long time = 0;
-								long tmbase = 0;
-								for (int j = 0; j < logDataTable.getRowCount(); ++j) {
-									try {
-										time = Utils.parseTime((String)logDataTable.getValueAt(j, i), tmbase);
-			                        	if (tmbase == 0) {
-			                        		tmbase = time;
-			                        		if (time > 1000)
-			                        			time = 0;
-			                        	}
-										logDataTable.setValueAt(String.valueOf(time), j, i);
-									}
-									catch (Exception e) {
-							            JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + colName + ", row " + (j + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
-							            return;
-									}
-								}
-							}
-						}
-					}
-				}
+				convertTimeToMsec();
 			}
 	        catch (Exception e) {
 	            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -1556,10 +1563,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
             		HashMap<String, ArrayList<Double>> pullData = new HashMap<String, ArrayList<Double>>();
             		ArrayList<Double> columnData;
 	                String[] flds;
-	                int pullRows = 0;
 	                row = 0;
-	                long time = 0;
-	                long tmbase = 0;
+	                int pullRows = 0;
 	                boolean wotFlag = true;
 	                while ((line = br.readLine()) != null) {
 		            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
@@ -1593,13 +1598,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		                		}
 		                		else
 		                			columnData = pullData.get(colNames.get(i));
-								if (colNames.get(i).toLowerCase().matches(".*\\btime\\b.*")) {
-									time = Utils.parseTime(flds[i], tmbase);
-		                        	if (tmbase == 0) {
-		                        		tmbase = time;
-		                        		time = 0;
-		                        	}
-			                		columnData.add((double)time);
+								if (flds[i].matches(Utils.tmRegex)) {
+			                		if (row == 0)
+		                        		Utils.resetBaseTime(flds[i]);
+			                		columnData.add((double)Utils.parseTime(flds[i]));
 								}
 								else
 									columnData.add(Double.valueOf(flds[i]));

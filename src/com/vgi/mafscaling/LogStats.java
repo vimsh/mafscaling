@@ -510,8 +510,6 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             if (line != null) {
             	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
                 for (String item : elements) {
-                	if (item.toLowerCase().matches(".*\\btime\\b.*"))
-                		continue;
 	                xAxisColumn.addItem(item);
 	                yAxisColumn.addItem(item);
 	                dataColumn.addItem(item);
@@ -743,6 +741,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 int lastYIdx = yAxisArraySize - 1;
                 int i = 2;
                 boolean skip;
+                int tmColIdx = -1;
                 // data struct where first hash set is X-Axis containing second hash set which is Y-Axis containing array of values
                 xData = new HashMap<Double, HashMap<Double, ArrayList<Double>>>();
                 HashMap<Double, ArrayList<Double>> yData;
@@ -753,6 +752,22 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 	line = br.readLine();
 	                while (line != null) {
 	                	elements = line.split(",", -1);
+	                	if (i == 2) {
+		                	if (useFilter1 && elements[fltr1ColIdx].matches(Utils.tmRegex))
+		                		tmColIdx = fltr1ColIdx;
+		                	else if (useFilter2 && elements[fltr2ColIdx].matches(Utils.tmRegex))
+		                		tmColIdx = fltr2ColIdx;
+		                	else if (useFilter3 && elements[fltr3ColIdx].matches(Utils.tmRegex))
+		                		tmColIdx = fltr3ColIdx;
+		                	else if (elements[xColIdx].matches(Utils.tmRegex))
+		                		tmColIdx = xColIdx;
+		                	else if (elements[yColIdx].matches(Utils.tmRegex))
+		                		tmColIdx = yColIdx;
+		                	if (tmColIdx >= 0)
+                        		Utils.resetBaseTime(elements[tmColIdx]);
+	                	}
+	                	if (tmColIdx >= 0)
+                    		elements[tmColIdx] = String.valueOf(Utils.parseTime(elements[tmColIdx]));
 	                	if (useFilter1) {
 	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr1ColIdx])) {
 	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 1, column " + (fltr1ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);

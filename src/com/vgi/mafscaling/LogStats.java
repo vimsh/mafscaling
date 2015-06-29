@@ -510,6 +510,8 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             if (line != null) {
             	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
                 for (String item : elements) {
+                	if (item.toLowerCase().matches(".*\\btime\\b.*"))
+                		continue;
 	                xAxisColumn.addItem(item);
 	                yAxisColumn.addItem(item);
 	                dataColumn.addItem(item);

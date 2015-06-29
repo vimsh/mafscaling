@@ -296,6 +296,9 @@ public class MafIatComp extends ACompCalc {
 	                boolean removed = false;
 	                int i = 2;
 	                int row = getLogTableEmptyRow();
+	                long time = 0;
+	                long prevTime = 0;
+	                long tmbase = 0;
 	                double thrtlMaxChange2 = thrtlMaxChange * 2.0;
 	                double throttle = 0;
 	                double pThrottle = 0;
@@ -307,9 +310,6 @@ public class MafIatComp extends ACompCalc {
 	                double cmdafr = 0;
 	                double trims = 0;
 	                double dVdt = 0;
-	                double prevTime = 0;
-	                double time = 0;
-	                double timeMultiplier = 1.0;
 	                double pmafv = 0;
 	                double maf = 0;
 	                double mafv = 0;
@@ -335,12 +335,12 @@ public class MafIatComp extends ACompCalc {
 		                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
 	                        	// Calculate dV/dt
                             	prevTime = time;
-                            	time = Double.valueOf(flds[logTimeColIdx]);
-                            	if (timeMultiplier == 1.0 && (int)time - time < 0) {
-                            		timeMultiplier = 1000.0;
-                            		prevTime *= timeMultiplier;
+                            	time = Utils.parseTime(flds[logTimeColIdx], tmbase);
+                            	if (tmbase == 0) {
+                            		tmbase = time;
+                            		if (time > 1000)
+                            			time = 0;
                             	}
-                        		time *= timeMultiplier;
                             	pmafv = mafv;
                             	mafv = Double.valueOf(flds[logMafvColIdx]);
                             	if ((time - prevTime) == 0.0)
@@ -386,7 +386,7 @@ public class MafIatComp extends ACompCalc {
 		                                mafArray.add(maf);
 		                                errCorrArray.add(corr);
 		                                mafvArray.add(mafv);
-		                                timeArray.add(time);
+		                                timeArray.add((double)time);
 		                                iatArray.add(iat);
 		                                dvdtArray.add(dVdt);
 		                                row += 1;

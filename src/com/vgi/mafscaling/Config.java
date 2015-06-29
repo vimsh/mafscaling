@@ -146,6 +146,14 @@ public class Config {
 	public static void setThrottleAngleColumnName(String name) {
 		props.setProperty("ThrottleAngleColumnName", name);
 	}
+	
+	public static String getLogThrottleAngleColumnName() {
+		return props.getProperty("LogThrottleAngleColumnName", NO_NAME);
+	}
+	
+	public static void setLogThrottleAngleColumnName(String name) {
+		props.setProperty("LogThrottleAngleColumnName", name);
+	}
 
 	public static String getMafVoltageColumnName() {
 		return props.getProperty("MafVoltageColumnName", NO_NAME);
@@ -217,6 +225,14 @@ public class Config {
 	
 	public static void setRpmColumnName(String name) {
 		props.setProperty("RpmColumnName", name);
+	}
+
+	public static String getLogRpmColumnName() {
+		return props.getProperty("LogRpmColumnName", NO_NAME);
+	}
+	
+	public static void setLogRpmColumnName(String name) {
+		props.setProperty("LogRpmColumnName", name);
 	}
 
 	public static String getLoadColumnName() {
@@ -445,6 +461,14 @@ public class Config {
 
 	public static void setWOTStationaryPointValue(int v) {
 		props.setProperty("WOTStationaryPoint", Integer.toString(v));
+	}
+
+	public static int getLogWOTStationaryPointValue() {
+		return Integer.parseInt(props.getProperty("LogWOTStationaryPoint", DefaultWOTStationaryPoint));
+	}
+
+	public static void setLogWOTStationaryPointValue(int v) {
+		props.setProperty("LogWOTStationaryPoint", Integer.toString(v));
 	}
 
 	public static int getWBO2RowOffset() {

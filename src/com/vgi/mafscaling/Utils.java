@@ -685,4 +685,23 @@ public final class Utils {
 
         return Utils.table3DInterpolation(load, rpm, loadLow, loadHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
+
+    /**
+     * Method used for parsing various time column formats and returns time in msec as long
+     * @param s time as string from log file
+     * @return time in msec as long
+     */
+    public static long parseTime(String s, long base) {
+    	if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
+    		int tmZero = '0' * 11;
+    		int msZero = '0' * 111;
+    		return ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 +
+    				(s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 +
+    				 s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000 +
+    				 (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - base;
+        }
+    	if (s.indexOf('.') > 0)
+    		return Long.valueOf(s) * 1000;
+    	return Long.valueOf(s);
+    }
 }

@@ -28,6 +28,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,13 +37,20 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Stack;
+
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -57,27 +65,37 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToolBar;
+import javax.swing.JTree;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
 import org.jfree.chart.ChartMouseListener;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.StandardTickUnitSource;
+import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
@@ -89,6 +107,11 @@ import org.jfree.ui.RectangleAnchor;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 import org.math.plot.Plot3DPanel;
+import org.scijava.swing.checkboxtree.CheckBoxNodeData;
+import org.scijava.swing.checkboxtree.CheckBoxNodeEditor;
+import org.scijava.swing.checkboxtree.CheckBoxNodePanel;
+import org.scijava.swing.checkboxtree.CheckBoxNodeRenderer;
+
 import quick.dbtable.Column;
 import quick.dbtable.DBTable;
 import quick.dbtable.PrintProperties;
@@ -184,7 +207,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		}
     }
     
-    class DoubleComparator implements quick.dbtable.Comparator {
+    public class DoubleComparator implements quick.dbtable.Comparator {
     	public int compare(int column, Object currentData, Object nextData) {
     		Double v1 = Double.valueOf(currentData.toString());
     		Double v2 = Double.valueOf(nextData.toString());
@@ -269,6 +292,22 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			return arr;
     	}
     }
+	
+	public class FileNodeRenderer extends CheckBoxNodeRenderer {
+		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+			Component renderer = super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+			renderer.setBackground(null);
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode)value;
+			if (renderer instanceof DefaultTreeCellRenderer && node.getAllowsChildren()) {
+				((DefaultTreeCellRenderer)renderer).setIcon(null);
+				((DefaultTreeCellRenderer)renderer).setOpaque(false);
+				((DefaultTreeCellRenderer)renderer).setBackgroundNonSelectionColor(null);
+			}
+			else
+				((CheckBoxNodePanel)renderer).setOpaque(false);
+			return renderer;
+		}
+	}
     
     public class CheckBoxIcon implements Icon {
     	private Color color;
@@ -359,7 +398,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     private ChartPanel chartPanel = null;
+    private ChartPanel wotChartPanel = null;
+    private JTree wotTree = null;
     private XYPlot plot = null;
+    private XYPlot wotPlot = null;
     private XYSeriesCollection rpmDataset = null;
     private XYSeriesCollection dataset = null;
     private XYLineAndShapeRenderer rpmPlotRenderer = null;
@@ -389,12 +431,20 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox plotsColumn = null;
+    private JMultiSelectionBox wotPlotsColumn = null;
+    private HashMap<String, ArrayList<HashMap<String, ArrayList<Double>>>> filesData = null;
+    private int wotPoint = Config.getWOTStationaryPointValue();
+    private int logThtlAngleColIdx = -1;
+    private String logRpmColName = null;
     private ValueMarker startMarker = null;
     private ValueMarker endMarker = null;
-    private XYDomainMutilineAnnotation xyMarker = null;
+    private XYDomainMutilineAnnotation xMarker = null;
+    private XYDomainMutilineAnnotation wotMarker = null;
     private Stack<Color> colors = new Stack<Color>();
+//    private Stack<Color> wotColors = new Stack<Color>();
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
+    private DecimalFormat df = new DecimalFormat("#.####");
 
 	public LogView(int tabPlacement) {
         super(tabPlacement);
@@ -404,6 +454,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private void initialize() {
         createDataTab();
         createChartTab();
+        createWotChartTab();
         createUsageTab();
     }
     
@@ -656,8 +707,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
         legend.setItemPaint(Color.WHITE);
         chart.addLegend(legend);
         
-        xyMarker = new XYDomainMutilineAnnotation();
-        plot.addAnnotation(xyMarker);
+        xMarker = new XYDomainMutilineAnnotation();
+        plot.addAnnotation(xMarker);
         
         chartMouseListener = new ChartMouseListener() {
 			@Override
@@ -693,7 +744,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			public void chartMouseClicked(ChartMouseEvent event) {
 				if (logPlayWindow == null)
 					return;
-				if (xyMarker.count() == 0)
+				if (xMarker.count() == 0)
 					return;
                 Rectangle2D dataArea = chartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
 		        Point2D p = chartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
@@ -831,6 +882,183 @@ public class LogView extends FCTabbedPane implements ActionListener {
         gbc_chartPanel.gridy = 1;
         plotPanel.add(plot3d, gbc_chartPanel);
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CREATE MUTI-FILE TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    private void createWotChartTab() {
+        JPanel plotPanel = new JPanel();
+        add(plotPanel, "<html><div style='text-align: center;'>W<br>O<br>T<br><br>P<br>u<br>l<br>l<br>s</div></html>");
+        GridBagLayout gbl_plotPanel = new GridBagLayout();
+        gbl_plotPanel.columnWidths = new int[] {0};
+        gbl_plotPanel.rowHeights = new int[] {0, 0};
+        gbl_plotPanel.columnWeights = new double[]{1.0};
+        gbl_plotPanel.rowWeights = new double[]{0.0, 1.0};
+        plotPanel.setLayout(gbl_plotPanel);
+        
+        createWotCtrlPanel(plotPanel);
+        createWotTreePanel();
+        createWotChart();
+        
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(wotTree), wotChartPanel);
+        splitPane.setResizeWeight(0.5);
+        splitPane.setOneTouchExpandable(true);
+        splitPane.setContinuousLayout(true);
+        splitPane.setDividerLocation(150);
+        GridBagConstraints gbc_dataPanel = new GridBagConstraints();
+        gbc_dataPanel.insets = insets3;
+        gbc_dataPanel.anchor = GridBagConstraints.CENTER;
+        gbc_dataPanel.weightx = 1.0;
+        gbc_dataPanel.weighty = 1.0;
+        gbc_dataPanel.fill = GridBagConstraints.BOTH;
+        gbc_dataPanel.gridx = 0;
+        gbc_dataPanel.gridy = 1;
+        plotPanel.add(splitPane, gbc_dataPanel);
+    }
+    
+	protected void createWotCtrlPanel(JPanel plotPanel) {
+        JPanel cntlPanel = new JPanel();
+        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
+        gbc_ctrlPanel.insets = insets3;
+        gbc_ctrlPanel.anchor = GridBagConstraints.NORTH;
+        gbc_ctrlPanel.weightx = 1.0;
+        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbc_ctrlPanel.gridx = 0;
+        gbc_ctrlPanel.gridy = 0;
+        plotPanel.add(cntlPanel, gbc_ctrlPanel);
+        
+        GridBagLayout gbl_cntlPanel = new GridBagLayout();
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0};
+        gbl_cntlPanel.rowHeights = new int[]{0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 1.0, 0.0};
+        gbl_cntlPanel.rowWeights = new double[]{0};
+        cntlPanel.setLayout(gbl_cntlPanel);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = insets3;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+
+        JButton btnAddButton = new JButton("Load Log");
+        btnAddButton.setActionCommand("loadWot");
+        btnAddButton.addActionListener(this);
+        cntlPanel.add(btnAddButton, gbc);
+
+        gbc.gridx += 1;
+        gbc.anchor = GridBagConstraints.EAST;
+        cntlPanel.add(new JLabel("Plots"), gbc);
+
+        gbc.gridx += 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        wotPlotsColumn = new JMultiSelectionBox();
+        wotPlotsColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        cntlPanel.add(wotPlotsColumn, gbc);
+        
+        gbc.gridx += 1;
+        gbc.anchor = GridBagConstraints.EAST;
+        JButton btnGoButton = new JButton("View");
+        btnGoButton.setActionCommand("viewWot");
+        btnGoButton.addActionListener(this);
+        cntlPanel.add(btnGoButton, gbc);
+	}
+	
+	protected void createWotTreePanel() {
+		DefaultMutableTreeNode wotTreeRoot = new DefaultMutableTreeNode("Root");
+		DefaultTreeModel treeModel = new DefaultTreeModel(wotTreeRoot);
+		wotTree = new JTree(treeModel);
+		wotTree.setCellRenderer(new FileNodeRenderer());
+		wotTree.setCellEditor(new CheckBoxNodeEditor(wotTree));
+		wotTree.setEditable(true);
+		wotTree.setRootVisible(false);
+		wotTree.setOpaque(false);
+		wotTree.setBackground(null);
+	}
+	
+	protected void createWotChart() {
+		wotMarker = new XYDomainMutilineAnnotation();
+        JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
+	    wotChartPanel = new ChartPanel(chart, true, true, true, true, true);
+	    wotChartPanel.setAutoscrolls(true);
+		chart.setBackgroundPaint(new Color(60, 60, 65));
+	    
+		wotPlot = chart.getXYPlot();
+		wotPlot.setRangePannable(true);
+		wotPlot.setDomainPannable(true);
+		wotPlot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+		wotPlot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+		wotPlot.setBackgroundPaint(new Color(80, 80, 85));
+		wotPlot.addAnnotation(wotMarker);
+
+		wotPlot.setRangeAxis(null);
+
+	    NumberAxis xAxis = new NumberAxis("Engine Speed (RPM)");
+	    xAxis.setAutoRangeIncludesZero(false);
+        xAxis.setTickLabelPaint(Color.WHITE);
+        xAxis.setLabelPaint(Color.LIGHT_GRAY);
+        wotPlot.setDomainAxis(0, xAxis);
+        
+	    wotPlot.setDataset(0, new XYSeriesCollection());
+	    wotPlot.mapDatasetToDomainAxis(0, 0);
+	    wotPlot.mapDatasetToRangeAxis(0, 0);
+	    
+	    LegendTitle legend = new LegendTitle(wotPlot); 
+	    legend.setItemFont(new Font("Arial", 0, 10));
+	    legend.setPosition(RectangleEdge.TOP);
+	    legend.setItemPaint(Color.WHITE);
+	    chart.addLegend(legend);
+	    
+	    wotChartPanel.addChartMouseListener(new ChartMouseListener() {
+			@Override
+	    	public void chartMouseMoved(ChartMouseEvent event) {
+	    	    try {
+	    	    	wotPlot.clearRangeMarkers();
+	    	    	wotMarker.clearLabels(false);
+                    Rectangle2D dataArea = wotChartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
+    		        Point2D p = wotChartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
+                    double y = 0;
+                    double x = wotPlot.getDomainAxis(0).java2DToValue(p.getX(), dataArea, wotPlot.getDomainAxisEdge());
+                    boolean isLeft = (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) ? true : false;
+	    	    	if (isLeft) {
+	    	    		wotMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
+	    	    		wotMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
+	    	    	}
+	    	    	else {
+	    	    		wotMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
+	    	    		wotMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
+	    	    	}
+	    	    	XYSeriesCollection dataset;
+	    	    	NumberAxis rangeAxis;
+	    	    	boolean show = false;
+	    	    	for (int i = 0; i < wotPlot.getDatasetCount(); ++i) {
+	    	    		dataset = (XYSeriesCollection)wotPlot.getDataset(i);
+	    	    		if (dataset != null && dataset.getSeriesCount() > 0) {
+	    	    			show = true;
+		    	    		rangeAxis = (NumberAxis)wotPlot.getRangeAxis(i);
+		    	    		y = rangeAxis.java2DToValue(p.getY(), dataArea, wotPlot.getRangeAxisEdge());
+		    	    		wotMarker.addLabel(rangeAxis.getLabel() + ": " + df.format(y), new Color(255 - i, 255, 255), false);
+	    	    		}
+	    	    	}
+	    	    	if (show) {
+	    	    		wotMarker.setValue(x);
+	                    y = wotPlot.getRangeAxis().java2DToValue(p.getY(), dataArea, wotPlot.getRangeAxisEdge());
+		    	    	Marker yMarker = new ValueMarker(y);
+		    	    	yMarker.setPaint(Color.WHITE);
+		    	    	wotPlot.addRangeMarker(yMarker);
+	    	    	}
+	    	    	wotChartPanel.repaint();
+	    	    }
+	    	    catch (Exception ex) {
+	        		ex.printStackTrace();
+	        		logger.error(ex);
+	    	    }
+	    	}
+
+			@Override
+			public void chartMouseClicked(ChartMouseEvent event) { }
+	    });
+	}
 
     //////////////////////////////////////////////////////////////////////////////////////
     // CREATE USAGE TAB
@@ -975,8 +1203,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				plotRenderer.setSeriesVisible(column, true);
 				displCount += 1;
 			}
-			if (xyMarker.count() > 0)
-				xyMarker.addLabel(series.getDescription() + ": " + series.getY((int) xyMarker.getValue()), color, true);
+			if (xMarker.count() > 0)
+				xMarker.addLabel(series.getDescription() + ": " + series.getY((int) xMarker.getValue()), color, true);
     	}
     	finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -989,14 +1217,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        ((NumberAxis)plot.getRangeAxis(0)).setStandardTickUnits(new StandardTickUnitSource());
 	        plot.getRangeAxis(0).setTickLabelsVisible(false);
 	        rpmPlotRenderer.setSeriesVisible(0, false);
-			xyMarker.removeLabel(rpmPlotRenderer.getSeriesPaint(0));
+			xMarker.removeLabel(rpmPlotRenderer.getSeriesPaint(0));
 		}
 		else {
 			displCount -= 1;
 			if (displCount == 0)
 				plot.getRangeAxis(1).setTickLabelsVisible(false);
 	        plotRenderer.setSeriesVisible(column, false);
-			xyMarker.removeLabel(plotRenderer.getSeriesPaint(column));
+			xMarker.removeLabel(plotRenderer.getSeriesPaint(column));
 		}
     }
     
@@ -1023,14 +1251,49 @@ public class LogView extends FCTabbedPane implements ActionListener {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
 		logDataTable.filter(null);
 		filterText.setText("");
+    	Column col;
+    	String colName;
+    	String lcColName;
+        String val;
         try {
 			for (int i = 0; i < logDataTable.getColumnCount(); ++i)
 				logDataTable.getTableHeader().removeMouseListener(((CheckboxHeaderRenderer)logDataTable.getColumn(i).getHeaderRenderer()).getMouseListener());
-        	logDataTable.refresh(file.toURI().toURL(), prop);
-        	Column col;
-        	String colName;
-        	String lcColName;
-	        String val;
+			try {
+				logDataTable.refresh(file.toURI().toURL(), prop);
+				// Below is a hack code to check and convert time column hh:mm:ss.sss to msec number
+				boolean timeColFound = false;
+				for (int i = 0; i < logDataTable.getColumnCount() && !timeColFound; ++i) {
+					colName = logDataTable.getColumn(i).getHeaderValue().toString();
+					if (colName.toLowerCase().matches(".*\\btime\\b.*")) {
+						if (logDataTable.getRowCount() > 0) {
+							val = (String)logDataTable.getValueAt(0, i);
+							if (val.matches(".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*")) {
+								long time = 0;
+								long tmbase = 0;
+								for (int j = 0; j < logDataTable.getRowCount(); ++j) {
+									try {
+										time = Utils.parseTime((String)logDataTable.getValueAt(j, i), tmbase);
+			                        	if (tmbase == 0) {
+			                        		tmbase = time;
+			                        		if (time > 1000)
+			                        			time = 0;
+			                        	}
+										logDataTable.setValueAt(String.valueOf(time), j, i);
+									}
+									catch (Exception e) {
+							            JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + colName + ", row " + (j + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
+							            return;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+	        catch (Exception e) {
+	            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+	    		return;
+	    	}
 	        CheckboxHeaderRenderer renderer;
         	Component comp;
         	XYSeries series;
@@ -1043,7 +1306,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
             plot3d.removeAllPlots();
         	rpmDataset.removeAllSeries();
         	dataset.removeAllSeries();
-			xyMarker.clearLabels(true);
+			xMarker.clearLabels(true);
         	rpmCol = -1;
         	displCount = 0;
         	selectionCombo.removeAllItems();
@@ -1197,30 +1460,333 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plot3d.setAxisLabel(2, plotsColumn.getSelectedItemsString());
     }
     
+    private boolean getColumnsFilters(ArrayList<String> columns) {
+    	boolean ret = true;
+        String logThtlAngleColName = Config.getLogThrottleAngleColumnName();
+        logRpmColName = Config.getLogRpmColumnName();
+        logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
+        int logRpmColIdx = columns.indexOf(logRpmColName);
+        if (logRpmColIdx == -1) {
+        	String lcColName;
+        	for (int i = 0; i < columns.size(); ++i) {
+	    		lcColName = columns.get(i).toLowerCase();
+				if (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))
+					logRpmColIdx = i;
+        	}
+        }
+        wotPoint = Config.getLogWOTStationaryPointValue();
+
+        JComboBox<String> thrlColumn = new JComboBox<String>();
+        JComboBox<String> rpmColumn = new JComboBox<String>();
+    	JSpinner wotPointSpinner = new JSpinner(new SpinnerNumberModel(wotPoint, 50, 100, 5));
+        for (String col : columns) {
+	        thrlColumn.addItem(col);
+	        rpmColumn.addItem(col);
+        }
+        thrlColumn.setSelectedIndex(logThtlAngleColIdx);
+        rpmColumn.setSelectedIndex(logRpmColIdx);
+   	
+        JPanel selectionPanel = new JPanel();
+        selectionPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        selectionPanel.setLayout(new GridLayout(0, 2, 5, 7));
+        selectionPanel.add(new JLabel(ColumnsFiltersSelection.rpmLabelText, JLabel.RIGHT));
+        selectionPanel.add(rpmColumn);
+        selectionPanel.add(new JLabel(ColumnsFiltersSelection.thrtlAngleLabelText, JLabel.RIGHT));
+        selectionPanel.add(thrlColumn);
+        selectionPanel.add(new JLabel(ColumnsFiltersSelection.wotStationaryLabelText, JLabel.RIGHT));
+        selectionPanel.add(wotPointSpinner);
+    	
+        if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, selectionPanel, "Settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+            ret = false;
+        else {
+        	logThtlAngleColName = thrlColumn.getSelectedItem().toString();
+        	logRpmColName = rpmColumn.getSelectedItem().toString();
+        	wotPoint = Integer.valueOf(wotPointSpinner.getValue().toString());
+            logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
+            logRpmColIdx = columns.indexOf(logRpmColName);
+            if (logThtlAngleColIdx == -1) {
+            	Config.setLogThrottleAngleColumnName(Config.NO_NAME);
+            	ret = false;
+            }
+            else
+            	Config.setLogThrottleAngleColumnName(logThtlAngleColName);
+        	if (logRpmColIdx == -1) {
+	        	Config.setLogRpmColumnName(Config.NO_NAME);
+            	ret = false;
+            }
+            else
+	        	Config.setLogRpmColumnName(logRpmColName);
+        }
+        return ret;
+    }
+
+	private void loadWotLogFiles() {
+    	fileChooser.setMultiSelectionEnabled(true);
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
+            return;
+        File[] files = fileChooser.getSelectedFiles();
+        if (files.length < 1)
+        	return;
+        filesData = new HashMap<String, ArrayList<HashMap<String, ArrayList<Double>>>>();
+        HashSet<String> columns = new HashSet<String>();
+        ArrayList<String> colNames = null;
+		DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
+		root.removeAllChildren();
+		((DefaultTreeModel )wotTree.getModel()).reload(root);
+        wotPlotsColumn.removeAllItems();
+        wotPlotsColumn.setText("");
+    	clearWotPlots();
+		double val;
+		int i = 0;
+		int row = 0;
+        for (File file : files) {
+	        BufferedReader br = null;
+	        try {
+	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+	            String line = br.readLine();
+	            if (line != null) {
+	            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
+	            		line = line.substring(0, line.length() - 1);
+	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	            	colNames = new ArrayList<String>(Arrays.asList(elements));	            	
+	            	if (false == getColumnsFilters(colNames))
+	            		continue;
+	        		DefaultMutableTreeNode fileNode = new DefaultMutableTreeNode("<html><u>" + file.getName() + "</u></html>");
+            		ArrayList<HashMap<String, ArrayList<Double>>> pulls = new ArrayList<HashMap<String, ArrayList<Double>>>();
+            		HashMap<String, ArrayList<Double>> pullData = new HashMap<String, ArrayList<Double>>();
+            		ArrayList<Double> columnData;
+	                String[] flds;
+	                int pullRows = 0;
+	                row = 0;
+	                long time = 0;
+	                long tmbase = 0;
+	                boolean wotFlag = true;
+	                while ((line = br.readLine()) != null) {
+		            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
+		            		line = line.substring(0, line.length() - 1);
+	                	flds = line.split(",", -1);
+	                    val = Double.valueOf(flds[logThtlAngleColIdx]);
+	                    if (row == 0 && val < 99)
+	                        wotFlag = false;
+	                    if (val < wotPoint) {
+	                        if (wotFlag == true) {
+	                            wotFlag = false;
+	                            if (pullRows >= 10) {
+	                            	pulls.add(pullData);
+	                            	pullData = new HashMap<String, ArrayList<Double>>();
+	                            	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData("Pull " + pulls.size(), false)));
+	                            }
+	                        }
+	                    }
+	                    else {
+	                        boolean newPullData = false;
+	                        if (wotFlag == false) {
+	                            wotFlag = true;
+	                            newPullData = true;
+	                            pullRows = 0;
+	                        }
+	                        pullRows += 1;
+		                	for (i = 0; i < colNames.size(); ++i) {
+		                		if (newPullData) {
+		                			columnData = new ArrayList<Double>();
+		                			pullData.put(colNames.get(i), columnData);
+		                		}
+		                		else
+		                			columnData = pullData.get(colNames.get(i));
+								if (colNames.get(i).toLowerCase().matches(".*\\btime\\b.*")) {
+									time = Utils.parseTime(flds[i], tmbase);
+		                        	if (tmbase == 0) {
+		                        		tmbase = time;
+		                        		time = 0;
+		                        	}
+			                		columnData.add((double)time);
+								}
+								else
+									columnData.add(Double.valueOf(flds[i]));
+		                	}
+	                    }
+	                    row += 1;
+	                }
+                    if (wotFlag == true) {
+                        if (pullRows >= 10) {
+                        	pulls.add(pullData);
+                        	pullData = new HashMap<String, ArrayList<Double>>();
+                        	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData("Pull " + pulls.size(), false)));
+                        }
+                    }
+	        		if (pulls.size() > 0) {
+		        		root.add(fileNode);
+		        		TreePath path = new TreePath(root);
+		        		wotTree.expandPath(path.pathByAddingChild(fileNode));		        		
+		        		filesData.put(file.getName(), pulls);
+		            	columns.addAll(colNames);
+	        		}
+	            }
+	        }
+	        catch (NumberFormatException ne) {
+	            logger.error(ne);
+                JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + ", column " + colNames.get(i) + " line " + row + ": " + ne, "Error processing file", JOptionPane.ERROR_MESSAGE);
+                return;
+	        }
+	        catch (Exception e) {
+	            logger.error(e);
+	            JOptionPane.showMessageDialog(null, e.getMessage(), "Error processing file " + file.getName(), JOptionPane.ERROR_MESSAGE);
+	            return;
+	        }
+	        finally {
+	        	if (br != null) {
+	                try {
+	                    br.close();
+	                }
+	                catch (IOException e) {
+	                    logger.error(e);
+	                }
+	        	}
+	        }
+        }
+        if (columns.size() > 0) {
+	        for (String col : columns)
+	        	wotPlotsColumn.addItem(col);
+			((DefaultTreeModel )wotTree.getModel()).reload(root);
+		    for (row = 0; row < wotTree.getRowCount(); ++row)
+		    	wotTree.expandRow(row);
+        }
+        else {
+            JOptionPane.showMessageDialog(null, "No WOT pulls were found in the log file(s)", "Oops", JOptionPane.INFORMATION_MESSAGE);
+        }
+/*
+        wotColors.push(Color.decode("#FF66FF"));
+        wotColors.push(Color.decode("#6666FF"));
+        wotColors.push(Color.decode("#669966"));
+		wotColors.push(Color.decode("#996666"));
+*/
+	}
+
+    protected void clearWotPlots() {
+    	for (int i = 0; i < wotPlot.getDatasetCount(); ++i) {
+        	XYSeriesCollection dataset = (XYSeriesCollection)wotPlot.getDataset(i);
+        	if (dataset != null) {
+        		dataset.removeAllSeries();
+        		wotPlot.setDataset(i, null);
+        		wotPlot.setRangeAxis(i, null);
+        	}
+    	}
+    	wotPlot.clearRangeMarkers();
+		wotMarker.clearLabels(true);
+    }
+	
+    private void viewWotPlots() {
+    	List<String> dataColNames = wotPlotsColumn.getSelectedItems();
+    	if (dataColNames == null || dataColNames.size() == 0) {
+            JOptionPane.showMessageDialog(null, "Please select columns to plot", "Invalid parameters", JOptionPane.ERROR_MESSAGE);
+    		return;
+    	}
+    	clearWotPlots();
+    	
+        ArrayList<HashMap<String, ArrayList<Double>>> filePulls;
+        HashMap<String, ArrayList<Double>> pullData;
+        ArrayList<Double> rpmData;
+        ArrayList<Double> colData;
+        DefaultMutableTreeNode fileNode;
+        CheckBoxNodeData pullNode;
+        String fileName;
+        String pullName;
+        int pullIdx;
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+    	try {
+/*
+		    int colorIdx = 0;
+    		float width = 1.0f;
+*/
+	    	for (int i = 0; i < dataColNames.size(); ++i) {
+	    		String yAxisColName = dataColNames.get(i);
+	    	    XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+	    	    XYSeriesCollection dataset = new XYSeriesCollection();
+	    	    
+
+    			DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
+    			for (int idx = 0; idx < root.getChildCount(); ++idx) {
+    				fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
+    				fileName = fileNode.getUserObject().toString().replaceAll("\\<.*?\\>", "");
+    				for (int j = 0; j < fileNode.getChildCount(); ++j) {
+    					pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(j)).getUserObject();
+    					if (!pullNode.isChecked())
+    						continue;
+    					pullName = pullNode.getText();
+    					filePulls = filesData.get(fileName);
+    					pullIdx = Integer.parseInt(pullName.replaceAll("Pull ", "")) - 1;
+    					pullData = filePulls.get(pullIdx);
+    					rpmData = pullData.get(logRpmColName);
+    					colData = pullData.get(yAxisColName);
+    					XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
+    					for (int k = 0; k < rpmData.size(); ++k)
+    						series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+/*
+		    	    	if (i == 0) {
+		    	    		lineRenderer.setSeriesStroke(i, new BasicStroke(width));
+				    	    lineRenderer.setSeriesPaint(i, wotColors.get(j));
+		    	    	}
+		    	    	else {
+		    	    		float space = 1 + i * width;
+		    	    		float length = i * space; 
+		    	    		lineRenderer.setSeriesStroke(i, new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, new float[] {space, length}, 0.0f));
+			    	    	Color color = wotColors.get(j);
+		    	    		for (int z = 0; z < i; ++z)
+		    	    			color = color.brighter();
+				    	    lineRenderer.setSeriesPaint(i, color);
+		    	    	}
+*/
+		    	    	dataset.addSeries(series);
+		    	    	lineRenderer.setSeriesShapesVisible(i, false);
+/*
+		    	    	if (wotColors.size() <= colorIdx) {
+				            JOptionPane.showMessageDialog(null, "Sorry, ran out of colors. Please select either smaller number of files or samller number of parameters so there wouldn't be as many curves.", "Error opening file", JOptionPane.ERROR_MESSAGE);
+		    	    		return;
+		    	    	}
+*/
+		    		}
+    			}
+	    	    NumberAxis yAxis = new NumberAxis(yAxisColName);
+	    	    yAxis.setAutoRangeIncludesZero(false);
+	    	    yAxis.setTickLabelPaint(Color.WHITE);
+	    	    yAxis.setLabelPaint(Color.LIGHT_GRAY);
+	    	    wotPlot.setRenderer(i, lineRenderer);
+	    	    wotPlot.setRangeAxis(i, yAxis, false);
+	    	    wotPlot.setDataset(i, dataset);
+	    	    wotPlot.mapDatasetToRangeAxis(i, i);
+	    	    wotPlot.mapDatasetToDomainAxis(i, 0);
+	    	    wotPlot.setRangeAxisLocation(i, (i % 2 == 0 ? AxisLocation.BOTTOM_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT));
+	    	}
+        }
+    	finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+    	}
+    }
+    
     public boolean setMarkers(double x, boolean isLeft) {
-    	xyMarker.clearLabels(false);
+    	xMarker.clearLabels(false);
         if (x < 0 || x >= logDataTable.getRowCount())
         	return false;
         XYSeries series = null;
     	if (isLeft) {
-    		xyMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
-    		xyMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
+    		xMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
+    		xMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
     	}
     	else {
-    		xyMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
-    		xyMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
+    		xMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
+    		xMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
     	}
         if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0)) {
         	series = rpmDataset.getSeries(0);
-            xyMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), rpmPlotRenderer.getSeriesPaint(0), false);
+            xMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), rpmPlotRenderer.getSeriesPaint(0), false);
         }
         for (int i = 0; i < dataset.getSeriesCount(); ++i) {
 	        if (plotRenderer.isSeriesVisible(i)) {
 	        	series = dataset.getSeries(i);
-	            xyMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), plotRenderer.getSeriesPaint(i), false);
+	            xMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), plotRenderer.getSeriesPaint(i), false);
 	        }
         }
-        xyMarker.setValue(x);
+        xMarker.setValue(x);
 		return (series != null);
     }
     
@@ -1318,6 +1884,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	    }
 		else if ("view".equals(e.getActionCommand()))
 			view3dPlots();
+		else if ("viewWot".equals(e.getActionCommand()))
+			viewWotPlots();
+		else if ("loadWot".equals(e.getActionCommand()))
+			loadWotLogFiles();
+		
 	}
 
 }

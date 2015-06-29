@@ -1075,11 +1075,11 @@ public class ClosedLoop extends AMafScaling {
 	                int clol;
 	                int i = 2;
 	                int row = getLogTableEmptyRow();
+	                long time = 0;
+	                long prevTime = 0;
+	                long tmbase = 0;
 	                double afr = 0;
 	                double dVdt = 0;
-	                double prevTime = 0;
-	                double time = 0;
-	                double timeMultiplier = 1.0;
 	                double pmafv = 0;
 	                double mafv = 0;
 	                double load;
@@ -1091,15 +1091,15 @@ public class ClosedLoop extends AMafScaling {
 	                    try {
                         	// Calculate dV/dt
                         	prevTime = time;
-                        	time = Double.valueOf(flds[logTimeColIdx]);
-                        	if (timeMultiplier == 1.0 && (int)time - time < 0) {
-                        		timeMultiplier = 1000.0;
-                        		prevTime *= timeMultiplier;
+                        	time = Utils.parseTime(flds[logTimeColIdx], tmbase);
+                        	if (tmbase == 0) {
+                        		tmbase = time;
+                        		if (time > 1000)
+                        			time = 0;
                         	}
-                    		time *= timeMultiplier;
                         	pmafv = mafv;
                         	mafv = Double.valueOf(flds[logMafvColIdx]);
-                        	if ((time - prevTime) == 0.0)
+                        	if ((time - prevTime) == 0)
                         		dVdt = 100.0;
                         	else
                         		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);

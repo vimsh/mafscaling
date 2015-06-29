@@ -279,7 +279,6 @@ public class LoadComp extends ACompCalc {
 	                int row = getLogTableEmptyRow();
 	                long time = 0;
 	                long prevTime = 0;
-	                long tmbase = 0;
 	                double cruise = -1;
 	                double thrtlMaxChange2 = thrtlMaxChange * 2.0;
 	                double throttle = 0;
@@ -307,12 +306,9 @@ public class LoadComp extends ACompCalc {
 		                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
 	                        	// Calculate dV/dt
                             	prevTime = time;
-                            	time = Utils.parseTime(flds[logTimeColIdx], tmbase);
-                            	if (tmbase == 0) {
-                            		tmbase = time;
-                            		if (time > 1000)
-                            			time = 0;
-                            	}
+                            	if (prevTime == 0)
+                            		Utils.resetBaseTime(flds[logTimeColIdx]);
+                            	time = Utils.parseTime(flds[logTimeColIdx]);
                             	pmafv = mafv;
                             	mafv = Double.valueOf(flds[logMafvColIdx]);
                             	if ((time - prevTime) == 0.0)

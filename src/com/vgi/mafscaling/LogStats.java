@@ -509,6 +509,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             String line = br.readLine();
             if (line != null) {
             	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+            	Arrays.sort(elements);
                 for (String item : elements) {
 	                xAxisColumn.addItem(item);
 	                yAxisColumn.addItem(item);

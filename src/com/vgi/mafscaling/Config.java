@@ -235,6 +235,14 @@ public class Config {
 		props.setProperty("LogRpmColumnName", name);
 	}
 
+	public static String getLogTimeColumnName() {
+		return props.getProperty("LogTimeColumnName", NO_NAME);
+	}
+	
+	public static void setLogTimeColumnName(String name) {
+		props.setProperty("LogTimeColumnName", name);
+	}
+
 	public static String getLoadColumnName() {
 		return props.getProperty("LoadColumnName", NO_NAME);
 	}

@@ -62,6 +62,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -92,6 +93,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
@@ -310,8 +312,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				((DefaultTreeCellRenderer)renderer).setOpaque(false);
 				((DefaultTreeCellRenderer)renderer).setBackgroundNonSelectionColor(null);
 			}
-			else
-				((CheckBoxNodePanel)renderer).setOpaque(false);
+			else {
+				CheckBoxNodePanel panel = (CheckBoxNodePanel)renderer;
+				if (!panel.hasFocus() && selected)
+					wotTree.clearSelection();
+			}
 			return renderer;
 		}
 	}
@@ -454,6 +459,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
     private DecimalFormat df = new DecimalFormat("#.####");
+    private boolean showWotCurvePoints = false;
 
 	public LogView(int tabPlacement) {
         super(tabPlacement);
@@ -895,7 +901,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
-    // CREATE MUTI-FILE TAB
+    // CREATE WOT TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void createWotChartTab() {
@@ -941,9 +947,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plotPanel.add(cntlPanel, gbc_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
@@ -984,6 +990,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
         cntlPanel.add(button, gbc);
 
         gbc.gridx += 1;
+        JCheckBox checkBox = new JCheckBox("Show points");
+        checkBox.setActionCommand("showpts");
+        checkBox.addActionListener(this);
+        cntlPanel.add(checkBox, gbc);
+
+        gbc.gridx += 1;
         gbc.anchor = GridBagConstraints.EAST;
         JButton btnGoButton = new JButton("View");
         btnGoButton.setActionCommand("viewWot");
@@ -1002,6 +1014,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		wotTree.setRootVisible(false);
 		wotTree.setOpaque(false);
 		wotTree.setBackground(null);
+		wotTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
 	}
 	
 	protected void createWotChart() {
@@ -1836,11 +1850,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
 					pullData = keyval.getValue();
 					timeData = pullData.get("xaxis");
 					colData = pullData.get(yAxisColName);
-					XYSeries series = new XYSeries(pullName);
-					for (int k = 0; k < timeData.size(); ++k)
-						series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
-		    	    dataset.addSeries(series);
-	    	    	lineRenderer.setSeriesShapesVisible(i, false);
+					if (colData != null) {
+						XYSeries series = new XYSeries(pullName);
+						for (int k = 0; k < timeData.size(); ++k)
+							series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
+			    	    dataset.addSeries(series);
+	                	lineRenderer.setSeriesShapesVisible(dataset.getSeriesCount() - 1, showWotCurvePoints);
+					}
     			}
 	    	    NumberAxis yAxis = new NumberAxis(yAxisColName);
 	    	    yAxis.setAutoRangeIncludesZero(false);
@@ -1878,16 +1894,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
         int pullIdx;
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
     	try {
-/*
-		    int colorIdx = 0;
-    		float width = 1.0f;
-*/
 	    	for (int i = 0; i < dataColNames.size(); ++i) {
 	    		String yAxisColName = dataColNames.get(i);
 	    	    XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
 	    	    XYSeriesCollection dataset = new XYSeriesCollection();
-	    	    
-
     			DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
     			for (int idx = 0; idx < root.getChildCount(); ++idx) {
     				fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
@@ -1902,38 +1912,19 @@ public class LogView extends FCTabbedPane implements ActionListener {
     					pullData = filePulls.get(pullIdx);
     					rpmData = pullData.get(logRpmColName);
     					colData = pullData.get(yAxisColName);
-    					XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
-    					for (int k = 0; k < rpmData.size(); ++k) {
-    						if (skipDrops) {
-    							if (k > 0 && rpmData.get(k) > rpmData.get(k - 1))
-    								series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
-    						}
-    						else
-    							series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+    					if (colData != null) {
+	    					XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
+	    					for (int k = 0; k < rpmData.size(); ++k) {
+	    						if (skipDrops) {
+	    							if (k > 0 && rpmData.get(k) > rpmData.get(k - 1))
+	    								series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+	    						}
+	    						else
+	    							series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+	    					}
+			    	    	dataset.addSeries(series);
+		                	lineRenderer.setSeriesShapesVisible(dataset.getSeriesCount() - 1, showWotCurvePoints);
     					}
-/*
-		    	    	if (i == 0) {
-		    	    		lineRenderer.setSeriesStroke(i, new BasicStroke(width));
-				    	    lineRenderer.setSeriesPaint(i, wotColors.get(j));
-		    	    	}
-		    	    	else {
-		    	    		float space = 1 + i * width;
-		    	    		float length = i * space; 
-		    	    		lineRenderer.setSeriesStroke(i, new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, new float[] {space, length}, 0.0f));
-			    	    	Color color = wotColors.get(j);
-		    	    		for (int z = 0; z < i; ++z)
-		    	    			color = color.brighter();
-				    	    lineRenderer.setSeriesPaint(i, color);
-		    	    	}
-*/
-		    	    	dataset.addSeries(series);
-		    	    	lineRenderer.setSeriesShapesVisible(i, false);
-/*
-		    	    	if (wotColors.size() <= colorIdx) {
-				            JOptionPane.showMessageDialog(null, "Sorry, ran out of colors. Please select either smaller number of files or samller number of parameters so there wouldn't be as many curves.", "Error opening file", JOptionPane.ERROR_MESSAGE);
-		    	    		return;
-		    	    	}
-*/
 		    		}
     			}
 	    	    NumberAxis yAxis = new NumberAxis(yAxisColName);
@@ -2073,6 +2064,17 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		    	logPlayWindow = new LogPlay(this);
 		    	logPlayButton.setEnabled(false);
 	        }
+	    }
+	    else if ("showpts".equals(e.getActionCommand())) {
+            showWotCurvePoints = ((JCheckBox)e.getSource()).isSelected();
+            for (int i = 0; i < wotPlot.getRendererCount(); ++i) {
+            	XYLineAndShapeRenderer lineRenderer = (XYLineAndShapeRenderer)wotPlot.getRenderer(i);
+            	XYSeriesCollection dataset = (XYSeriesCollection)wotPlot.getDataset(i);
+            	if (lineRenderer == null || dataset == null)
+            		continue;
+            	for (int j = 0; j < dataset.getSeriesCount(); ++j)
+                	lineRenderer.setSeriesShapesVisible(j, showWotCurvePoints);
+            }
 	    }
 		else if ("view".equals(e.getActionCommand()))
 			view3dPlots();

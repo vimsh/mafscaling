@@ -26,6 +26,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
+import java.util.Arrays;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -226,6 +228,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         columnsTable.setTableHeader(null);
         columnsTable.setModel(new DefaultTableModel(columns.length + 1, 1));
         columnsTable.setValueAt("", 0, 0);
+        Arrays.sort(columns);
         for (int i = 0; i < columns.length; ++i)
         	columnsTable.setValueAt(columns[i], i + 1, 0);        
         JScrollPane scrollPane = new JScrollPane(columnsTable);

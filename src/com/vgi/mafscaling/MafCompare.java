@@ -29,6 +29,10 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
@@ -53,6 +57,7 @@ import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.labels.StandardXYSeriesLabelGenerator;
 import org.jfree.chart.labels.StandardXYToolTipGenerator;
 import org.jfree.chart.plot.PlotOrientation;
@@ -397,6 +402,7 @@ public class MafCompare extends JFrame {
 	        JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
 	        chart.setBorderVisible(true);
 			chartPanel = new ChartPanel(chart, true, true, true, true, true);
+			chartPanel.setFocusable(true);
 			chartPanel.setAutoscrolls(true);
 	        
 	        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
@@ -467,6 +473,34 @@ public class MafCompare extends JFrame {
 	        legend.setPosition(RectangleEdge.TOP);
 	        chart.addLegend(legend);
 
+	        chartPanel.addMouseListener(new MouseAdapter() {
+	        	public void mousePressed(MouseEvent e) {
+	        		chartPanel.requestFocusInWindow();
+	        	}
+	        });
+	        chartPanel.addKeyListener(new KeyListener() {
+	        	public void keyPressed(KeyEvent e) {
+	        		if (!chartPanel.hasFocus())
+	        			return;
+	        		int keyCode = e.getKeyCode();
+	        		if (keyCode < KeyEvent.VK_LEFT || keyCode > KeyEvent.VK_DOWN)
+	        			return;
+	        	    ValueAxis axis = null;
+	        	    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT)
+	        	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getDomainAxis();
+	        	    else
+	        	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getRangeAxis();
+	        	    if (axis != null) {
+	        		    double delta = (axis.getUpperBound()- axis.getLowerBound()) / 100.0;
+	        		    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_DOWN)
+	        		    	axis.setRange(axis.getLowerBound()- delta, axis.getUpperBound() - delta);
+	        		    else if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_RIGHT)
+	        		    	axis.setRange(axis.getLowerBound() + delta, axis.getUpperBound() + delta);
+	        	    }
+	        	}
+				public void keyReleased(KeyEvent arg0) { }
+				public void keyTyped(KeyEvent arg0) { }
+	        });
     	}
     	catch (Exception e) {
             logger.error(e);

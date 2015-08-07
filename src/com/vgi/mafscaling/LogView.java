@@ -32,6 +32,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -104,6 +106,7 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.StandardTickUnitSource;
+import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
@@ -676,6 +679,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private void createGraghPanel() {
         JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
+		chartPanel.setFocusable(true);
         chartPanel.setAutoscrolls(true);
         chartPanel.setPopupMenu(null);
 		chart.setBackgroundPaint(new Color(60, 60, 65));
@@ -759,6 +763,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			}
 			@Override
 			public void chartMouseClicked(ChartMouseEvent event) {
+        		chartPanel.requestFocusInWindow();
 				if (logPlayWindow == null)
 					return;
 				if (xMarker.count() == 0)
@@ -796,8 +801,30 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				logPlayWindow.setStartEndArea(startMarker, endMarker);
 			}
     	};
-        
         chartPanel.addChartMouseListener(chartMouseListener);
+        chartPanel.addKeyListener(new KeyListener() {
+        	public void keyPressed(KeyEvent e) {
+        		if (!chartPanel.hasFocus())
+        			return;
+        		int keyCode = e.getKeyCode();
+        		if (keyCode < KeyEvent.VK_LEFT || keyCode > KeyEvent.VK_DOWN)
+        			return;
+        	    ValueAxis axis = null;
+        	    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT)
+        	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getDomainAxis();
+        	    else
+        	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getRangeAxis();
+        	    if (axis != null) {
+        		    double delta = (axis.getUpperBound()- axis.getLowerBound()) / 100.0;
+        		    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_DOWN)
+        		    	axis.setRange(axis.getLowerBound()- delta, axis.getUpperBound() - delta);
+        		    else if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_RIGHT)
+        		    	axis.setRange(axis.getLowerBound() + delta, axis.getUpperBound() + delta);
+        	    }
+        	}
+			public void keyReleased(KeyEvent arg0) { }
+			public void keyTyped(KeyEvent arg0) { }
+        });
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -1022,6 +1049,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		wotMarker = new XYDomainMutilineAnnotation();
         JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
 	    wotChartPanel = new ChartPanel(chart, true, true, true, true, true);
+	    wotChartPanel.setFocusable(true);
 	    wotChartPanel.setAutoscrolls(true);
 		chart.setBackgroundPaint(new Color(60, 60, 65));
 	    
@@ -1098,8 +1126,33 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	    	}
 
 			@Override
-			public void chartMouseClicked(ChartMouseEvent event) { }
+			public void chartMouseClicked(ChartMouseEvent event) {
+        		wotChartPanel.requestFocusInWindow();
+			}
 	    });
+	    wotChartPanel.addKeyListener(new KeyListener() {
+        	public void keyPressed(KeyEvent e) {
+        		if (!wotChartPanel.hasFocus())
+        			return;
+        		int keyCode = e.getKeyCode();
+        		if (keyCode < KeyEvent.VK_LEFT || keyCode > KeyEvent.VK_DOWN)
+        			return;
+        	    ValueAxis axis = null;
+        	    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT)
+        	        axis = ((XYPlot)wotChartPanel.getChart().getXYPlot()).getDomainAxis();
+        	    else
+        	        axis = ((XYPlot)wotChartPanel.getChart().getXYPlot()).getRangeAxis();
+        	    if (axis != null) {
+        		    double delta = (axis.getUpperBound()- axis.getLowerBound()) / 100.0;
+        		    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_DOWN)
+        		    	axis.setRange(axis.getLowerBound()- delta, axis.getUpperBound() - delta);
+        		    else if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_RIGHT)
+        		    	axis.setRange(axis.getLowerBound() + delta, axis.getUpperBound() + delta);
+        	    }
+        	}
+			public void keyReleased(KeyEvent arg0) { }
+			public void keyTyped(KeyEvent arg0) { }
+        });
 	}
 
     //////////////////////////////////////////////////////////////////////////////////////

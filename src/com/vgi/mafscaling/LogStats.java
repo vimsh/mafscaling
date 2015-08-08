@@ -492,6 +492,12 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
+        Object xAxis = xAxisColumn.getSelectedItem();
+        Object yAxis = yAxisColumn.getSelectedItem();
+        List<String> data = dataColumn.getSelectedItems();
+        Object filter1 = filter1Column.getSelectedItem();
+        Object filter2 = filter2Column.getSelectedItem();
+        Object filter3 = filter3Column.getSelectedItem();
         xAxisColumn.removeAllItems();
         yAxisColumn.removeAllItems();
         dataColumn.removeAllItems();
@@ -534,6 +540,18 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 }
         	}
         }
+        if (xAxis != null)
+        	xAxisColumn.setSelectedItem(xAxis);
+        if (yAxis != null)
+        	yAxisColumn.setSelectedItem(yAxis);
+        if (data != null)
+        	dataColumn.setSelectedItems(data);
+        if (filter1 != null)
+        	filter1Column.setSelectedItem(filter1);
+        if (filter2 != null)
+        	filter2Column.setSelectedItem(filter2);
+        if (filter3 != null)
+        	filter3Column.setSelectedItem(filter3);
     }
     
     private Statistics getStatId() {

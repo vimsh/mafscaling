@@ -169,6 +169,19 @@ public class JMultiSelectionBox extends JButton {
     	return null;
     }
     
+    public void setSelectedItems(List<String> items) {
+    	if (items == null)
+    		return;
+    	for (int i = 0; i < menu.getComponentCount(); ++i) {
+    		JCheckBoxMenuItem menuItem = (JCheckBoxMenuItem) menu.getComponent(i);
+        	for (String item : items) {
+        		if (menuItem.getText().equals(item))
+        			menuItem.setSelected(true);
+        	}
+    	}
+    	button.setText(getSelectedItemsString());
+    }
+    
     public String getSelectedItemsString() {
     	String s = " ";
     	for (int i = 0; i < menu.getComponentCount(); ++i) {
@@ -181,8 +194,7 @@ public class JMultiSelectionBox extends JButton {
     		}
     	}
     	return s;
-    }
-    
+    }    
 
     public void setPrototypeDisplayValue(String val) {
     	combo.setPrototypeDisplayValue(val);

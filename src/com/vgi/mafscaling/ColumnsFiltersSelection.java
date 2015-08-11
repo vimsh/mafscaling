@@ -27,7 +27,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
 import java.util.Arrays;
-
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -198,7 +197,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     abstract boolean validate(StringBuffer error);
     abstract boolean processDefaultButton(ActionEvent e);
     
-    protected void createColumnsPanel(String[] columns) {
+    protected void createColumnsPanel(String[] elements) {
+    	String[] columns = elements.clone();
     	colrow = 0;
     	columnsPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();

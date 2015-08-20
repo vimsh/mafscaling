@@ -85,6 +85,7 @@ import javax.swing.JTree;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
@@ -133,6 +134,28 @@ import quick.dbtable.Filter;
 public class LogView extends FCTabbedPane implements ActionListener {
 	private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(LogView.class);
+    private static final int tableControlPanelNumComponents = 7;
+    private static final int tableRowTextFieldComponentIdx = 3;
+    private static final int tableRowTextFieldSize = 5;
+    private static final int iconWidthHeight = 20;
+    private static final int iconFillPadding1 = 4;
+    private static final int iconFillPadding2 = 5;
+    private static final int maxNumPlots = 5;
+    private static final Color chartColor = new Color(60, 60, 65);
+    private static final Color chartBgColor = new Color(80, 80, 85);
+    private static final String prototypeDisplayValue = "XXXXXXXXXXXXXXXXXXXXXXXXXXX";
+    private static final String greater = ">";
+    private static final String greaterEqual = ">=";
+    private static final String less = "<";
+    private static final String lessEqual = "<=";
+    private static final String equal = "=";
+    private static final String rpmAxisName = "Engine Speed (RPM)";
+    private static final String timeAxisName = "Time (RPM aligned)";
+    private static final String fileNameReplaceString = "\\<.*?\\>";
+    private static final String pullIndexReplaceString = "Pull ";
+    private static final String rpmMatchString = ".*rpm.*";
+    private static final String engineSpeedMatchString = ".*eng.*speed.*";
+    private static final String timeMatchString = "^\\s*time\\s*(\\(.*\\))?$";
     
     public class XYZ {
         @Override
@@ -334,15 +357,15 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		public boolean isChecked() { return this.checked; }
 		public void setChecked(boolean checked) { this.checked = checked; }
 		@Override
-		public int getIconWidth() { return 20; }
+		public int getIconWidth() { return iconWidthHeight; }
 		@Override
-		public int getIconHeight() { return 20; }
+		public int getIconHeight() { return iconWidthHeight; }
 		@Override
 		public void paintIcon(Component c, Graphics g, int x, int y) {
 	        g.setColor(Color.BLACK);
-	        g.fillRect(x + 4, y + 4, getIconWidth() - 8, getIconHeight() - 8);
+	        g.fillRect(x + iconFillPadding1, y + iconFillPadding1, getIconWidth() - iconFillPadding1 * 2, getIconHeight() - iconFillPadding1 * 2);
 	        g.setColor(color);
-	        g.fillRect(x + 5, y + 5, getIconWidth() - 10, getIconHeight() - 10);
+	        g.fillRect(x + iconFillPadding2, y + iconFillPadding2, getIconWidth() - iconFillPadding2 * 2, getIconHeight() - iconFillPadding2 * 2);
 		}
 	}
     
@@ -458,9 +481,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private XYDomainMutilineAnnotation xMarker = null;
     private XYDomainMutilineAnnotation wotMarker = null;
     private Stack<Color> colors = new Stack<Color>();
-//    private Stack<Color> wotColors = new Stack<Color>();
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
+    private Insets insets10 = new Insets(10, 10, 10, 10);
     private DecimalFormat df = new DecimalFormat("#.####");
     private boolean showWotCurvePoints = false;
 
@@ -524,9 +547,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			logDataTable.getTable().setColumnSelectionAllowed(true);
 			logDataTable.getTable().setRowSelectionAllowed(true);
 			logDataTable.getTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			JTextField rowTextField = ((JTextField)logDataTable.getControlPanel().getComponent(3));
+			JTextField rowTextField = ((JTextField)logDataTable.getControlPanel().getComponent(tableRowTextFieldComponentIdx));
 			rowTextField.setPreferredSize(null);
-			rowTextField.setColumns(5);
+			rowTextField.setColumns(tableRowTextFieldSize);
 
 	        GridBagConstraints gbc_logDataTable = new GridBagConstraints();
 	        gbc_logDataTable.insets = insets0;
@@ -654,12 +677,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
         gbc_filter.gridy = 0;
         
 		selectionCombo = new JComboBox<String>();
-		selectionCombo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+		selectionCombo.setPrototypeDisplayValue(prototypeDisplayValue);
 		selectionCombo.addActionListener(this);
         filterPanel.add(selectionCombo, gbc_filter);
 
         gbc_filter.gridx++;
-		compareCombo = new JComboBox<String>(new String[] {"", "<", "<=", "=", ">=", ">"});
+		compareCombo = new JComboBox<String>(new String[] {"", less, lessEqual, equal, greaterEqual, greater});
 		compareCombo.addActionListener(this);
         filterPanel.add(compareCombo, gbc_filter);
 
@@ -682,7 +705,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		chartPanel.setFocusable(true);
         chartPanel.setAutoscrolls(true);
         chartPanel.setPopupMenu(null);
-		chart.setBackgroundPaint(new Color(60, 60, 65));
+		chart.setBackgroundPaint(chartColor);
 
 		rpmDataset = new XYSeriesCollection();
 		rpmPlotRenderer = new XYLineAndShapeRenderer();		
@@ -707,7 +730,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plot.setDomainPannable(true);
         plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
         plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
-        plot.setBackgroundPaint(new Color(80, 80, 85));
+        plot.setBackgroundPaint(chartBgColor);
 
         plot.setDataset(0, rpmDataset);
         plot.setRenderer(0, rpmPlotRenderer);
@@ -873,7 +896,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         cntlPanel.add(new JLabel("X-Axis"), gbc_label);
         
         xAxisColumn = new JComboBox<String>();
-        xAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        xAxisColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(xAxisColumn, gbc_column);
     	
         gbc_label.gridx += 2;
@@ -881,7 +904,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 
         gbc_column.gridx += 2;
         yAxisColumn = new JComboBox<String>();
-        yAxisColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        yAxisColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(yAxisColumn, gbc_column);
 
         gbc_label.gridx += 2;
@@ -889,7 +912,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 
         gbc_column.gridx += 2;
         plotsColumn = new JMultiSelectionBox();
-        plotsColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        plotsColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(plotsColumn, gbc_column);
 
         gbc_label.gridx = 7;
@@ -998,7 +1021,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         gbc.gridx += 1;
         gbc.anchor = GridBagConstraints.WEST;
         wotPlotsColumn = new JMultiSelectionBox();
-        wotPlotsColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        wotPlotsColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(wotPlotsColumn, gbc);
 
         gbc.gridx += 1;
@@ -1012,7 +1035,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         cntlPanel.add(button, gbc);
 
         gbc.gridx += 1;
-		button = new JRadioButton("Time (RPM aligned)");
+		button = new JRadioButton(timeAxisName);
         wotRbGroup.add(button);
         cntlPanel.add(button, gbc);
 
@@ -1051,14 +1074,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	    wotChartPanel = new ChartPanel(chart, true, true, true, true, true);
 	    wotChartPanel.setFocusable(true);
 	    wotChartPanel.setAutoscrolls(true);
-		chart.setBackgroundPaint(new Color(60, 60, 65));
+		chart.setBackgroundPaint(chartColor);
 	    
 		wotPlot = chart.getXYPlot();
 		wotPlot.setRangePannable(true);
 		wotPlot.setDomainPannable(true);
 		wotPlot.setDomainGridlinePaint(Color.LIGHT_GRAY);
 		wotPlot.setRangeGridlinePaint(Color.LIGHT_GRAY);
-		wotPlot.setBackgroundPaint(new Color(80, 80, 85));
+		wotPlot.setBackgroundPaint(chartBgColor);
 		wotPlot.addAnnotation(wotMarker);
 
 		wotPlot.setRangeAxis(null);
@@ -1161,7 +1184,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     
     private void createUsageTab() {
         JTextPane  usageTextArea = new JTextPane();
-        usageTextArea.setMargin(new Insets(10, 10, 10, 10));
+        usageTextArea.setMargin(insets10);
         usageTextArea.setContentType("text/html");
         usageTextArea.setText(usage());
         usageTextArea.setEditable(false);
@@ -1336,7 +1359,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		boolean timeColFound = false;
 		for (int i = 0; i < logDataTable.getColumnCount() && !timeColFound; ++i) {
 			String colName = logDataTable.getColumn(i).getHeaderValue().toString();
-			if (colName.toLowerCase().matches(".*\\btime\\b.*")) {
+			if (colName.toLowerCase().matches(timeMatchString)) {
 				if (logDataTable.getRowCount() > 0) {
 					val = (String)logDataTable.getValueAt(0, i);
 					if (val.matches(Utils.tmRegex)) {
@@ -1429,7 +1452,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				dataset.addSeries(series);
 				plotRenderer.setSeriesShapesVisible(i, false);
 				plotRenderer.setSeriesVisible(i, false);
-				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*"))) {
+				if (rpmDataset.getSeriesCount() == 0 && (lcColName.matches(rpmMatchString) || lcColName.matches(engineSpeedMatchString))) {
 					rpmDataset.addSeries(series);
 					rpmPlotRenderer.setSeriesShapesVisible(0, false);
 					rpmPlotRenderer.setSeriesVisible(0, false);
@@ -1455,9 +1478,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
 				renderer = (CheckboxHeaderRenderer)logDataTable.getColumnByHeaderName(s).getHeaderRenderer();
 	    		listModel.addElement(new JLabel(s, renderer.getCheckIcon(), JLabel.LEFT));
 			}
-			if (logDataTable.getControlPanel().getComponentCount() > 7)
-				logDataTable.getControlPanel().remove(7);
-			logDataTable.getControlPanel().add(new JLabel("   [" + file.getName() + "]"));
+			if (logDataTable.getControlPanel().getComponentCount() > tableControlPanelNumComponents)
+				logDataTable.getControlPanel().remove(tableControlPanelNumComponents);
+			logDataTable.getControlPanel().add(new JLabel("     [" + file.getName() + "]"));
 			initColors();
         }
         catch (Exception ex) {
@@ -1518,8 +1541,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	String xAxisColName = (String)xAxisColumn.getSelectedItem();
     	String yAxisColName = (String)yAxisColumn.getSelectedItem();
     	List<String> dataColNames = plotsColumn.getSelectedItems();
-    	if (dataColNames.size() > 5) {
-            JOptionPane.showMessageDialog(null, "Sorry, only 5 plots are supported. More plots will make the graph too slow.", "Too many parameters", JOptionPane.ERROR_MESSAGE);
+    	if (dataColNames.size() > maxNumPlots) {
+            JOptionPane.showMessageDialog(null, "Sorry, only " + maxNumPlots + " plots are supported. More plots will make the graph too slow.", "Too many parameters", JOptionPane.ERROR_MESSAGE);
             return;
     	}
 
@@ -1579,7 +1602,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         	String lcColName;
         	for (int i = 0; i < columns.size(); ++i) {
 	    		lcColName = columns.get(i).toLowerCase();
-				if (lcColName.matches(".*rpm.*") || lcColName.matches(".*eng.*speed.*")) {
+				if (lcColName.matches(rpmMatchString) || lcColName.matches(engineSpeedMatchString)) {
 					logRpmColIdx = i;
 					logRpmColName = columns.get(i);
 				}
@@ -1589,7 +1612,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         	String lcColName;
         	for (int i = 0; i < columns.size(); ++i) {
 	    		lcColName = columns.get(i).toLowerCase();
-				if (lcColName.matches("^\\s*time\\s*(\\(.*\\))?$")) {
+				if (lcColName.toLowerCase().matches(timeMatchString)) {
 					logTimeColIdx = i;
 					logTimeColName = columns.get(i);
 				}
@@ -1708,7 +1731,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	                            if (pullRows >= 10) {
 	                            	pulls.add(pullData);
 	                            	pullData = new HashMap<String, ArrayList<Double>>();
-	                            	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData("Pull " + pulls.size(), true)));
+	                            	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
 	                            }
 	                        }
 	                    }
@@ -1742,7 +1765,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                         if (pullRows >= 10) {
                         	pulls.add(pullData);
                         	pullData = new HashMap<String, ArrayList<Double>>();
-                        	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData("Pull " + pulls.size(), true)));
+                        	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
                         }
                     }
 	        		if (pulls.size() > 0) {
@@ -1785,12 +1808,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
         else {
             JOptionPane.showMessageDialog(null, "No WOT pulls were found in the log file(s)", "Oops", JOptionPane.INFORMATION_MESSAGE);
         }
-/*
-        wotColors.push(Color.decode("#FF66FF"));
-        wotColors.push(Color.decode("#6666FF"));
-        wotColors.push(Color.decode("#669966"));
-		wotColors.push(Color.decode("#996666"));
-*/
 	}
 
     protected void clearWotPlots() {
@@ -1839,14 +1856,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
 			for (idx = 0; idx < root.getChildCount(); ++idx) {
 				fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
-				fileName = fileNode.getUserObject().toString().replaceAll("\\<.*?\\>", "");
+				fileName = fileNode.getUserObject().toString().replaceAll(fileNameReplaceString, "");
 				for (int j = 0; j < fileNode.getChildCount(); ++j) {
 					pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(j)).getUserObject();
 					if (!pullNode.isChecked())
 						continue;
 					pullName = pullNode.getText();
 					filePulls = filesData.get(fileName);
-					pullIdx = Integer.parseInt(pullName.replaceAll("Pull ", "")) - 1;
+					pullIdx = Integer.parseInt(pullName.replaceAll(pullIndexReplaceString, "")) - 1;
 					pullData = filePulls.get(pullIdx);
 					pullName = " [" + pullName + ": " + fileName + "]";
 					HashMap<String, HashMap<String, ArrayList<Double>>> pullDataByName = new HashMap<String, HashMap<String, ArrayList<Double>>>();
@@ -1954,14 +1971,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
     			DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
     			for (int idx = 0; idx < root.getChildCount(); ++idx) {
     				fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
-    				fileName = fileNode.getUserObject().toString().replaceAll("\\<.*?\\>", "");
+    				fileName = fileNode.getUserObject().toString().replaceAll(fileNameReplaceString, "");
     				for (int j = 0; j < fileNode.getChildCount(); ++j) {
     					pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(j)).getUserObject();
     					if (!pullNode.isChecked())
     						continue;
     					pullName = pullNode.getText();
     					filePulls = filesData.get(fileName);
-    					pullIdx = Integer.parseInt(pullName.replaceAll("Pull ", "")) - 1;
+    					pullIdx = Integer.parseInt(pullName.replaceAll(pullIndexReplaceString, "")) - 1;
     					pullData = filePulls.get(pullIdx);
     					rpmData = pullData.get(logRpmColName);
     					colData = pullData.get(yAxisColName);
@@ -2067,13 +2084,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	    		try {
 		    		CompareFilter filter = new CompareFilter();
 		    		filter.setCondition(CompareFilter.Condition.EQUAL);
-		    		if (compareCombo.getSelectedItem().toString().equals(">"))
+		    		if (compareCombo.getSelectedItem().toString().equals(greater))
 		    			filter.setCondition(CompareFilter.Condition.GREATER);
-		    		if (compareCombo.getSelectedItem().toString().equals(">="))
+		    		if (compareCombo.getSelectedItem().toString().equals(greaterEqual))
 		    			filter.setCondition(CompareFilter.Condition.GREATER_EQUAL);
-		    		else if (compareCombo.getSelectedItem().toString().equals("<"))
+		    		else if (compareCombo.getSelectedItem().toString().equals(less))
 		    			filter.setCondition(CompareFilter.Condition.LESS);
-		    		else if (compareCombo.getSelectedItem().toString().equals("<="))
+		    		else if (compareCombo.getSelectedItem().toString().equals(lessEqual))
 		    			filter.setCondition(CompareFilter.Condition.LESS_EQUAL);
 		    		filter.setFilter(filterText.getText());
 		    		filter.setColumn(logDataTable.getColumnByHeaderName((String)selectionCombo.getSelectedItem()).getModelIndex());
@@ -2135,15 +2152,15 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			Enumeration<AbstractButton> buttons = wotRbGroup.getElements();
 			if (((JRadioButton)buttons.nextElement()).isSelected()) {
 				viewWotPlotsByRpm(false);
-				wotPlot.getDomainAxis(0).setLabel("Engine Speed (RPM)");
+				wotPlot.getDomainAxis(0).setLabel(rpmAxisName);
 			}
 			else if (((JRadioButton)buttons.nextElement()).isSelected()) {
 				viewWotPlotsByRpm(true);
-				wotPlot.getDomainAxis(0).setLabel("Engine Speed (RPM)");
+				wotPlot.getDomainAxis(0).setLabel(rpmAxisName);
 			}
 			else {
 				viewWotPlotsByTime();
-				wotPlot.getDomainAxis(0).setLabel("Time (RPM aligned)");
+				wotPlot.getDomainAxis(0).setLabel(timeAxisName);
 			}
 		}
 		else if ("loadWot".equals(e.getActionCommand()))

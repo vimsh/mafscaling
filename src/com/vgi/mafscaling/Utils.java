@@ -717,7 +717,7 @@ public final class Utils {
     				 (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - baseTime;
         }
     	if (s.indexOf('.') > 0)
-    		return Long.valueOf(s) * 1000;
+    		return (long)(Double.valueOf(s) * 1000);
     	return Long.valueOf(s);
     }
 }

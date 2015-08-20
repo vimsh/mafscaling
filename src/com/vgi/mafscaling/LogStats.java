@@ -58,6 +58,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
 import javax.swing.UIDefaults;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableColumnModel;
@@ -118,6 +119,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     private JButton filter3Button = null;
     private JTable dataTable = null;
     private JPanel cntlPanel = null;
+    private JLabel labelFileName = null;
     private ExcelAdapter excelAdapter = null;
     private HashMap<Double, HashMap<Double, ArrayList<Double>>> xData = null;
     private Plot3DPanel plot = null;
@@ -191,9 +193,9 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	        
 	        GridBagLayout gbl_cntlPanel = new GridBagLayout();
 	        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
+	        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0, 0};
 	        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-	        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
+	        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0};
 	        cntlPanel.setLayout(gbl_cntlPanel);
 	        
 	        JButton selectLogButton = addButton(0, 0, 2, "<html><center>Select<br>Log</center></html>", "selectlog");
@@ -244,6 +246,17 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	        filter1TextBox = addTextFilter(0, 10, 5, doubleFmtFilters, false);
 	        filter2TextBox = addTextFilter(1, 10, 5, doubleFmtFilters, false);
 	        filter3TextBox = addTextFilter(2, 10, 5, doubleFmtFilters, false);
+
+	        labelFileName = new JLabel("");
+	        labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
+	        GridBagConstraints gbc_label = new GridBagConstraints();
+	        gbc_label.anchor = GridBagConstraints.WEST;
+	        gbc_label.fill = GridBagConstraints.HORIZONTAL;
+	        gbc_label.insets = insets3;
+	        gbc_label.gridx = 0;
+	        gbc_label.gridy = 3;
+	        gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length;
+	        cntlPanel.add(labelFileName, gbc_label);
 
 	        JButton clearFiltersButton = addButton(0, 11, 2, "<html><center>Clear<br>Filters</center></html>", "clearfilters");
 	        clearFiltersButton.setMargin(new Insets(3, 5, 3, 5));
@@ -505,6 +518,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         filter1Column.removeAllItems();
         filter2Column.removeAllItems();
         filter3Column.removeAllItems();
+        labelFileName.setText("");
         logFile = fileChooser.getSelectedFile();
         BufferedReader br = null;
         try {
@@ -552,6 +566,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         	filter2Column.setSelectedItem(filter2);
         if (filter3 != null)
         	filter3Column.setSelectedItem(filter3);
+        labelFileName.setText("[" + logFile.getName() + "]");
     }
     
     private Statistics getStatId() {

@@ -85,7 +85,6 @@ import javax.swing.JTree;
 import javax.swing.ListCellRenderer;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.table.JTableHeader;
@@ -1737,7 +1736,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	                    }
 	                    else {
 	                        boolean newPullData = false;
-	                        if (wotFlag == false) {
+	                        if (wotFlag == false || row == 0) {
 	                            wotFlag = true;
 	                            newPullData = true;
 	                            pullRows = 0;

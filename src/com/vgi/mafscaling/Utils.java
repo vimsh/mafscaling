@@ -43,6 +43,9 @@ public final class Utils {
     public final static String fpRegex = "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
     //		("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
     public final static String tmRegex = ".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*";
+    public final static String onOffRegex = "(?i)^\\s*(ON|OFF)\\s*$";
+    public final static Pattern offPattern = Pattern.compile("^\\s*OFF\\s*$", Pattern.CASE_INSENSITIVE);
+    public final static Pattern onPattern = Pattern.compile("^\\s*ON\\s*$", Pattern.CASE_INSENSITIVE);
     
     private static long baseTime = 0;
 
@@ -719,5 +722,19 @@ public final class Utils {
     	if (s.indexOf('.') > 0)
     		return (long)(Double.valueOf(s) * 1000);
     	return Long.valueOf(s);
+    }
+
+    /**
+     * Method used for parsing log values besides time
+     * This method should only be used where all columns of the log file(s) being loaded, eg LogStats, LogView 
+     * @param s value as string from log file
+     * @return value as double
+     */
+    public static double parseValue(String s) {
+    	if (Utils.onPattern.matcher(s).find())
+			return 1.0;
+    	if (Utils.offPattern.matcher(s).find())
+			return 0.0;
+    	return Double.valueOf(s);
     }
 }

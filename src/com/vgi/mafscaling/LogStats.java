@@ -807,21 +807,21 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 1, column " + (fltr1ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
 	                            return;
 	                        }
-	                        f1 = Double.valueOf(elements[fltr1ColIdx]);
+	                        f1 = Utils.parseValue(elements[fltr1ColIdx]);
 	                	}
 	                	if (useFilter2) {
 	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr2ColIdx])) {
 	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 2, column " + (fltr2ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
 	                            return;
 	                        }
-	                        f2 = Double.valueOf(elements[fltr2ColIdx]);
+	                        f2 = Utils.parseValue(elements[fltr2ColIdx]);
 	                	}
 	                	if (useFilter3) {
 	                        if (!Pattern.matches(Utils.fpRegex, elements[fltr3ColIdx])) {
 	                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 3, column " + (fltr3ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
 	                            return;
 	                        }
-	                        f3 = Double.valueOf(elements[fltr3ColIdx]);
+	                        f3 = Utils.parseValue(elements[fltr3ColIdx]);
 	                	}
 
 	                	passFilters = (!useFilter1 || checkAgainstFilter(f1, filter1Type, filter1, filter1Rounding));
@@ -835,17 +835,17 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	                		passFilters = (passFilters || (!useFilter3 || checkAgainstFilter(f3, filter3Type, filter3, filter3Rounding)));
 
                     	if (passFilters) {
-                            if (!Pattern.matches(Utils.fpRegex, elements[xColIdx])) {
+                            if (!Pattern.matches(Utils.fpRegex, elements[xColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[xColIdx])) {
                                 JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
-                            if (!Pattern.matches(Utils.fpRegex, elements[yColIdx])) {
+                            if (!Pattern.matches(Utils.fpRegex, elements[yColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[yColIdx])) {
                                 JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
                             skip = false;
 	                    	if (Double.isNaN(xRound)) {
-	                    		val = Double.valueOf(elements[xColIdx]);
+	                    		val = Utils.parseValue(elements[xColIdx]);
 	                    		idx = Utils.closestValueIndex(val, xAxisArray);
 	                    		x = xAxisArray.get(idx);
 	                    		if (distance < 50 && xAxisArraySize > 1) {
@@ -868,11 +868,11 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	                    		}
 	                    	}
 	                    	else {
-	                    		x = Utils.round(Double.valueOf(elements[xColIdx]), xRound);
+	                    		x = Utils.round(Utils.parseValue(elements[xColIdx]), xRound);
 	                    		xVals.add(x);
 	                    	}
 	                    	if (Double.isNaN(yRound)) {
-	                    		val = Double.valueOf(elements[yColIdx]);
+	                    		val = Utils.parseValue(elements[yColIdx]);
 	                    		idx = Utils.closestValueIndex(val, yAxisArray);
 	                    		y = yAxisArray.get(idx);
 	                    		if (distance < 50 && yAxisArraySize > 1) {
@@ -895,16 +895,16 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	                    		}
 	                    	}
 	                    	else {
-	                    		y = Utils.round(Double.valueOf(elements[yColIdx]), yRound);
+	                    		y = Utils.round(Utils.parseValue(elements[yColIdx]), yRound);
 	                    		yVals.add(y);
 	                    	}
 	                    	val = 0;
 	                    	for (Integer vColIdx : vColIdxArray) {
-	                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx])) {
+	                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[vColIdx])) {
 	                                JOptionPane.showMessageDialog(null, "Invalid value for Data, column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
 	                                return;
 	                            }
-	                    		val += Double.valueOf(elements[vColIdx]);
+	                    		val += Utils.parseValue(elements[vColIdx]);
 	                    	}
 	                        yData = xData.get(x);
 	                        if (yData == null) {

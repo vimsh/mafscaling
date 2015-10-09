@@ -56,7 +56,6 @@ import java.util.ResourceBundle;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -1387,6 +1386,21 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		}
     }
     
+    private void convertOnOffToNumMsec() {
+    	String val;
+		for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
+			if (logDataTable.getRowCount() > 0) {
+				val = (String)logDataTable.getValueAt(0, i);
+				if (val.matches(Utils.onOffRegex)) {
+					for (int j = 0; j < logDataTable.getRowCount(); ++j) {
+						val = (String)logDataTable.getValueAt(j, i);
+						logDataTable.setValueAt(String.valueOf(Utils.parseValue(val)), j, i);
+					}
+				}
+			}
+		}
+    }
+    
 	private void loadLogFile() {
     	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
@@ -1407,12 +1421,20 @@ public class LogView extends FCTabbedPane implements ActionListener {
     	String lcColName;
         String val;
         try {
-			for (int i = 0; i < logDataTable.getColumnCount(); ++i)
-				logDataTable.getTableHeader().removeMouseListener(((CheckboxHeaderRenderer)logDataTable.getColumn(i).getHeaderRenderer()).getMouseListener());
+			for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
+				try {
+					CheckboxHeaderRenderer cbr = (CheckboxHeaderRenderer)logDataTable.getColumn(i).getHeaderRenderer();
+					logDataTable.getTableHeader().removeMouseListener(cbr.getMouseListener());
+				}
+		        catch (Exception e) {
+		    	}
+			}
 			try {
 				logDataTable.refresh(file.toURI().toURL(), prop);
 				// Below is a hack code to check and convert time column hh:mm:ss.sss to msec number
 				convertTimeToMsec();
+				// Below is a hack code to check and convert column(s) with on/off values to number
+				convertOnOffToNumMsec();
 			}
 	        catch (Exception e) {
 	            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -1755,7 +1777,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			                		columnData.add((double)Utils.parseTime(flds[i]));
 								}
 								else
-									columnData.add(Double.valueOf(flds[i]));
+									columnData.add(Utils.parseValue(flds[i]));
 		                	}
 	                    }
 	                    row += 1;

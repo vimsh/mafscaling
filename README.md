@@ -13,3 +13,7 @@ IAT Compensation
 Log statistics (learning)
 
 Log view and map tracing (replay)
+
+
+
+WIKI page - https://github.com/vimsh/mafscaling/wiki

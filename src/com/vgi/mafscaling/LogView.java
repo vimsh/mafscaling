@@ -576,8 +576,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			menuList.setOpaque(false);
 			menuList.setCellRenderer(new ImageListCellRenderer());
 			menuList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-			menuList.setLayoutOrientation(JList.VERTICAL);
+			menuList.setLayoutOrientation(JList.VERTICAL_WRAP);
 			menuList.setFixedCellHeight(25);
+			menuList.setVisibleRowCount(-1);
 			menuList.addMouseListener(new MouseAdapter() {
     			@Override
     			public void mouseClicked(MouseEvent e) {
@@ -913,7 +914,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plotsColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(plotsColumn, gbc_column);
 
-        gbc_label.gridx = 7;
+        gbc_label.gridx += 2;
         JButton btnGoButton = new JButton("View");
         btnGoButton.setActionCommand("view");
         btnGoButton.addActionListener(this);

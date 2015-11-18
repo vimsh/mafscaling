@@ -70,6 +70,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 	protected static final String dvdtAxisName = "dV / dt";
     protected static final String trendDataName = "Trend";
     protected static final int ColumnWidth = 60;
+    protected static final int TableWidth = 250;
     protected static final int TableRowCount = 20;
     protected static final int LogDataRowCount = 200;
     protected JScrollPane dataScrollPane = null;
@@ -82,7 +83,6 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 	protected ButtonGroup rbGroup = null;
 	protected ChartPanel chartPanel = null;
 	protected Plot3DPanel plot3d = null;
-	protected ExcelAdapter otExcelAdapter = null;
 	protected ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
 	protected ArrayList<Double> xAxisArray = null;
 	protected ArrayList<Double> yAxisArray = null;
@@ -116,13 +116,6 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 
 
     protected void initialize(String[] logColumns) {
-        otExcelAdapter = new ExcelAdapter() {
-    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
-    	    	super.onPaste(table, extendRows, extendCols);
-    	    	validateTable(table);
-    	    	clearRunTables();
-    	    }
-    	};
         createDataTab(logColumns);
         createGraghTab();
         create3dGraghTab();
@@ -163,18 +156,18 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
-        JScrollPane aprScrollPane = new JScrollPane();
-        GridBagConstraints gbc_aprScrollPane = new GridBagConstraints();
-        gbc_aprScrollPane.weightx = 1.0;
-        gbc_aprScrollPane.weighty = 1.0;
-        gbc_aprScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_aprScrollPane.fill = GridBagConstraints.BOTH;
-        gbc_aprScrollPane.gridx = 1;
-        gbc_aprScrollPane.gridy = 1;
-        dataPanel.add(aprScrollPane, gbc_aprScrollPane);
+        JScrollPane dataTablesScrollPane = new JScrollPane();
+        GridBagConstraints gbc_dataTablesScrollPanee = new GridBagConstraints();
+        gbc_dataTablesScrollPanee.weightx = 1.0;
+        gbc_dataTablesScrollPanee.weighty = 1.0;
+        gbc_dataTablesScrollPanee.anchor = GridBagConstraints.PAGE_START;
+        gbc_dataTablesScrollPanee.fill = GridBagConstraints.BOTH;
+        gbc_dataTablesScrollPanee.gridx = 1;
+        gbc_dataTablesScrollPanee.gridy = 1;
+        dataPanel.add(dataTablesScrollPane, gbc_dataTablesScrollPanee);
         
         JPanel tablesPanel = new JPanel();
-        aprScrollPane.setViewportView(tablesPanel);
+        dataTablesScrollPane.setViewportView(tablesPanel);
         GridBagLayout gbl_tablesPanel = new GridBagLayout();
         gbl_tablesPanel.columnWidths = new int[]{0, 0};
         gbl_tablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0};
@@ -265,44 +258,61 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected JTable createDataTable(JPanel panel, String tableName, int gridy, boolean isOriginalTable) {
+    	return createDataTable(panel, tableName, TableRowCount, TableRowCount, 0, gridy, isOriginalTable, true, true);
+    }
+    
+    protected JTable createDataTable(JPanel panel, String tableName, int colCount, int gridx, boolean isOriginalTable) {
+    	return createDataTable(panel, tableName, colCount, TableRowCount, gridx, 0, isOriginalTable, true, false);
+    }
+    
+    private JTable createDataTable(JPanel panel, String tableName, int colCount, int rowCount, int gridx, int gridy, boolean isOriginalTable, boolean extendRows, boolean extendCols) {
         final JTable table;
+        ExcelAdapter excelAdapter;
         if (isOriginalTable) {
 	        table = new JTable() {
 				private static final long serialVersionUID = 3218402382894083287L;
 				public boolean isCellEditable(int row, int column) { return false; };
 	        };
-	        otExcelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
+	        excelAdapter = new ExcelAdapter() {
+	    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+	    	    	super.onPaste(table, extendRows, extendCols);
+	    	    	validateTable(table);
+	    	    	clearRunTables();
+	    	    }
+	    	};
+	    	excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
+            excelAdapterList.add(excelAdapter);
         }
         else {
         	table = new JTable() {
 				private static final long serialVersionUID = -3754572906310312568L;
 	        };
-	        ExcelAdapter excelAdapter = new ExcelAdapter();
-	        excelAdapter.addTable(table, false, true, false, false, true, true, false, true, true);
+	        excelAdapter = new ExcelAdapter();
+	        excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
             excelAdapterList.add(excelAdapter);
         }
-    	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
-        final TableColumn afrColumn = new TableColumn(0, 250);
-        afrColumn.setHeaderValue(tableName);
-        afrModel.addColumn(afrColumn);
-        JTableHeader lblAfrTableName = table.getTableHeader();
-        lblAfrTableName.setColumnModel(afrModel);
-        lblAfrTableName.setReorderingAllowed(false);
-        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) lblAfrTableName.getDefaultRenderer();
+    	DefaultTableColumnModel tableModel = new DefaultTableColumnModel();
+        final TableColumn tableColumn = new TableColumn(0, (colCount == 1 ? ColumnWidth : TableWidth));
+        tableColumn.setHeaderValue(tableName);
+        tableModel.addColumn(tableColumn);
+        JTableHeader lblTableHeaderName = table.getTableHeader();
+        lblTableHeaderName.setColumnModel(tableModel);
+        lblTableHeaderName.setReorderingAllowed(false);
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) lblTableHeaderName.getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
         
-        GridBagConstraints gbc_lblAfrTableName = new GridBagConstraints();
-        gbc_lblAfrTableName.insets = new Insets((gridy == 0 ? 0 : 5),0,0,0);
-        gbc_lblAfrTableName.anchor = GridBagConstraints.WEST;
-        gbc_lblAfrTableName.fill = GridBagConstraints.HORIZONTAL;
-        gbc_lblAfrTableName.gridx = 0;
-        gbc_lblAfrTableName.gridy = gridy;
-        panel.add(lblAfrTableName, gbc_lblAfrTableName);
+        GridBagConstraints gbc_lblTableName = new GridBagConstraints();
+        gbc_lblTableName.insets = new Insets((gridy == 0 ? 0 : 5),0,0,0);
+        gbc_lblTableName.anchor = GridBagConstraints.NORTHWEST;
+        gbc_lblTableName.fill = GridBagConstraints.HORIZONTAL;
+        gbc_lblTableName.gridx = gridx;
+        gbc_lblTableName.gridy = gridy;
+        panel.add(lblTableHeaderName, gbc_lblTableName);
         
         table.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                afrColumn.setWidth(table.getWidth());
+            	tableColumn.setWidth(table.getWidth());
             }
         });
         table.addMouseListener(new MouseAdapter() {
@@ -314,7 +324,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         		int lastRowIdx = rows.length - 1;
         		JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
         		for (JTable t : tables) {
-        			if (t == evenTable)
+        			if (t == null || t == evenTable)
         				continue;
         			if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
         				t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
@@ -324,9 +334,6 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         	}
         });
         
-        
-        
-        
         table.setName(tableName);
         table.getTableHeader().setReorderingAllowed(false);
         table.setColumnSelectionAllowed(true);
@@ -334,15 +341,15 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         table.setBorder(new LineBorder(new Color(0, 0, 0)));
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.setModel(new DefaultTableModel(TableRowCount, TableRowCount));
+        table.setModel(new DefaultTableModel(rowCount, colCount));
         Utils.initializeTable(table, ColumnWidth);
         
         formatTable(table);
         
         GridBagConstraints gbc_table = new GridBagConstraints();
         gbc_table.insets = insets0;
-        gbc_table.anchor = GridBagConstraints.PAGE_START;
-        gbc_table.gridx = 0;
+        gbc_table.anchor = GridBagConstraints.NORTHWEST;
+        gbc_table.gridx = gridx;
         gbc_table.gridy = gridy + 1;
         panel.add(table, gbc_table);
 
@@ -578,23 +585,28 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         	return true;
         // check paste format
         if (!table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-            !((table.getValueAt(0, 0).toString().equals("")) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString()) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString()))) {
+            ((table.getColumnCount() > 1 || table.getRowCount() > 1) && !((table.getValueAt(0, 0).toString().equals(""))) &&
+            (table.getColumnCount() > 1 && Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString())) &&
+            (table.getRowCount() > 1 && Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString())))) {
             JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease paste " + table.getName() + " table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         if (table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
             // realign if paste is from RomRaider
-            if (table.getValueAt(0, 1).toString().equals("")) {
+            if (table.getColumnCount() > 1 && table.getValueAt(0, 1).toString().equals("")) {
                 Utils.removeRow(0, table);
                 for (int i = table.getColumnCount() - 2; i >= 0; --i)
                 	table.setValueAt(table.getValueAt(0, i), 0, i + 1);
                 table.setValueAt("", 0, 0);
             }
-            // paste is probably from excel, just blank out the first cell
-            else
-            	table.setValueAt("", 0, 0);
+            // paste is probably from excel
+            else {
+            	// just blank out the first cell if tabe is 3D
+            	if (table.getColumnCount() > 1)
+            		table.setValueAt("", 0, 0);
+            	else
+            		Utils.removeRow(0, table);
+            }
         }
         // remove extra rows
         for (int i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)

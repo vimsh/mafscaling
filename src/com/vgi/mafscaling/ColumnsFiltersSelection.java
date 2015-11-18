@@ -32,6 +32,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
@@ -53,6 +54,9 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String rpmLabelText = "Engine Speed";
     public static final String loadLabelText = "Engine Load";
     public static final String mpLabelText = "Manifold Pressure";
+    public static final String mapLabelText = "Manifold Abs Pressure";
+    public static final String vvt1LabelText = "VVT System #1";
+    public static final String vvt2LabelText = "VVT System #2 *";
     public static final String afLearningLabelText = "AFR Learning (LTFT)";
     public static final String afCorrectionLabelText = "AFR Correction (STFT)";
     public static final String mafVLabelText = "MAF Voltage";
@@ -90,6 +94,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String minEngineLoadLabelText = "Engine Load Minimum";
     public static final String minManifoldPressureLabelText = "Manifold Pressure Minimum";
     public static final String wotStationaryLabelText = "WOT Stationary Point (Angle %)";
+    public static final String temperatureScaleLabelText = "Temperature Scale";
+    public static final String mapUnitLabelText = "Manifold Abs Pressure Unit";
     public static final String afrErrorLabelText = "AFR Error +/- % Value";
     public static final String minWOTEnrichmentLabelText = "Min WOT Enrichment";
     public static final String wbo2RowOffsetLabelText = "Wideband AFR Row Offset";
@@ -106,6 +112,9 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JTextField rpmName = null;
 	protected JTextField loadName = null;
 	protected JTextField mpName = null;
+	protected JTextField mapName = null;
+	protected JTextField vvt1Name = null;
+	protected JTextField vvt2Name = null;
 	protected JTextField commAfrName = null;
 	protected JTextField clolStatusName = null;
 	protected JTextField cruiseStatusName = null;
@@ -136,6 +145,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JSpinner cruiseStatusFilter = null;
 	protected JSpinner correctionAppliedValue = null;
 	protected JSpinner thrtlChangeMaxFilter = null;
+	protected JComboBox<String> temperatureScaleField = null;
+	protected JComboBox<String> mapUnitField = null;
 	protected JCheckBox isLoadCompInRatioBool = null;
 	protected JCheckBox isMafIatInRatioBool = null;
 	protected JPanel columnsPanel = null;
@@ -335,6 +346,27 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addCopyButton(colrow, "mp");
     }
     
+    protected void addManifoldAbsolutePressureColSelection() {
+        // Manifold Absolute Pressure
+        addLabel(columnsPanel, ++colrow, mapLabelText);
+        mapName = addColumn(colrow, Config.getMapColumnName());
+        addCopyButton(colrow, "map");
+    }
+    
+    protected void addVVTSystem1ColSelection() {
+        // Manifold Absolute Pressure
+        addLabel(columnsPanel, ++colrow, vvt1LabelText);
+        vvt1Name = addColumn(colrow, Config.getVvt1ColumnName());
+        addCopyButton(colrow, "vvt1");
+    }
+    
+    protected void addVVTSystem2ColSelection() {
+        // Manifold Absolute Pressure
+        addLabel(columnsPanel, ++colrow, vvt2LabelText);
+        vvt2Name = addColumn(colrow, Config.getVvt2ColumnName());
+        addCopyButton(colrow, "vvt2");
+    }
+    
     protected void addTimeColSelection() {
         // Time
         addLabel(columnsPanel, ++colrow, timeLabelText);
@@ -506,6 +538,22 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addLabel(filtersPanel, ++filtrow, wotStationaryLabelText);
         wotStationaryPointFilter = addSpinnerFilter(filtrow, Config.getWOTStationaryPointValue(), 50, 100, 5);
         addDefaultButton(filtrow, "wotpoint");
+    }
+    
+    protected void addTemperatureScaleFilter() {
+        // Temperature Scale Note
+        addNote(filtersPanel, ++filtrow, 3, "Temperature Scale used in logging (Celsius/Fahrenheit)");
+        addLabel(filtersPanel, ++filtrow, temperatureScaleLabelText);
+        temperatureScaleField = addComboBoxFilter(filtrow, new String [] { "F", "C" });
+        addDefaultButton(filtrow, "tempscale");
+    }
+    
+    protected void addManifoldAbsolutePressureUnitFilter() {
+        // Temperature Scale Note
+        addNote(filtersPanel, ++filtrow, 3, "Manifold Absolute Pressure unit used in logging (Bar/Psi/kPa)");
+        addLabel(filtersPanel, ++filtrow, mapUnitLabelText);
+        mapUnitField = addComboBoxFilter(filtrow, new String [] { "Psi", "Bar", "kPa" });
+        addDefaultButton(filtrow, "mapunit");
     }
     
     protected void addAFRErrorPctFilter() {
@@ -696,6 +744,19 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         filtersPanel.add(spinner, gbc_spinner);
         return spinner;
     }
+
+	protected JComboBox<String> addComboBoxFilter(int row, String[] values) {
+        JComboBox<String> combo = new JComboBox<String>(values);
+        combo.setSelectedIndex(0);
+        GridBagConstraints gbc_combo = new GridBagConstraints();
+        gbc_combo.anchor = GridBagConstraints.WEST;
+        gbc_combo.fill = GridBagConstraints.HORIZONTAL;
+        gbc_combo.insets = insets3;
+        gbc_combo.gridx = 1;
+        gbc_combo.gridy = row;
+        filtersPanel.add(combo, gbc_combo);
+        return combo;
+    }
     
     private JCheckBox addFlag(int row) {
         JCheckBox flag = new JCheckBox();
@@ -765,6 +826,12 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         	textField = ffbName;
         else if ("veflow".equals(e.getActionCommand()))
         	textField = veFlowName;
+        else if ("vvt1".equals(e.getActionCommand()))
+        	textField = vvt1Name;
+        else if ("vvt2".equals(e.getActionCommand()))
+        	textField = vvt2Name;
+        else if ("map".equals(e.getActionCommand()))
+        	textField = mapName;
         else
         	return;
         textField.setText(value);

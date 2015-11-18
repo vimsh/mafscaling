@@ -55,6 +55,7 @@ public class Config {
 	public static final String DefaultWOTStationaryPoint = "80";
 	public static final String DefaultWBO2RowOffset = "0";
 	public static final String DefaultOLCLTransitionSkipRows = "3";
+	public static final String DefaultVVTTransitionSkipRows = "3";
 	public static final String DefaultMafVMaximum = "5.0";
 	public static final String DefaultMafVMinimum = "0.0";
 	public static final String DefaultRPMMaximum = "5000";
@@ -78,6 +79,8 @@ public class Config {
 	public static final String DefaultDvDtMaximum = "0.7";
 	public static final String DefaultMIAfrMaximum = "16.0";
 	public static final String DefaultMIAfrMinimum = "10.0";
+	public static final String DefaultTempScale = "F";
+	public static final String DefaultMapUnit = "Psi";
 	private static final String CFG_FILE = "config.xml";
 	public static final String NO_NAME = "#$#";
 	private static Properties props = new Properties();
@@ -217,6 +220,30 @@ public class Config {
 	
 	public static void setMpColumnName(String name) {
 		props.setProperty("MPColumnName", name);
+	}
+
+	public static String getMapColumnName() {
+		return props.getProperty("MAPColumnName", NO_NAME);
+	}
+	
+	public static void setMapColumnName(String name) {
+		props.setProperty("MAPColumnName", name);
+	}
+
+	public static String getVvt1ColumnName() {
+		return props.getProperty("VVT1ColumnName", NO_NAME);
+	}
+	
+	public static void setVvt1ColumnName(String name) {
+		props.setProperty("VVT1ColumnName", name);
+	}
+
+	public static String getVvt2ColumnName() {
+		return props.getProperty("VVT2ColumnName", NO_NAME);
+	}
+	
+	public static void setVvt2ColumnName(String name) {
+		props.setProperty("VVT2ColumnName", name);
 	}
 
 	public static String getRpmColumnName() {
@@ -479,6 +506,22 @@ public class Config {
 		props.setProperty("LogWOTStationaryPoint", Integer.toString(v));
 	}
 
+	public static char getTemperatureScale() {
+		return props.getProperty("TempScale", DefaultTempScale).charAt(0);
+	}
+
+	public static void setTemperatureScale(char v) {
+		props.setProperty("TempScale", Character.toString(v));
+	}
+
+	public static char getMapUnit() {
+		return Character.toUpperCase(props.getProperty("MapUnit", DefaultMapUnit).charAt(0));
+	}
+
+	public static void setMapUnit(char v) {
+		props.setProperty("MapUnit", ('P' == v ? "Psi" : ('B' == v ? "Bar" : "kPa")));
+	}
+
 	public static int getWBO2RowOffset() {
 		return Integer.parseInt(props.getProperty("WBO2RowOffset", DefaultWBO2RowOffset));
 	}
@@ -709,6 +752,22 @@ public class Config {
 
 	public static void setYAxisTemplates(String s) {
 		props.setProperty("YAxisTemplates", s);
+	}
+
+	public static String getVVT1RPMColumn() {
+		return props.getProperty("VVT1RPMColumn", "");
+	}
+
+	public static void setVVT1RPMColumn(String s) {
+		props.setProperty("VVT1RPMColumn", s);
+	}
+
+	public static String getVVT2RPMColumn() {
+		return props.getProperty("VVT2RPMColumn", "");
+	}
+
+	public static void setVVT2RPMColumn(String s) {
+		props.setProperty("VVT2RPMColumn", s);
 	}
 	
 	public static boolean veOpenLoop() {

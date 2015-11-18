@@ -147,15 +147,15 @@ public final class Utils {
      */
     public static void colorTable(JTable table) {
         Color[][] colorMatrix = Utils.generateTableColorMatrix(table, 1, 1);
-        if (colorMatrix != null) {
-            for (int i = 0; i < colorMatrix.length; ++i)
-                colorMatrix[i][0] = Color.LIGHT_GRAY;
-            for (int i = 0; i < colorMatrix[0].length; ++i)
-                colorMatrix[0][i] = Color.LIGHT_GRAY;
-            BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
-            if (renderer != null)
-                renderer.setColors(colorMatrix);
-        }
+        if (colorMatrix == null)
+        	colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
+        for (int i = 0; i < colorMatrix.length; ++i)
+            colorMatrix[i][0] = Color.LIGHT_GRAY;
+        for (int i = 0; i < colorMatrix[0].length; ++i)
+            colorMatrix[0][i] = Color.LIGHT_GRAY;
+        BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
+        if (renderer != null)
+            renderer.setColors(colorMatrix);
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
     

@@ -2,7 +2,7 @@ A small ECU log files based utility to help tuning for Subaru owners.
 
 
 
-MAF Scaling
+MAF CL/OL Scaling
 
 MAF Rescaling
 
@@ -10,9 +10,13 @@ Load Compensation
 
 IAT Compensation
 
+SD Calculations
+
+WOT best VVT
+
 Log statistics (learning)
 
-Log view and map tracing (replay)
+Log view, WOT comparison, and map tracing (replay)
 
 
 

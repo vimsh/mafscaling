@@ -587,23 +587,22 @@ public class LogView extends FCTabbedPane implements ActionListener {
         					JList<?> list = (JList<?>)e.getSource();
         					int index = list.locationToIndex(e.getPoint());
         					if (index >= 0) {
-        						int colIdx = logDataTable.getCurrentIndexForOriginalColumn(index);
-        						Column col = logDataTable.getColumn(colIdx);
+        			            JLabel label = (JLabel)list.getModel().getElementAt(index);
+        						Column col = logDataTable.getColumnByHeaderName(label.getText());
         						if (col.getHeaderRenderer() instanceof CheckboxHeaderRenderer) {
         							CheckboxHeaderRenderer renderer = (CheckboxHeaderRenderer)col.getHeaderRenderer();
-	        			            JLabel label = (JLabel)list.getModel().getElementAt(index);
 	        			            CheckBoxIcon checkIcon = (CheckBoxIcon)label.getIcon();
 	        			            checkIcon.setChecked(!checkIcon.isChecked());
 				    				if (checkIcon.isChecked()) {
 				    					checkIcon.setColor(colors.pop());
 				    					JTable table = logDataTable.getTable();
 				    					TableModel model = table.getModel();
-				    					addXYSeries(model, index, col.getHeaderValue().toString(), checkIcon.getColor());
+				    					addXYSeries(model, col.getModelIndex() - 1, col.getHeaderValue().toString(), checkIcon.getColor());
 				    				}
 				    				else {
 				    					colors.push(checkIcon.getColor());
 				    					checkIcon.setColor(renderer.getDefaultColor());
-				    					removeXYSeries(index);
+				    					removeXYSeries(col.getModelIndex() - 1);
 				    				}
 									list.repaint();
         						}

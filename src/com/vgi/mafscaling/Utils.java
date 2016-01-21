@@ -420,6 +420,8 @@ public final class Utils {
     		for (int j = 0; j < y.length; ++j) {
     			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
     				z[j][i] = renderer.getColorAt(j + 1, i + 1);
+    			else
+    				z[j][i] = new Color(255, 255, 255, 0);
     		}
     	}
     	return z;

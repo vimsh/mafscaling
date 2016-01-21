@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="lib/quicktable-3.0.jar"/>
 	<classpathentry kind="lib" path="lib/JTattoo-1.6.11.jar"/>
 	<classpathentry kind="lib" path="lib/CheckBoxTree_1.0.0.jar"/>
+	<classpathentry kind="lib" path="lib/jmathio.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

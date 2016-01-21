@@ -1080,7 +1080,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         double[][] array = new double[dataTable.getColumnCount() * dataTable.getRowCount()][3];
 
         BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
-        Color[] colors = new Color[array.length];
+        ArrayList<Color> colors = new ArrayList<Color>();
     	for (int i = 1; i < dataTable.getColumnCount(); ++i) {
     		val = dataTable.getValueAt(0, i).toString();
     		if (val.isEmpty())
@@ -1093,7 +1093,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     			Y = Double.valueOf(val.toString());
     			val = dataTable.getValueAt(j, i).toString();
     			if (!val.isEmpty()) {
-    				colors[k] = renderer.getColorAt(j, i);
+    				colors.add(renderer.getColorAt(j, i));
     				array[k][0] = X;
     				array[k][1] = Y;
     				array[k++][2] = Double.valueOf(val);
@@ -1105,16 +1105,16 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     		System.arraycopy(array[k], 0, xyzArray[k], 0, 3);
         switch (type) {
         case BAR:
-            plot.addBarPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addBarPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case HIST:
-        	addHistogramPlot(colors, xyzArray);
+        	addHistogramPlot(colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case LINE:
-            plot.addLinePlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addLinePlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case SCATTER:
-            plot.addScatterPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray);
+            plot.addScatterPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
 		default:
 			break;
         }

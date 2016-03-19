@@ -55,14 +55,17 @@ public class LoadComp extends ACompCalc {
     private boolean isLoadCompInRatio = Config.getIsLoadCompInRatio();
     private int thrtlMaxChange = Config.getThrottleChangeMaxValue();
     private int minCellHitCount = Config.getLCMinCellHitCount();
+    private int corrApplied = Config.getLCCorrectionAppliedValue();
     private double afrMin = Config.getLCAfrMinimumValue();
     private double afrMax = Config.getLCAfrMaximumValue();
+    private double mpMin = Config.getLCMPMinimumValue();
+    private double mpMax = Config.getLCMPMaximumValue();
     private double rpmMax = Config.getRPMMaximumValue();
     private double rpmMin = Config.getRPMMinimumValue();
     private double dvDtMax = Config.getLCDvDtMaximumValue();
     private double iatMax = Config.getLCIatMaximumValue();
     private double cruiseValue = Config.getCruiseStatusValue();
-    private int corrApplied = Config.getLCCorrectionAppliedValue();
+    private double atmPressure = Config.getAtmPressureValue();
     
     private int logThrottleAngleColIdx = -1;
     private int logAfLearningColIdx = -1;
@@ -235,12 +238,15 @@ public class LoadComp extends ACompCalc {
         minCellHitCount = Config.getLCMinCellHitCount();
         afrMin = Config.getLCAfrMinimumValue();
         afrMax = Config.getLCAfrMaximumValue();
+        mpMin = Config.getLCMPMinimumValue();
+        mpMax = Config.getLCMPMaximumValue();
         rpmMax = Config.getRPMMaximumValue();
         rpmMin = Config.getRPMMinimumValue();
         dvDtMax = Config.getLCDvDtMaximumValue();
         iatMax = Config.getLCIatMaximumValue();
         cruiseValue = Config.getCruiseStatusValue();
         corrApplied = Config.getLCCorrectionAppliedValue();
+        atmPressure = Config.getAtmPressureValue();
         return ret;
     }
     
@@ -288,6 +294,7 @@ public class LoadComp extends ACompCalc {
 	                double stft = 0;
 	                double ltft = 0;
 	                double afr = 0;
+	                double mp = 0;
 	                double dVdt = 0;
 	                double pmafv = 0;
 	                double mafv = 0;
@@ -324,13 +331,14 @@ public class LoadComp extends ACompCalc {
 		                            // Filters
 		                        	afr = Double.valueOf(flds[logAfrColIdx]);
 	                                rpm = Double.valueOf(flds[logRpmColIdx]);
+		                        	mp = Double.valueOf(flds[logMpColIdx]);
 		                        	iat = Double.valueOf(flds[logIatColIdx]);
 		                        	stft = Double.valueOf(flds[logAfCorrectionColIdx]);
 		                        	ltft = Double.valueOf(flds[logAfLearningColIdx]);
 		                        	trims = stft + ltft;
 		                        	if (cruiseValue != -1)
 		                        		cruise = Double.valueOf(flds[logCruiseStatusColIdx]);
-		                        	if (afrMin <= afr && afr <= afrMax && rpmMin <= rpm && rpm <= rpmMax && dVdt <= dvDtMax && iat <= iatMax && cruise == cruiseValue) {
+		                        	if (afrMin <= afr && afr <= afrMax && rpmMin <= rpm && rpm <= rpmMax && mpMin <= mp && mp <= mpMax && dVdt <= dvDtMax && iat <= iatMax && cruise == cruiseValue) {
 			                    		removed = false;
 		                                Utils.ensureRowCount(row + 1, logDataTable);
 		                                logDataTable.setValueAt(time, row, 0);
@@ -338,7 +346,7 @@ public class LoadComp extends ACompCalc {
 		                                logDataTable.setValueAt(iat, row, 2);
 		                                logDataTable.setValueAt(stft, row, 3);
 		                                logDataTable.setValueAt(ltft, row, 4);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 5);
+		                                logDataTable.setValueAt(mp, row, 5);
 		                                logDataTable.setValueAt(mafv, row, 6);
 		                                logDataTable.setValueAt(trims, row, 7);
 		                                logDataTable.setValueAt(dVdt, row, 8);
@@ -466,7 +474,7 @@ public class LoadComp extends ACompCalc {
 	                    	newTable.setValueAt(origTable.getValueAt(j, i), j, i);
 	                    else {
 	    	        		cnt = data.size();
-    		        		val = (Utils.mean(data) + Utils.mode(data)) / 2.0;
+    		        		val = (Utils.mean(data) + Utils.mode(data)) / 2.0 + atmPressure - 14.7;
 	    	        		corrTable.setValueAt(val, j, i);
 	    	        		corrCountTable.setValueAt(cnt, j, i);
 	    	        		if (cnt > minCellHitCount) {

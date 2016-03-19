@@ -44,6 +44,8 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
     protected void addFilterSelection() {
     	addLoadCompInRatioFlag();
         isLoadCompInRatioBool.setSelected(Config.getIsLoadCompInRatio());
+        addAtmPressureFilter();
+        atmPressureFilter.setText(String.valueOf(Config.getAtmPressureValue()));
         addThrottleChangeMaximumFilter();
         thrtlChangeMaxFilter.setValue(Config.getThrottleChangeMaxValue());
         addRPMMaximumFilter();
@@ -56,6 +58,13 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         maxAfrFilter.setText(String.valueOf(Config.getLCAfrMaximumValue()));
         addAFRMinimumFilter();
         minAfrFilter.setText(String.valueOf(Config.getLCAfrMinimumValue()));
+        
+
+        addManifoldPressureMaximumFilter();
+        maxMPFilter.setText(String.valueOf(Config.getLCMPMaximumValue()));
+        addManifoldPressureMinimumFilter();
+        minMPFilter.setText(String.valueOf(Config.getLCMPMinimumValue()));
+        
         addDvDtMaximumFilter();
         maxDvdtFilter.setText(String.valueOf(Config.getLCDvDtMaximumValue()));
         addCellHitCountMinimumFilter();
@@ -175,6 +184,9 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         // Load Compensation values in ratio
     	Config.setIsLoadCompInRatio(isLoadCompInRatioBool.isSelected());
     	
+    	// Atm Pressure filters
+    	Config.setAtmPressureValue(Double.valueOf(atmPressureFilter.getText()));
+    	
     	// Throttle Change % Maximum
     	Config.setThrottleChangeMaxValue(Integer.valueOf(thrtlChangeMaxFilter.getValue().toString()));
     	
@@ -191,6 +203,10 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
     	// AFR filters
     	Config.setLCAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
     	Config.setLCAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
+    	
+    	// MP filters
+    	Config.setLCMPMaximumValue(Double.valueOf(maxMPFilter.getText()));
+    	Config.setLCMPMinimumValue(Double.valueOf(minMPFilter.getText()));
     	
     	// dV/dt filter
     	Config.setLCDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
@@ -219,6 +235,10 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         	maxAfrFilter.setText(Config.DefaultLCAfrMaximum);
         else if ("minafr".equals(e.getActionCommand()))
         	minAfrFilter.setText(Config.DefaultLCAfrMinimum);
+        else if ("maxmp".equals(e.getActionCommand()))
+        	maxMPFilter.setText(Config.DefaultMPMaximum);
+        else if ("minmp".equals(e.getActionCommand()))
+        	minMPFilter.setText(Config.DefaultMPMinimum);
         else if ("maxdvdt".equals(e.getActionCommand()))
         	maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
         else if ("minhitcnt".equals(e.getActionCommand()))
@@ -227,6 +247,8 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         	cruiseStatusFilter.setValue(Integer.valueOf(Config.DefaultCruiseStatusValue));
         else if ("corrapply".equals(e.getActionCommand()))
         	correctionAppliedValue.setValue(Integer.valueOf(Config.DefaultCorrectionAppliedValue));
+        else if ("atmpress".equals(e.getActionCommand()))
+        	atmPressureFilter.setText(Config.DefaultAtmPressure);
         else
         	return false;
         return true;

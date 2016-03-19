@@ -43,9 +43,9 @@ public final class Utils {
     public final static String fpRegex = "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
     //		("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
     public final static String tmRegex = ".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*";
-    public final static String onOffRegex = "(?i)^\\s*(ON|OFF)\\s*$";
-    public final static Pattern offPattern = Pattern.compile("^\\s*OFF\\s*$", Pattern.CASE_INSENSITIVE);
-    public final static Pattern onPattern = Pattern.compile("^\\s*ON\\s*$", Pattern.CASE_INSENSITIVE);
+    public final static String onOffRegex = "(?i)^\\s*(ON|OFF|OPENED|OPEN|CLOSED|CLOSE)\\s*$";
+    public final static Pattern offPattern = Pattern.compile("^\\s*(OFF|CLOSED|CLOSE)\\s*$", Pattern.CASE_INSENSITIVE);
+    public final static Pattern onPattern = Pattern.compile("^\\s*(ON|OPENED|OPEN)\\s*$", Pattern.CASE_INSENSITIVE);
     
     private static long baseTime = 0;
 

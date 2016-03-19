@@ -56,6 +56,8 @@ import java.util.ResourceBundle;
 import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
+
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -1388,7 +1390,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     
     private void convertOnOffToNumMsec() {
     	String val;
-		for (int i = 0; i < logDataTable.getColumnCount(); ++i) {
+		for (int i = logDataTable.getColumnCount() - 1; i >= 0 ; --i) {
 			if (logDataTable.getRowCount() > 0) {
 				val = (String)logDataTable.getValueAt(0, i);
 				if (val.matches(Utils.onOffRegex)) {
@@ -1397,6 +1399,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
 						logDataTable.setValueAt(String.valueOf(Utils.parseValue(val)), j, i);
 					}
 				}
+				else if (!Pattern.matches(Utils.fpRegex, val))
+					logDataTable.removeColumn(logDataTable.getColumn(i));
 			}
 		}
     }

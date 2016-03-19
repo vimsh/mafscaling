@@ -87,11 +87,13 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String maxIatLabelText = "IAT Maximum";
     public static final String maxAfrLabelText = "AFR Maximum";
     public static final String minAfrLabelText = "AFR Minimum";
+    public static final String atmPressureLabelText = "Atm Pressure";
     public static final String maxCorrLabelText = "Error Correction Maximum";
     public static final String minCorrLabelText = "Error Correction Minimum";
     public static final String maxDvdtLabelText = "dV/dt Maximum";
     public static final String minCellHitCountLabelText = "Cell Hit Minimum Count";
     public static final String minEngineLoadLabelText = "Engine Load Minimum";
+    public static final String maxManifoldPressureLabelText = "Manifold Pressure Maximum";
     public static final String minManifoldPressureLabelText = "Manifold Pressure Minimum";
     public static final String wotStationaryLabelText = "WOT Stationary Point (Angle %)";
     public static final String temperatureScaleLabelText = "Temperature Scale";
@@ -129,6 +131,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JFormattedTextField maxFFBFilter = null;
 	protected JFormattedTextField minFFBFilter = null;
 	protected JFormattedTextField minEngineLoadFilter = null;
+	protected JFormattedTextField maxMPFilter = null;
 	protected JFormattedTextField minMPFilter = null;
 	protected JFormattedTextField afrErrorFilter = null;
 	protected JFormattedTextField wotEnrichmentField = null;
@@ -136,6 +139,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected JFormattedTextField olClTransitionSkipRowsField = null;
 	protected JFormattedTextField maxAfrFilter = null;
 	protected JFormattedTextField minAfrFilter = null;
+	protected JFormattedTextField atmPressureFilter = null;
 	protected JFormattedTextField maxIatFilter = null;
 	protected JFormattedTextField maxDvdtFilter = null;
 	protected JFormattedTextField thrtlMinimumFilter = null;
@@ -475,6 +479,14 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         minAfrFilter = addTextFilter(filtrow, doubleFmt);
         addDefaultButton(filtrow, "minafr");
     }
+
+    protected void addAtmPressureFilter() {
+        // Atmosphere Pressure Note
+        addNote(filtersPanel, ++filtrow, 3, "Specify your Atmosphere Pressure if above sea level, otherwise leave it at 14.7");
+        addLabel(filtersPanel, ++filtrow, atmPressureLabelText);
+        atmPressureFilter = addTextFilter(filtrow, doubleFmt);
+        addDefaultButton(filtrow, "atmpress");
+    }
     
     protected void addIATMaximumFilter() {
         // Intake Air Temperature Maximum Note
@@ -514,6 +526,14 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addLabel(filtersPanel, ++filtrow, minEngineLoadLabelText);
         minEngineLoadFilter = addTextFilter(filtrow, doubleFmt);
         addDefaultButton(filtrow, "minengload");
+    }
+    
+    protected void addManifoldPressureMaximumFilter() {
+        // Manifold Pressure Maximum Note
+        addNote(filtersPanel, ++filtrow, 3, "Remove data where Manifold Pressure is above the filter value");
+        addLabel(filtersPanel, ++filtrow, maxManifoldPressureLabelText);
+        maxMPFilter = addTextFilter(filtrow, doubleFmt);
+        addDefaultButton(filtrow, "maxmp");
     }
     
     protected void addManifoldPressureMinimumFilter() {

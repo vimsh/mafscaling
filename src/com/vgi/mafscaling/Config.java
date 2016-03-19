@@ -44,6 +44,7 @@ public class Config {
 	public static final String DefaultCruiseStatusValue = "-1";
 	public static final String DefaultCorrectionAppliedValue = "100";
 	public static final String DefaultThrottleChangeMax = "2";
+	public static final String DefaultAtmPressure = "14.7";
 	public static final String DefaultVEThrottleChangeMax = "4";
 	public static final String DefaultVEThrottleMinimum = "5";
 	public static final String DefaultIsLoadCompInRatio = "false";
@@ -62,6 +63,7 @@ public class Config {
 	public static final String DefaultRPMMinimum = "0";
 	public static final String DefaultFFBMaximum = "100.0";
 	public static final String DefaultFFBMinimum = "0.0";
+	public static final String DefaultMPMaximum = "100.0";
 	public static final String DefaultMPMinimum = "-100.0";
 	public static final String DefaultIATMaximum = "300.0";
 	public static final String DefaultLCIATMaximum = "300.0";
@@ -356,6 +358,14 @@ public class Config {
 
 	public static void setThrottleChangeMaxValue(int v) {
 		props.setProperty("ThrottleChangeMax", Integer.toString(v));
+	}
+
+	public static double getAtmPressureValue() {
+		return Double.parseDouble(props.getProperty("AtmPressure", DefaultAtmPressure));
+	}
+
+	public static void setAtmPressureValue(double v) {
+		props.setProperty("AtmPressure", Double.toString(v));
 	}
 	
 	public static boolean getIsLoadCompInRatio() {
@@ -672,6 +682,22 @@ public class Config {
 
 	public static void setLCAfrMaximumValue(double v) {
 		props.setProperty("LCAfrMaximum", Double.toString(v));
+	}
+
+	public static double getLCMPMaximumValue() {
+		return Double.parseDouble(props.getProperty("LCMPMaximum", DefaultMPMaximum));
+	}
+
+	public static void setLCMPMaximumValue(double v) {
+		props.setProperty("LCMPMaximum", Double.toString(v));
+	}
+	
+	public static double getLCMPMinimumValue() {
+		return Double.parseDouble(props.getProperty("LCMPMinimum", DefaultMPMinimum));
+	}
+
+	public static void setLCMPMinimumValue(double v) {
+		props.setProperty("LCMPMinimum", Double.toString(v));
 	}
 
 	public static double getVEOlAfrMaximumValue() {

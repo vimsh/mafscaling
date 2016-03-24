@@ -46,6 +46,7 @@ public final class Utils {
     public final static String onOffRegex = "(?i)^\\s*(ON|OFF|OPENED|OPEN|CLOSED|CLOSE)\\s*$";
     public final static Pattern offPattern = Pattern.compile("^\\s*(OFF|CLOSED|CLOSE)\\s*$", Pattern.CASE_INSENSITIVE);
     public final static Pattern onPattern = Pattern.compile("^\\s*(ON|OPENED|OPEN)\\s*$", Pattern.CASE_INSENSITIVE);
+    public final static Color ZeroColor = new Color(255, 255, 255, 0);
     
     private static long baseTime = 0;
 
@@ -107,33 +108,41 @@ public final class Utils {
      * @param startColumn, column to begin coloring from
      */
     public static Color[][] generateTableColorMatrix(JTable table, int startRow, int startColumn) {
+    	return generateTableColorMatrix(table, startRow, startColumn, table.getRowCount(), table.getColumnCount());
+    }
+    
+    /**
+     * Methods return table gradient colors matrix
+     * @param table, table to get matrix for
+     * @param startRow, row to begin coloring from
+     * @param startColumn, column to begin coloring from
+     * @param endRow, row to finish coloring on
+     * @param endColumn, column to finish coloring on
+     * @return
+     */
+    public static Color[][] generateTableColorMatrix(JTable table, int startRow, int startColumn, int endRow, int endColumn) {
         Color[][] colorMatrix = null;
         TreeSet<Double> uniqueValues = new TreeSet<Double>();
         int i, j;
-        Object cellValue;
         String value;
-        for (i = startRow; i < table.getRowCount(); ++i) {
-            for (j = startColumn; j < table.getColumnCount(); ++j) {
-                cellValue = table.getValueAt(i, j);
-                if (cellValue != null) {
-                    value = cellValue.toString();
-                    if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
-                        uniqueValues.add(Double.valueOf(value));
-                }
+        for (i = startRow; i < endRow; ++i) {
+            for (j = startColumn; j < endColumn; ++j) {
+            	value = table.getValueAt(i, j).toString();
+                if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
+                    uniqueValues.add(Double.valueOf(value));
             }
         }
         if (uniqueValues.size() > 0) {
             List<Color> colors = Arrays.asList(Utils.getColorArray(uniqueValues.size()));
             Collections.reverse(colors);
-            colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
-            for (i = startRow; i < table.getRowCount(); ++i) {
-                for (j = startColumn; j < table.getColumnCount(); ++j) {
-                    cellValue = table.getValueAt(i, j);
-                    if (cellValue != null) {
-                        value = cellValue.toString();
-                        if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
-                            colorMatrix[i][j] = colors.get(uniqueValues.headSet(Double.valueOf(value)).size());
-                    }
+            colorMatrix = new Color[endRow][endColumn];
+            for (i = startRow; i < endRow; ++i) {
+                for (j = startColumn; j < endColumn; ++j) {
+                	value = table.getValueAt(i, j).toString();
+                    if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
+                        colorMatrix[i][j] = colors.get(uniqueValues.headSet(Double.valueOf(value)).size());
+        			else
+        				colorMatrix[i][j] = ZeroColor;
                 }
             }
         }
@@ -421,7 +430,7 @@ public final class Utils {
     			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
     				z[j][i] = renderer.getColorAt(j + 1, i + 1);
     			else
-    				z[j][i] = new Color(255, 255, 255, 0);
+    				z[j][i] = ZeroColor;
     		}
     	}
     	return z;

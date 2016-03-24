@@ -743,7 +743,11 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 		        for (i = 0; i < yAxisArray.size(); ++i)
 		        	y[i] = yAxisArray.get(i);
 		        double[][] z = Utils.doubleZArray(corrTable, x, y);
-		        Color[][] colors = Utils.generateTableColorMatrix(corrTable, 1, 1);
+		        Color[][] tableColors = Utils.generateTableColorMatrix(corrTable, 1, 1, y.length + 1, x.length + 1);
+		        Color[][] colors = new Color[y.length][x.length];
+		        for (int j = 1; j < tableColors.length; ++j)
+			        for (i = 1; i < tableColors[j].length; ++i)
+			        	colors[j - 1][i - 1] = tableColors[j][i];		        
 		        plot3d.addGridPlot("Average Error % Plot", colors, x, y, z);
             }
             catch (Exception e) {

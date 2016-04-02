@@ -313,7 +313,7 @@ public class MafIatComp extends ACompCalc {
 	                double maf = 0;
 	                double mafv = 0;
 	                double iat;
-	                clearChartData();
+	                clearRunTables();
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
 	                	line = br.readLine();
@@ -547,8 +547,11 @@ public class MafIatComp extends ACompCalc {
         dvdtArray.clear();
         runData.clear();
         trendData.clear();
-        clear2dChartData();
-        plot3d.removeAllPlots();
+    }
+    
+    protected void clearLogDataTables() {
+    	super.clearLogDataTables();
+    	clearChartData();
     }
     
     private boolean plotDvdtData() {

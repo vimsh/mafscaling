@@ -300,7 +300,7 @@ public class LoadComp extends ACompCalc {
 	                double mafv = 0;
 	                double iat;
 	                double rpm;
-	                clearChartData();
+	                clearRunTables();
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	                try {
 	                	if (-1 == logCruiseStatusColIdx)
@@ -520,8 +520,11 @@ public class LoadComp extends ACompCalc {
         dvdtArray.clear();
         runData.clear();
         trendData.clear();
-        clear2dChartData();
-        plot3d.removeAllPlots();
+    }
+    
+    protected void clearLogDataTables() {
+    	super.clearLogDataTables();
+    	clearChartData();
     }
     
     private boolean plotDvdtData() {

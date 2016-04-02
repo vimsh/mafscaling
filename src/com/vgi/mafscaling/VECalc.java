@@ -613,6 +613,17 @@ public class VECalc extends ACompCalc {
         }
         return false;    	
     }
+    
+    private void clearChartData() {
+        trims.clear();
+        runData.clear();
+        trendData.clear();
+    }
+    
+    protected void clearLogDataTables() {
+    	super.clearLogDataTables();
+    	clearChartData();
+    }
 
     private boolean plotCorrectionData() {
         plot3d.removeAllPlots();

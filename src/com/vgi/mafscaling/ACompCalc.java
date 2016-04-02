@@ -559,6 +559,8 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 	        while (LogDataRowCount < logDataTable.getRowCount())
 	            Utils.removeRow(LogDataRowCount, logDataTable);
 	        Utils.clearTable(logDataTable);
+	        clear2dChartData();
+	        plot3d.removeAllPlots();
     	}
     	finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -763,8 +765,6 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     	clearRunTable(corrCountTable);
     	savedNewTable.clear();
     	compareTableCheckBox.setSelected(false);
-        clear2dChartData();
-        plot3d.removeAllPlots();
     }
     
     protected void clearRunTable(JTable table) {

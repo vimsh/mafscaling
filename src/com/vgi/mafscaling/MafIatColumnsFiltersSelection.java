@@ -219,6 +219,7 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	
     	// CL/OL Status
     	value = clolStatusFilter.getValue().toString();
+    	colName = clolStatusLabelText;
     	if (value.isEmpty() || value.equals("-1")) {
     		ret = false;
     		error.append("\"").append(colName).append("\" value must be specified\n");

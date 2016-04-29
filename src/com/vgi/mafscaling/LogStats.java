@@ -528,7 +528,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
             String line = br.readLine();
             if (line != null) {
-            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+            	String [] elements = line.split("\\s*,\\s*", -1);
             	Arrays.sort(elements);
                 for (String item : elements) {
 	                xAxisColumn.addItem(item);
@@ -749,7 +749,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
             String line = br.readLine();
             if (line != null) {
-            	elements = line.split(",", -1);
+            	elements = line.split("\\s*,\\s*", -1);
                 ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
                 int xColIdx = columns.indexOf(xAxisColName);
                 int yColIdx = columns.indexOf(yAxisColName);
@@ -785,7 +785,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 try {
                 	line = br.readLine();
 	                while (line != null) {
-	                	elements = line.split(",", -1);
+	                	elements = line.split("\\s*,\\s*", -1);
 	                	if (i == 2) {
 		                	if (useFilter1 && elements[fltr1ColIdx].matches(Utils.tmRegex))
 		                		tmColIdx = fltr1ColIdx;

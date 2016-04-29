@@ -358,7 +358,7 @@ public class VECalc extends ACompCalc {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	                String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	                String [] elements = line.split("\\s*,\\s*", -1);
 	                getColumnsFilters(elements);
 
 	                boolean resetColumns = false;
@@ -399,7 +399,7 @@ public class VECalc extends ACompCalc {
 	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
 	                	line = br.readLine();
 	                	if (line != null)
-	                		buffer.addFirst(line.split(",", -1));
+	                		buffer.addFirst(line.split("\\s*,\\s*", -1));
 	                }
 	                try {
 		                while (line != null && buffer.size() > afrRowOffset) {
@@ -407,7 +407,7 @@ public class VECalc extends ACompCalc {
 		                    flds = buffer.removeLast();
 		                    line = br.readLine();
 		                	if (line != null)
-		                		buffer.addFirst(line.split(",", -1));
+		                		buffer.addFirst(line.split("\\s*,\\s*", -1));
 		                    ppThrottle = pThrottle;
 		                    pThrottle = throttle;
 	                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);

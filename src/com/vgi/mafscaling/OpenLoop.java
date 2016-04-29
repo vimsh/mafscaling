@@ -537,7 +537,7 @@ public class OpenLoop extends AMafScaling {
             JTable table = null;
             i = k = l = 0;
             while (line != null) {
-                elements = line.split(",", -1);
+                elements = line.split("\\s*,\\s*", -1);
                 switch (i) {
                 case 0:
                     Utils.ensureColumnCount(elements.length - 1, mafTable);
@@ -632,7 +632,7 @@ public class OpenLoop extends AMafScaling {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	            	String [] elements = line.split("\\s*,\\s*", -1);
 	                getColumnsFilters(elements, false);
 	
 	                boolean resetColumns = false;
@@ -676,14 +676,14 @@ public class OpenLoop extends AMafScaling {
 	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
 	                	line = br.readLine();
 	                	if (line != null)
-	                		buffer.addFirst(line.split(",", -1));
+	                		buffer.addFirst(line.split("\\s*,\\s*", -1));
 	                }
 	                while (line != null && buffer.size() > afrRowOffset) {
 	                    afrflds = buffer.getFirst();
 	                    flds = buffer.removeLast();
 	                    line = br.readLine();
 	                	if (line != null)
-	                		buffer.addFirst(line.split(",", -1));
+	                		buffer.addFirst(line.split("\\s*,\\s*", -1));
 
 	                    try {
 		                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);

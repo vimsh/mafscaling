@@ -798,7 +798,7 @@ public class VVTCalc extends ACompCalc {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	            	String [] elements = line.split("\\s*,\\s*", -1);
 	                getColumnsFilters(elements);
 	                
 	            	int origLogVvt2ColIdx = logVvt2ColIdx;
@@ -848,7 +848,7 @@ public class VVTCalc extends ACompCalc {
 	                    return;
 	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
 	                while ((line = br.readLine()) != null) {
-	                	flds = line.split(",", -1);
+	                	flds = line.split("\\s*,\\s*", -1);
 	                    try {
 		                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
 		                    if (row == 0 && throttle < 99)
@@ -1165,7 +1165,7 @@ public class VVTCalc extends ACompCalc {
     }
     
     private void loadConfig() {
-        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().split(",", -1);
+        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().split("\\s*,\\s*", -1);
         if (vvt1RpmColumn != null) {
 	        for (int i = 0; i < vvt1RpmColumn.length; ++i) {
             	Utils.ensureRowCount(i + 1, origTable);
@@ -1174,7 +1174,7 @@ public class VVTCalc extends ACompCalc {
 	        }
 	    	validateTable(origTable);
         }
-        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().split(",", -1);
+        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().split("\\s*,\\s*", -1);
         if (vvt2RpmColumn != null) {
 	        for (int i = 0; i < vvt2RpmColumn.length; ++i) {
             	Utils.ensureRowCount(i + 1, newTable);

@@ -261,7 +261,7 @@ public class LoadComp extends ACompCalc {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
 	            String line = br.readLine();
 	            if (line != null) {
-	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	            	String [] elements = line.split("\\s*,\\s*", -1);
 	                getColumnsFilters(elements);
 	
 	                boolean resetColumns = false;
@@ -306,7 +306,7 @@ public class LoadComp extends ACompCalc {
 	                	if (-1 == logCruiseStatusColIdx)
 	                		cruiseValue = -1;
 		                while (line != null) {
-		                    flds = line.split(",", -1);
+		                    flds = line.split("\\s*,\\s*", -1);
 		                    ppThrottle = pThrottle;
 		                    pThrottle = throttle;
 		                    try {

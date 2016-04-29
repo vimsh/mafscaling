@@ -1731,7 +1731,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	            if (line != null) {
 	            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
 	            		line = line.substring(0, line.length() - 1);
-	            	String [] elements = line.split("(\\s*)?,(\\s*)?", -1);
+	            	String [] elements = line.split("\\s*,\\s*", -1);
 	            	colNames = new ArrayList<String>(Arrays.asList(elements));	            	
 	            	if (false == getColumnsFilters(colNames))
 	            		continue;
@@ -1746,7 +1746,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	                while ((line = br.readLine()) != null) {
 		            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
 		            		line = line.substring(0, line.length() - 1);
-	                	flds = line.split(",", -1);
+	                	flds = line.split("\\s*,\\s*", -1);
 	                    val = Double.valueOf(flds[logThtlAngleColIdx]);
 	                    if (row == 0 && val < 99)
 	                        wotFlag = false;

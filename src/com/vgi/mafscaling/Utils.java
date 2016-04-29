@@ -636,10 +636,10 @@ public final class Utils {
         double timingLowHigh = 0;
         double timingHighLow = 0;
         double timingHighHigh = 0;
-        int rpmRowLow = 0;
-        int rpmRowHigh = 0;
-        int loadColLow = 0;
-        int loadColHigh = 0;
+        int rpmRowLow = 1;
+        int rpmRowHigh = 1;
+        int loadColLow = 1;
+        int loadColHigh = 1;
         int index = 1;
         double value;
 

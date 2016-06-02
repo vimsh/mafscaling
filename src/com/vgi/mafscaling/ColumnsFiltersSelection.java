@@ -610,7 +610,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     
     protected void addCLOLStatusFilter() {
         // CL/OL Status value for CL Note
-        addNote(filtersPanel, ++filtrow, 3, "Filter out data using logged OL/CL status (EcuTek CL: 2, OL: 4, OP2/RR CL: 8, OL: 7)");
+        addNote(filtersPanel, ++filtrow, 3, "Filter out data using logged OL/CL status (EcuTek CL: 2, OL: 4, OP2/RR CL: 8, OL: 7, Cobb CL: 0, OL: 1)");
         addLabel(filtersPanel, ++filtrow, clolStatusValLabelText);
         clolStatusFilter = addSpinnerFilter(filtrow, Config.getClOlStatusValue(), -1, 10, 1);
         addDefaultButton(filtrow, "clolstatus");

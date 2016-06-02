@@ -351,7 +351,7 @@ public class MafIatComp extends ACompCalc {
 		                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
 		                            // Filters
 		                    		trims = Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]);
-	                            	if (clValue == Double.valueOf(flds[logClOlStatusColIdx])) {
+	                            	if (clValue == (int)Utils.parseValue(flds[logClOlStatusColIdx])) {
 	                            		afr = Double.valueOf(flds[logAfrColIdx]);
 	                            		corr = (100.0 + trims) / 100.0;
 	                            	}

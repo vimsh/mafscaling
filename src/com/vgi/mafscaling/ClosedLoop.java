@@ -1099,7 +1099,7 @@ public class ClosedLoop extends AMafScaling {
                         		dVdt = 100.0;
                         	else
                         		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
-	                        clol = Integer.valueOf(flds[logClOlStatusColIdx]);
+	                        clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
 	                        if (clol == clValue) {
 	                            // Filters
 	                        	afr = Double.valueOf(flds[logAfrColIdx]);

@@ -32,29 +32,26 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <h3>
-<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+<a id="mafscalig" class="anchor" href="#mafscalig" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Mafscalig</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
+<h4>
+<a id="is-a-program-which-helps-to-tune-subaru-cars-by-processing-and-analyzing-ecu-logs-it-was-initially-written-for-maf-scaling-thus-the-name-and-then-it-was-extended-to-provide-more-tools-at-the-moment-the-following-tabs-are-available" class="anchor" href="#is-a-program-which-helps-to-tune-subaru-cars-by-processing-and-analyzing-ecu-logs-it-was-initially-written-for-maf-scaling-thus-the-name-and-then-it-was-extended-to-provide-more-tools-at-the-moment-the-following-tabs-are-available" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>is a program which helps to tune Subaru cars by processing and analyzing ECU logs. It was initially written for MAF scaling (thus the name) and then it was extended to provide more tools. At the moment the following tabs are available:</h4>
 
-<h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Designer Templates</h3>
+<ol>
+<li><p><strong><a href="How-To-Use#open-loop">Open Loop</a></strong> - used for open loop MAF (Mass Air Flow) scaling based on WOT (Wide Open Throttle) pulls. You would use it whenever you install upgrades that change Air/Fuel ratio, eg CAI (Cold Air Intake), larger injectors.</p></li>
+<li><p><strong><a href="How-To-Use#closed-loop">Closed Loop</a></strong> - used for closed loop MAF scaling. Same as Open Loop you would use it whenever you install upgrades that change Air/Fuel ratio, eg CAI (Cold Air Intake), larger injectors.</p></li>
+<li><p><strong><a href="How-To-Use#rescale">Rescale</a></strong> - used for custom MAF reallocation of existing curve points. Sometimes after adding modifications and rescaling (Open/Closed loop) the MAF table you may find out that some of the points at low MAF voltage scale are never hit (at idle your log shows MAFv values which are closer to 3rd or 4th point of MAF scaling), and some other times you may find that the points at high MAF voltage scale are never hit (at WOT redline cutoff you log shows MAFv values closer to some point which has 3-4 more points after it). Those "unused" points could be reallocated to the mid-upper effective range to improving the accuracy of Air/Fuel calculation of closed/open loop transitional and open loop area of MAF curve.</p></li>
+<li><p><strong><a href="How-To-Use#load-comp">Load Comp / Injector Pulse Width Compensation</a></strong> - used to adjust Load Compensation or Injector Pulse Width Compensation tables to improve fueling calculation based on engine RPM and Manifold Pressure for Load or Injector Pulse Width for PW</p></li>
+<li><p><strong><a href="How-To-Use#maf-iat-comp">MAF IAT Comp</a></strong> - used to adust Intake Air Temperature Compensation table to improve fueling calculation based on IAT temperature and Mass Air Flow</p></li>
+<li><p><strong><a href="How-To-Use#maf-ve-calc">MAF VE Calc</a></strong> - used to build Speed Density map based on your existing well working MAF scale (MAF Builder) or to fine-tune existing SD table (AFR Tuner). Use MAF Builder when switching to Speed Density you could run your car in MAF/SD mode (unless you've removed your MAF sensor already) and build SD table based on MAF scaling. Use AFR Tuner to make adjustment to the SD map based on AFR (Air/Fuel ratio) error (you would have to select Open Loop or Closed loop when loading log file).</p></li>
+<li><p><strong><a href="How-To-Use#wot-best-vvt">WOT Best VVT</a></strong> - used to analyze VTT angles by best volumetric efficiency. Logged VVT angles are compared to volumetric efficiency of each WOT pull allowing changes to be made to VVT systems and compared for the best settings. The logged VVT with the best VE will be the ideal VVT setting.</p></li>
+<li><p><strong><a href="How-To-Use#log-stats">Log Stats</a></strong> - used to analyse ECU log by calculating statistics (on specified Data column of a log file) over specified X/Y axes (specified as any column of a log file). The axes values can be specified as a step or fixed axes. The stats will be calculated on Data column after all filters (if specified) are applied to the log file data. The result data is presented as a table and 3D plot.</p></li>
+<li><p><strong><a href="How-To-Use#log-view">Log View</a></strong> - used to display log data in a table and as 2D and 3D plots and map tracing. A single filter can be applied to the data to be displayed. The tool also allows to set markers for desired area and replay the log data over specified tables (map tracing). While replaying, the tool allows to mark the cells which are used for current value calculation, mark the most significant cell, show current value by placing dot over the tables cells, trace the current value change as a line.</p></li>
+</ol>
 
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
+<p>Please always check Usage Tab for the tool you're planning to use.</p>
 
-<h3>
-<a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating pages manually</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#mentioning-users-and-teams" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+<p>DISCLAIMER: This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
       </section>
     </div>
 

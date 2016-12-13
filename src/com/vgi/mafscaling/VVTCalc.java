@@ -41,7 +41,6 @@ import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -788,157 +787,159 @@ public class VVTCalc extends ACompCalc {
     }
     
     protected void loadLogFile() {
-    	fileChooser.setMultiSelectionEnabled(true);
-        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;
+        boolean displayDialog = true;
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = br.readLine();
-	            if (line != null) {
-	            	String [] elements = line.split("\\s*,\\s*", -1);
-	                getColumnsFilters(elements);
-	                
-	            	int origLogVvt2ColIdx = logVvt2ColIdx;
-	                boolean resetColumns = false;
-	                if (logThtlAngleColIdx >= 0 || logRpmColIdx >= 0 || logVvt1ColIdx >= 0 ||
-	                	logVvt2ColIdx >= 0 || logIatColIdx >= 0 || logMapColIdx >= 0 || logMafColIdx >=0) {
-	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	            String line = null;
+	            String [] elements = null;
+	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+	            	continue;
+                getColumnsFilters(elements);                
+            	int origLogVvt2ColIdx = logVvt2ColIdx;
+                boolean resetColumns = false;
+                if (logThtlAngleColIdx >= 0 || logRpmColIdx >= 0 || logVvt1ColIdx >= 0 ||
+                	logVvt2ColIdx >= 0 || logIatColIdx >= 0 || logMapColIdx >= 0 || logMafColIdx >=0) {
+                	if (displayDialog) {
+	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+	                    if (rc == 0)
 	                    	resetColumns = true;
-	                }
-	
-	                if (resetColumns || logThtlAngleColIdx < 0 || logRpmColIdx < 0 ||
-	                	logVvt1ColIdx < 0 || logIatColIdx < 0 || logMapColIdx < 0 || logMafColIdx < 0) {
-	                	ColumnsFiltersSelection selectionWindow = new VVTColumnsFiltersSelection(false);
-	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-	                		return;
-	                }
-	                if (origLogVvt2ColIdx != logVvt2ColIdx) {
-	                	createLogDataTable(dataRunPanel);
-	                	if (logVvt2ColIdx != -1)
-	                		chartPanels[1].setVisible(true);
-	                	else
-	                		chartPanels[1].setVisible(false);
-	                	validate();
-	                	repaint();
-	                }
+	                    else if (rc == 2)
+	                    	displayDialog = false;
+                	}
+                }
 
-	                String[] flds;
-	                boolean wotFlag = true;
-	                boolean foundWot = false;
-	                double prpm = 0;
-	                double rpm;
-	                double map;
-	                double iat;
-	                double maf;
-	                double ve;
-	                double throttle;
-	                int skipRowCount = 0;
-	                int row = 0;
-	                int i = 0;
-	                int j = 0;
-	                int k = 0;
-	                for (; i < runTables.length; ++i) {
-	                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
-	                        break;
-	                }
-	                if (i == runTables.length)
-	                    return;
-	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-	                while ((line = br.readLine()) != null) {
-	                	flds = line.split("\\s*,\\s*", -1);
-	                    try {
-		                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
-		                    if (row == 0 && throttle < 99)
-		                        wotFlag = false;
-		                    if (throttle < wotPoint) {
-		                        if (wotFlag == true) {
-		                            wotFlag = false;
-		                            prpm = 0;
-		                            skipRowCount = 0;
+                if (resetColumns || logThtlAngleColIdx < 0 || logRpmColIdx < 0 ||
+                	logVvt1ColIdx < 0 || logIatColIdx < 0 || logMapColIdx < 0 || logMafColIdx < 0) {
+                	ColumnsFiltersSelection selectionWindow = new VVTColumnsFiltersSelection(false);
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                		return;
+                }
+                if (origLogVvt2ColIdx != logVvt2ColIdx) {
+                	createLogDataTable(dataRunPanel);
+                	if (logVvt2ColIdx != -1)
+                		chartPanels[1].setVisible(true);
+                	else
+                		chartPanels[1].setVisible(false);
+                	validate();
+                	repaint();
+                }
+
+                String[] flds;
+                boolean wotFlag = true;
+                boolean foundWot = false;
+                double prpm = 0;
+                double rpm;
+                double map;
+                double iat;
+                double maf;
+                double ve;
+                double throttle;
+                int skipRowCount = 0;
+                int row = 0;
+                int i = 0;
+                int j = 0;
+                int k = 0;
+                for (; i < runTables.length; ++i) {
+                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
+                        break;
+                }
+                if (i == runTables.length)
+                    return;
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                while ((line = br.readLine()) != null) {
+                	flds = line.split("\\s*,\\s*", -1);
+                    try {
+	                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
+	                    if (row == 0 && throttle < 99)
+	                        wotFlag = false;
+	                    if (throttle < wotPoint) {
+	                        if (wotFlag == true) {
+	                            wotFlag = false;
+	                            prpm = 0;
+	                            skipRowCount = 0;
+	                            j -= 1;
+	                            while (j > 0 && skipRowCount < skipRowsOnTransition) {
+	                            	for (k = 0; k < runTables[i].getColumnCount(); ++k)
+	                            		runTables[i].setValueAt("", j, k);
+		                            skipRowCount += 1;
 		                            j -= 1;
-		                            while (j > 0 && skipRowCount < skipRowsOnTransition) {
-		                            	for (k = 0; k < runTables[i].getColumnCount(); ++k)
-		                            		runTables[i].setValueAt("", j, k);
-			                            skipRowCount += 1;
-			                            j -= 1;
-		                            }
-		                            skipRowCount = 0;
-		                        }
-		                    }
-		                    else {
-		                        if (wotFlag == false) {
-		                            wotFlag = true;
-		                            skipRowCount = 0;
-		                            if (foundWot &&
-		                            	!runTables[i].getValueAt(0, 0).equals("") &&
-		                            	!runTables[i].getValueAt(1, 0).equals("") &&
-		                            	!runTables[i].getValueAt(2, 0).equals("")) {
-		                            	if (j > 1)
-		                            		i += 1;
-		                                if (i == runTables.length)
-		                                    return;
-		                            }
-		                            if (row > 0)
-		                                j = 0;
-		                        }
-		                        if (skipRowCount >= skipRowsOnTransition) {
-		                            foundWot = true;
-		                        	rpm = Double.valueOf(flds[logRpmColIdx]);
-		                        	if (rpm > prpm) {
-		                        		prpm = rpm;
-			                        	map = Double.valueOf(flds[logMapColIdx]);
-			                        	iat = Double.valueOf(flds[logIatColIdx]);
-			                        	maf = Double.valueOf(flds[logMafColIdx]);
-			                        	// leaving all the calcs expended for now for easy checkup
-			                        	if ('F' == temperScale) {
-			                        		if ('P' == mapUnit)
-			                        			ve = (maf / ((map * 6894.76) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
-			                        		else if ('B' == mapUnit)
-			                        			ve = (maf / ((map * 100000) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
-			                        		else // must be 'K' for kPa
-			                        			ve = (maf / ((map * 1000) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
-			                        	}
-			                        	else { // must be 'C' for Celcius
-			                        		if ('P' == mapUnit)
-			                        			ve = (maf / ((map * 6894.76) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
-			                        		else if ('B' == mapUnit)
-			                        			ve = (maf / ((map * 100000) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
-			                        		else // must be 'K' for kPa
-			                        			ve = (maf / ((map * 1000) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60 ) * 100;
-			                        	}
-			                        	k = 0;
-		                            	Utils.ensureRowCount(j + 1, runTables[i]);
-			                            runTables[i].setValueAt(rpm, j, k++);
-			                            runTables[i].setValueAt(Double.valueOf(flds[logVvt1ColIdx]), j, k++);
-			                            if (logVvt2ColIdx >= 0)
-				                            runTables[i].setValueAt(Double.valueOf(flds[logVvt2ColIdx]), j, k++);
-			                            runTables[i].setValueAt(ve, j, k++);
-			                            j += 1;
+	                            }
+	                            skipRowCount = 0;
+	                        }
+	                    }
+	                    else {
+	                        if (wotFlag == false) {
+	                            wotFlag = true;
+	                            skipRowCount = 0;
+	                            if (foundWot &&
+	                            	!runTables[i].getValueAt(0, 0).equals("") &&
+	                            	!runTables[i].getValueAt(1, 0).equals("") &&
+	                            	!runTables[i].getValueAt(2, 0).equals("")) {
+	                            	if (j > 1)
+	                            		i += 1;
+	                                if (i == runTables.length)
+	                                    return;
+	                            }
+	                            if (row > 0)
+	                                j = 0;
+	                        }
+	                        if (skipRowCount >= skipRowsOnTransition) {
+	                            foundWot = true;
+	                        	rpm = Double.valueOf(flds[logRpmColIdx]);
+	                        	if (rpm > prpm) {
+	                        		prpm = rpm;
+		                        	map = Double.valueOf(flds[logMapColIdx]);
+		                        	iat = Double.valueOf(flds[logIatColIdx]);
+		                        	maf = Double.valueOf(flds[logMafColIdx]);
+		                        	// leaving all the calcs expended for now for easy checkup
+		                        	if ('F' == temperScale) {
+		                        		if ('P' == mapUnit)
+		                        			ve = (maf / ((map * 6894.76) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
+		                        		else if ('B' == mapUnit)
+		                        			ve = (maf / ((map * 100000) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
+		                        		else // must be 'K' for kPa
+		                        			ve = (maf / ((map * 1000) / ((((iat - 32) / 1.8) + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
 		                        	}
-		                        }
-		                        skipRowCount += 1;
-		                    }
+		                        	else { // must be 'C' for Celcius
+		                        		if ('P' == mapUnit)
+		                        			ve = (maf / ((map * 6894.76) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
+		                        		else if ('B' == mapUnit)
+		                        			ve = (maf / ((map * 100000) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60) * 100;
+		                        		else // must be 'K' for kPa
+		                        			ve = (maf / ((map * 1000) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60 ) * 100;
+		                        	}
+		                        	k = 0;
+	                            	Utils.ensureRowCount(j + 1, runTables[i]);
+		                            runTables[i].setValueAt(rpm, j, k++);
+		                            runTables[i].setValueAt(Double.valueOf(flds[logVvt1ColIdx]), j, k++);
+		                            if (logVvt2ColIdx >= 0)
+			                            runTables[i].setValueAt(Double.valueOf(flds[logVvt2ColIdx]), j, k++);
+		                            runTables[i].setValueAt(ve, j, k++);
+		                            j += 1;
+	                        	}
+	                        }
+	                        skipRowCount += 1;
 	                    }
-	                    catch (NumberFormatException e) {
-	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + (row + 1) + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
-	                    row += 1;
-	                }
-	                if (j == 0) {
-                    	for (k = 0; k < runTables[i].getColumnCount(); ++k)
-                    		runTables[i].setValueAt("", j, k);
-	                }
+                    }
+                    catch (NumberFormatException e) {
+                        logger.error(e);
+                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + (row + 1) + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    row += 1;
+                }
+                if (j == 0) {
+                	for (k = 0; k < runTables[i].getColumnCount(); ++k)
+                		runTables[i].setValueAt("", j, k);
+                }
 
-	                if (!foundWot) {
-	                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	                    JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
-	                }
-	            }
+                if (!foundWot) {
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
+                }
 	        }
 	        catch (Exception e) {
 	            logger.error(e);

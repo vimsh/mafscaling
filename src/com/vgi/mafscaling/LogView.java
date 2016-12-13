@@ -1405,10 +1405,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		}
     }
     
-	private void loadLogFile() {
+	private void selectLogFile() {
     	fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
+        loadLogFile();
+	}
+    
+	private void loadLogFile() {
         // close log player
     	if (logPlayWindow != null)
     		disposeLogView();
@@ -1433,8 +1437,17 @@ public class LogView extends FCTabbedPane implements ActionListener {
 		        catch (Exception e) {
 		    	}
 			}
+			BufferedReader br = null;
 			try {
-				logDataTable.refresh(file.toURI().toURL(), prop);
+	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+	            String line = null;
+            	br.mark(1024);
+	            while ((line = br.readLine()) != null && !line.contains(",")) {
+	            	br.mark(1024);
+	            	continue;
+	            }
+	            br.reset();
+				logDataTable.refresh(br, prop);
 				// Below is a hack code to check and convert time column hh:mm:ss.sss to msec number
 				convertTimeToMsec();
 				// Below is a hack code to check and convert column(s) with on/off values to number
@@ -1444,6 +1457,16 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	            JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 	    		return;
 	    	}
+	        finally {
+	        	if (br != null) {
+	                try {
+	                    br.close();
+	                }
+	                catch (IOException e) {
+	                    logger.error(e);
+	                }
+	        	}
+	        }
 	        CheckboxHeaderRenderer renderer;
         	Component comp;
         	XYSeries series;
@@ -1704,10 +1727,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
         return ret;
     }
 
-	private void loadWotLogFiles() {
+	private void selectWotLogFiles() {
     	fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
+        loadWotLogFiles();
+	}
+
+	private void loadWotLogFiles() {
         File[] files = fileChooser.getSelectedFiles();
         if (files.length < 1)
         	return;
@@ -1727,80 +1754,80 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	        BufferedReader br = null;
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = br.readLine();
-	            if (line != null) {
+	            String line = null;
+	            String [] elements = null;
+	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+	            	continue;
+	            if (line.charAt(line.length() - 1) == ',')
+	            	Arrays.copyOf(elements, elements.length - 1);
+            	colNames = new ArrayList<String>(Arrays.asList(elements));	            	
+            	if (false == getColumnsFilters(colNames))
+            		continue;
+        		DefaultMutableTreeNode fileNode = new DefaultMutableTreeNode("<html><u>" + file.getName() + "</u></html>");
+        		ArrayList<HashMap<String, ArrayList<Double>>> pulls = new ArrayList<HashMap<String, ArrayList<Double>>>();
+        		HashMap<String, ArrayList<Double>> pullData = new HashMap<String, ArrayList<Double>>();
+        		ArrayList<Double> columnData;
+                String[] flds;
+                row = 0;
+                int pullRows = 0;
+                boolean wotFlag = true;
+                while ((line = br.readLine()) != null) {
 	            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
 	            		line = line.substring(0, line.length() - 1);
-	            	String [] elements = line.split("\\s*,\\s*", -1);
-	            	colNames = new ArrayList<String>(Arrays.asList(elements));	            	
-	            	if (false == getColumnsFilters(colNames))
-	            		continue;
-	        		DefaultMutableTreeNode fileNode = new DefaultMutableTreeNode("<html><u>" + file.getName() + "</u></html>");
-            		ArrayList<HashMap<String, ArrayList<Double>>> pulls = new ArrayList<HashMap<String, ArrayList<Double>>>();
-            		HashMap<String, ArrayList<Double>> pullData = new HashMap<String, ArrayList<Double>>();
-            		ArrayList<Double> columnData;
-	                String[] flds;
-	                row = 0;
-	                int pullRows = 0;
-	                boolean wotFlag = true;
-	                while ((line = br.readLine()) != null) {
-		            	if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
-		            		line = line.substring(0, line.length() - 1);
-	                	flds = line.split("\\s*,\\s*", -1);
-	                    val = Double.valueOf(flds[logThtlAngleColIdx]);
-	                    if (row == 0 && val < 99)
-	                        wotFlag = false;
-	                    if (val < wotPoint) {
-	                        if (wotFlag == true) {
-	                            wotFlag = false;
-	                            if (pullRows >= 10) {
-	                            	pulls.add(pullData);
-	                            	pullData = new HashMap<String, ArrayList<Double>>();
-	                            	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
-	                            }
-	                        }
-	                    }
-	                    else {
-	                        boolean newPullData = false;
-	                        if (wotFlag == false || row == 0) {
-	                            wotFlag = true;
-	                            newPullData = true;
-	                            pullRows = 0;
-	                        }
-	                        pullRows += 1;
-		                	for (i = 0; i < colNames.size(); ++i) {
-		                		if (newPullData) {
-		                			columnData = new ArrayList<Double>();
-		                			pullData.put(colNames.get(i), columnData);
-		                		}
-		                		else
-		                			columnData = pullData.get(colNames.get(i));
-								if (flds[i].matches(Utils.tmRegex)) {
-			                		if (row == 0)
-		                        		Utils.resetBaseTime(flds[i]);
-			                		columnData.add((double)Utils.parseTime(flds[i]));
-								}
-								else
-									columnData.add(Utils.parseValue(flds[i]));
-		                	}
-	                    }
-	                    row += 1;
-	                }
-                    if (wotFlag == true) {
-                        if (pullRows >= 10) {
-                        	pulls.add(pullData);
-                        	pullData = new HashMap<String, ArrayList<Double>>();
-                        	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
+                	flds = line.split("\\s*,\\s*", -1);
+                    val = Double.valueOf(flds[logThtlAngleColIdx]);
+                    if (row == 0 && val < 99)
+                        wotFlag = false;
+                    if (val < wotPoint) {
+                        if (wotFlag == true) {
+                            wotFlag = false;
+                            if (pullRows >= 10) {
+                            	pulls.add(pullData);
+                            	pullData = new HashMap<String, ArrayList<Double>>();
+                            	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
+                            }
                         }
                     }
-	        		if (pulls.size() > 0) {
-		        		root.add(fileNode);
-		        		TreePath path = new TreePath(root);
-		        		wotTree.expandPath(path.pathByAddingChild(fileNode));		        		
-		        		filesData.put(file.getName(), pulls);
-		            	columns.addAll(colNames);
-	        		}
-	            }
+                    else {
+                        boolean newPullData = false;
+                        if (wotFlag == false || row == 0) {
+                            wotFlag = true;
+                            newPullData = true;
+                            pullRows = 0;
+                        }
+                        pullRows += 1;
+	                	for (i = 0; i < colNames.size(); ++i) {
+	                		if (newPullData) {
+	                			columnData = new ArrayList<Double>();
+	                			pullData.put(colNames.get(i), columnData);
+	                		}
+	                		else
+	                			columnData = pullData.get(colNames.get(i));
+							if (flds[i].matches(Utils.tmRegex)) {
+		                		if (row == 0)
+	                        		Utils.resetBaseTime(flds[i]);
+		                		columnData.add((double)Utils.parseTime(flds[i]));
+							}
+							else
+								columnData.add(Utils.parseValue(flds[i]));
+	                	}
+                    }
+                    row += 1;
+                }
+                if (wotFlag == true) {
+                    if (pullRows >= 10) {
+                    	pulls.add(pullData);
+                    	pullData = new HashMap<String, ArrayList<Double>>();
+                    	fileNode.add(new DefaultMutableTreeNode(new CheckBoxNodeData(pullIndexReplaceString + pulls.size(), true)));
+                    }
+                }
+        		if (pulls.size() > 0) {
+	        		root.add(fileNode);
+	        		TreePath path = new TreePath(root);
+	        		wotTree.expandPath(path.pathByAddingChild(fileNode));		        		
+	        		filesData.put(file.getName(), pulls);
+	            	columns.addAll(colNames);
+        		}
 	        }
 	        catch (NumberFormatException ne) {
 	            logger.error(ne);
@@ -2088,7 +2115,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource() == loadButton)
-			loadLogFile();
+			selectLogFile();
 		else if (e.getSource() == printButton)
 			logDataTable.print(new PrintProperties());
 	    else if (e.getSource() == previewButton)
@@ -2189,8 +2216,25 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			}
 		}
 		else if ("loadWot".equals(e.getActionCommand()))
-			loadWotLogFiles();
-		
+			selectWotLogFiles();
+	}
+	
+	protected void onDroppedFiles(List<File> files) {
+		if (files.size() > 0) {
+			int idx = getSelectedIndex();
+			if (idx == 0) {
+		    	fileChooser.setMultiSelectionEnabled(false);
+				fileChooser.setSelectedFile(files.get(0));
+				fileChooser.approveSelection();
+				loadLogFile();
+			}
+			else if (idx == 2) {
+		    	fileChooser.setMultiSelectionEnabled(true);
+				fileChooser.setSelectedFiles((File[])files.toArray());
+				fileChooser.approveSelection();
+				loadWotLogFiles();
+			}
+		}
 	}
 
 }

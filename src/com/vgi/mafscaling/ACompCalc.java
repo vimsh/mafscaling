@@ -15,6 +15,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -101,6 +103,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected Insets insets1 = new Insets(1, 1, 1, 1);
     protected Insets insets2 = new Insets(2, 2, 2, 2);
     protected Insets insets3 = new Insets(3, 3, 3, 3);
+    protected String[] optionButtons = { "Yes", "No", "No to all" };
 
     public ACompCalc(int tabPlacement) {
         super(tabPlacement);
@@ -113,7 +116,22 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected abstract boolean displayData();
     protected abstract void formatTable(JTable table);
     protected abstract String usage();
-
+    
+    protected void selectLogFile() {
+    	fileChooser.setMultiSelectionEnabled(true);
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
+            return;
+        loadLogFile();
+    }
+	
+	protected void onDroppedFiles(List<File> files) {
+		if (files.size() > 0 && getSelectedIndex() == 0) {
+	    	fileChooser.setMultiSelectionEnabled(true);
+			fileChooser.setSelectedFiles((File[])files.toArray());
+			fileChooser.approveSelection();
+			loadLogFile();
+		}
+	}
 
     protected void initialize(String[] logColumns) {
         createDataTab(logColumns);
@@ -853,7 +871,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         	calculate();
         }
         else if ("loadlog".equals(e.getActionCommand())) {
-            loadLogFile();
+            selectLogFile();
         }
         else if ("hidelogtable".equals(e.getActionCommand())) {
         	JCheckBox checkBox = (JCheckBox)e.getSource();

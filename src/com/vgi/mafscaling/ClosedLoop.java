@@ -1042,93 +1042,95 @@ public class ClosedLoop extends AMafScaling {
     }
     
     protected void loadLogFile() {
-    	fileChooser.setMultiSelectionEnabled(true);
-        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;
+        boolean displayDialog = true;
         boolean isPolSet = polfTable.isSet();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = br.readLine();
-	            if (line != null) {
-	            	String [] elements = line.split("\\s*,\\s*", -1);
-	                getColumnsFilters(elements);
-	
-	                boolean resetColumns = false;
-	                if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-	                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
-	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	            String line = null;
+	            String [] elements = null;
+	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+	            	continue;
+                getColumnsFilters(elements);
+                boolean resetColumns = false;
+                if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
+                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
+                	if (displayDialog) {
+	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+	                    if (rc == 0)
 	                    	resetColumns = true;
-	                }
-	
-	                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-	                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-	                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolSet);
-	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-	                		return;
-	                }
-	                
-	                String[] flds;
-	                line = br.readLine();
-	                int clol;
-	                int i = 2;
-	                int row = getLogTableEmptyRow();
-	                long time = 0;
-	                long prevTime = 0;
-	                double afr = 0;
-	                double dVdt = 0;
-	                double pmafv = 0;
-	                double mafv = 0;
-	                double load;
-	                double iat;
-	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+	                    else if (rc == 2)
+	                    	displayDialog = false;
+                	}
+                }
 
-	                while (line != null) {
-	                    flds = line.split("\\s*,\\s*", -1);
-	                    try {
-                        	// Calculate dV/dt
-                        	prevTime = time;
-                        	if (prevTime == 0)
-                        		Utils.resetBaseTime(flds[logTimeColIdx]);
-                        	time = Utils.parseTime(flds[logTimeColIdx]);
-                        	pmafv = mafv;
-                        	mafv = Double.valueOf(flds[logMafvColIdx]);
-                        	if ((time - prevTime) == 0)
-                        		dVdt = 100.0;
-                        	else
-                        		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
-	                        clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
-	                        if (clol == clValue) {
-	                            // Filters
-	                        	afr = Double.valueOf(flds[logAfrColIdx]);
-	                        	load = Double.valueOf(flds[logLoadColIdx]);
-	                        	iat = Double.valueOf(flds[logIatColIdx]);
-	                        	if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
-	                                Utils.ensureRowCount(row + 1, logDataTable);
-	                                logDataTable.setValueAt(time, row, 0);
-	                                logDataTable.setValueAt(load, row, 1);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 2);
-	                                logDataTable.setValueAt(mafv, row, 3);
-	                                logDataTable.setValueAt(afr, row, 4);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 5);
-	                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 6);
-	                                logDataTable.setValueAt(dVdt, row, 7);
-	                                logDataTable.setValueAt(iat, row, 8);
-	                                row += 1;
-	                        	}
-	                        }
-	                    }
-	                    catch (NumberFormatException e) {
-	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
-	                    line = br.readLine();
-	                    i += 1;
-	                }
-	            }
+                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
+                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
+                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolSet);
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                		return;
+                }
+                
+                String[] flds;
+                line = br.readLine();
+                int clol;
+                int i = 2;
+                int row = getLogTableEmptyRow();
+                long time = 0;
+                long prevTime = 0;
+                double afr = 0;
+                double dVdt = 0;
+                double pmafv = 0;
+                double mafv = 0;
+                double load;
+                double iat;
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+
+                while (line != null) {
+                    flds = line.split("\\s*,\\s*", -1);
+                    try {
+                    	// Calculate dV/dt
+                    	prevTime = time;
+                    	if (prevTime == 0)
+                    		Utils.resetBaseTime(flds[logTimeColIdx]);
+                    	time = Utils.parseTime(flds[logTimeColIdx]);
+                    	pmafv = mafv;
+                    	mafv = Double.valueOf(flds[logMafvColIdx]);
+                    	if ((time - prevTime) == 0)
+                    		dVdt = 100.0;
+                    	else
+                    		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+                        clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
+                        if (clol == clValue) {
+                            // Filters
+                        	afr = Double.valueOf(flds[logAfrColIdx]);
+                        	load = Double.valueOf(flds[logLoadColIdx]);
+                        	iat = Double.valueOf(flds[logIatColIdx]);
+                        	if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
+                                Utils.ensureRowCount(row + 1, logDataTable);
+                                logDataTable.setValueAt(time, row, 0);
+                                logDataTable.setValueAt(load, row, 1);
+                                logDataTable.setValueAt(Double.valueOf(flds[logRpmColIdx]), row, 2);
+                                logDataTable.setValueAt(mafv, row, 3);
+                                logDataTable.setValueAt(afr, row, 4);
+                                logDataTable.setValueAt(Double.valueOf(flds[logAfCorrectionColIdx]), row, 5);
+                                logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 6);
+                                logDataTable.setValueAt(dVdt, row, 7);
+                                logDataTable.setValueAt(iat, row, 8);
+                                row += 1;
+                        	}
+                        }
+                    }
+                    catch (NumberFormatException e) {
+                        logger.error(e);
+                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    line = br.readLine();
+                    i += 1;
+                }
 	        }
 	        catch (Exception e) {
 	            logger.error(e);

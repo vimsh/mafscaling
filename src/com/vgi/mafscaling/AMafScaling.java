@@ -13,14 +13,17 @@ import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.net.URI;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -93,6 +96,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     protected Insets insets1 = new Insets(1, 1, 1, 1);
     protected Insets insets2 = new Insets(2, 2, 2, 2);
     protected Insets insets3 = new Insets(3, 3, 3, 3);
+    protected String[] optionButtons = { "Yes", "No", "No to all" };
 
     public AMafScaling(int tabPlacement, PrimaryOpenLoopFuelingTable table, MafCompare comparer) {
         super(tabPlacement);
@@ -116,6 +120,22 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     protected abstract void clearRunTables();
     protected abstract void loadLogFile();
     protected abstract String usage();
+    
+    protected void selectLogFile() {
+    	fileChooser.setMultiSelectionEnabled(true);
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
+            return;
+        loadLogFile();
+    }
+	
+	protected void onDroppedFiles(List<File> files) {
+		if (files.size() > 0 && getSelectedIndex() == 0) {
+	    	fileChooser.setMultiSelectionEnabled(true);
+			fileChooser.setSelectedFiles((File[])files.toArray());
+			fileChooser.approveSelection();
+			loadLogFile();
+		}
+	}
 
     
     protected void createDataTab() {
@@ -809,7 +829,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             polfTable.getSetUserFueling();
         }
         else if ("loadlog".equals(e.getActionCommand())) {
-            loadLogFile();
+            selectLogFile();
         }
         else
         	return false;

@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.ResourceBundle;
 import javax.swing.ButtonGroup;
-import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -251,135 +250,137 @@ public class LoadComp extends ACompCalc {
     }
     
     protected void loadLogFile() {
-    	fileChooser.setMultiSelectionEnabled(true);
-        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
-            return;
+        boolean displayDialog = true;
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = br.readLine();
-	            if (line != null) {
-	            	String [] elements = line.split("\\s*,\\s*", -1);
-	                getColumnsFilters(elements);
-	
-	                boolean resetColumns = false;
-	                if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-	                	logRpmColIdx >= 0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
-	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	            String line = null;
+	            String [] elements = null;
+	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+	            	continue;
+                getColumnsFilters(elements);
+                boolean resetColumns = false;
+                if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
+                	logRpmColIdx >= 0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
+                	if (displayDialog) {
+	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+	                    if (rc == 0)
 	                    	resetColumns = true;
-	                }
-	
-	                if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-	                	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
-	                	ColumnsFiltersSelection selectionWindow = new LCColumnsFiltersSelection(false);
-	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-	                		return;
-	                }
-	                
-	                String[] flds;
-	                line = br.readLine();
-	                boolean removed = false;
-	                int i = 2;
-	                int row = getLogTableEmptyRow();
-	                long time = 0;
-	                long prevTime = 0;
-	                double cruise = -1;
-	                double thrtlMaxChange2 = thrtlMaxChange * 2.0;
-	                double throttle = 0;
-	                double pThrottle = 0;
-	                double ppThrottle = 0;
-	                double trims = 0;
-	                double stft = 0;
-	                double ltft = 0;
-	                double afr = 0;
-	                double mp = 0;
-	                double dVdt = 0;
-	                double pmafv = 0;
-	                double mafv = 0;
-	                double iat;
-	                double rpm;
-	                clearRunTables();
-	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-	                try {
-	                	if (-1 == logCruiseStatusColIdx)
-	                		cruiseValue = -1;
-		                while (line != null) {
-		                    flds = line.split("\\s*,\\s*", -1);
-		                    ppThrottle = pThrottle;
-		                    pThrottle = throttle;
-		                    try {
-		                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
-	                        	// Calculate dV/dt
-                            	prevTime = time;
-                            	if (prevTime == 0)
-                            		Utils.resetBaseTime(flds[logTimeColIdx]);
-                            	time = Utils.parseTime(flds[logTimeColIdx]);
-                            	pmafv = mafv;
-                            	mafv = Double.valueOf(flds[logMafvColIdx]);
-                            	if ((time - prevTime) == 0.0)
-                            		dVdt = 100.0;
-                            	else
-                            		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
-		                    	if (row > 1 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
-		                    		if (!removed)
-		                    			Utils.removeRow(row--, logDataTable);
+	                    else if (rc == 2)
+	                    	displayDialog = false;
+                	}
+                }
+
+                if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
+                	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
+                	ColumnsFiltersSelection selectionWindow = new LCColumnsFiltersSelection(false);
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                		return;
+                }
+                
+                String[] flds;
+                line = br.readLine();
+                boolean removed = false;
+                int i = 2;
+                int row = getLogTableEmptyRow();
+                long time = 0;
+                long prevTime = 0;
+                double cruise = -1;
+                double thrtlMaxChange2 = thrtlMaxChange * 2.0;
+                double throttle = 0;
+                double pThrottle = 0;
+                double ppThrottle = 0;
+                double trims = 0;
+                double stft = 0;
+                double ltft = 0;
+                double afr = 0;
+                double mp = 0;
+                double dVdt = 0;
+                double pmafv = 0;
+                double mafv = 0;
+                double iat;
+                double rpm;
+                clearRunTables();
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                try {
+                	if (-1 == logCruiseStatusColIdx)
+                		cruiseValue = -1;
+	                while (line != null) {
+	                    flds = line.split("\\s*,\\s*", -1);
+	                    ppThrottle = pThrottle;
+	                    pThrottle = throttle;
+	                    try {
+	                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
+                        	// Calculate dV/dt
+                        	prevTime = time;
+                        	if (prevTime == 0)
+                        		Utils.resetBaseTime(flds[logTimeColIdx]);
+                        	time = Utils.parseTime(flds[logTimeColIdx]);
+                        	pmafv = mafv;
+                        	mafv = Double.valueOf(flds[logMafvColIdx]);
+                        	if ((time - prevTime) == 0.0)
+                        		dVdt = 100.0;
+                        	else
+                        		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+	                    	if (row > 1 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
+	                    		if (!removed)
+	                    			Utils.removeRow(row--, logDataTable);
+	                    		removed = true;
+	                    	}
+	                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
+	                            // Filters
+	                        	afr = Double.valueOf(flds[logAfrColIdx]);
+                                rpm = Double.valueOf(flds[logRpmColIdx]);
+	                        	mp = Double.valueOf(flds[logMpColIdx]);
+	                        	iat = Double.valueOf(flds[logIatColIdx]);
+	                        	stft = Double.valueOf(flds[logAfCorrectionColIdx]);
+	                        	ltft = Double.valueOf(flds[logAfLearningColIdx]);
+	                        	trims = stft + ltft;
+	                        	if (cruiseValue != -1)
+	                        		cruise = Double.valueOf(flds[logCruiseStatusColIdx]);
+	                        	if (afrMin <= afr && afr <= afrMax && rpmMin <= rpm && rpm <= rpmMax && mpMin <= mp && mp <= mpMax && dVdt <= dvDtMax && iat <= iatMax && cruise == cruiseValue) {
+		                    		removed = false;
+	                                Utils.ensureRowCount(row + 1, logDataTable);
+	                                logDataTable.setValueAt(time, row, 0);
+	                                logDataTable.setValueAt(rpm, row, 1);
+	                                logDataTable.setValueAt(iat, row, 2);
+	                                logDataTable.setValueAt(stft, row, 3);
+	                                logDataTable.setValueAt(ltft, row, 4);
+	                                logDataTable.setValueAt(mp, row, 5);
+	                                logDataTable.setValueAt(mafv, row, 6);
+	                                logDataTable.setValueAt(trims, row, 7);
+	                                logDataTable.setValueAt(dVdt, row, 8);
+	                                trimArray.add(trims);
+	                                rpmArray.add(rpm);
+	                                mafvArray.add(mafv);
+	                                timeArray.add((double)time);
+	                                iatArray.add(iat);
+	                                dvdtArray.add(dVdt);
+	                                row += 1;
+	                        	}
+	                        	else
 		                    		removed = true;
-		                    	}
-		                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
-		                            // Filters
-		                        	afr = Double.valueOf(flds[logAfrColIdx]);
-	                                rpm = Double.valueOf(flds[logRpmColIdx]);
-		                        	mp = Double.valueOf(flds[logMpColIdx]);
-		                        	iat = Double.valueOf(flds[logIatColIdx]);
-		                        	stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-		                        	ltft = Double.valueOf(flds[logAfLearningColIdx]);
-		                        	trims = stft + ltft;
-		                        	if (cruiseValue != -1)
-		                        		cruise = Double.valueOf(flds[logCruiseStatusColIdx]);
-		                        	if (afrMin <= afr && afr <= afrMax && rpmMin <= rpm && rpm <= rpmMax && mpMin <= mp && mp <= mpMax && dVdt <= dvDtMax && iat <= iatMax && cruise == cruiseValue) {
-			                    		removed = false;
-		                                Utils.ensureRowCount(row + 1, logDataTable);
-		                                logDataTable.setValueAt(time, row, 0);
-		                                logDataTable.setValueAt(rpm, row, 1);
-		                                logDataTable.setValueAt(iat, row, 2);
-		                                logDataTable.setValueAt(stft, row, 3);
-		                                logDataTable.setValueAt(ltft, row, 4);
-		                                logDataTable.setValueAt(mp, row, 5);
-		                                logDataTable.setValueAt(mafv, row, 6);
-		                                logDataTable.setValueAt(trims, row, 7);
-		                                logDataTable.setValueAt(dVdt, row, 8);
-		                                trimArray.add(trims);
-		                                rpmArray.add(rpm);
-		                                mafvArray.add(mafv);
-		                                timeArray.add((double)time);
-		                                iatArray.add(iat);
-		                                dvdtArray.add(dVdt);
-		                                row += 1;
-		                        	}
-		                        	else
-			                    		removed = true;
-		                    	}
-		                    	else
-		                    		removed = true;
-		                    }
-		                    catch (NumberFormatException e) {
-		                        logger.error(e);
-		                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-		                        return;
-		                    }
-		                    line = br.readLine();
-		                    i += 1;
-		                }
-		    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
-		    	        button.setSelected(true);
-		    	        plotDvdtData();
+	                    	}
+	                    	else
+	                    		removed = true;
+	                    }
+	                    catch (NumberFormatException e) {
+	                        logger.error(e);
+	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+	                        return;
+	                    }
+	                    line = br.readLine();
+	                    i += 1;
 	                }
-	                finally {
-	                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	                }
-	            }
+	    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
+	    	        button.setSelected(true);
+	    	        plotDvdtData();
+                }
+                finally {
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                }
 	        }
 	        catch (Exception e) {
 	            logger.error(e);

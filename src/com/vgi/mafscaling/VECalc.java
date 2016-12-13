@@ -347,6 +347,7 @@ public class VECalc extends ACompCalc {
     }
     
     protected void loadLogFile() {
+        boolean displayDialog = true;
     	fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
@@ -356,108 +357,112 @@ public class VECalc extends ACompCalc {
 	        ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
 	        try {
 	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = br.readLine();
-	            if (line != null) {
-	                String [] elements = line.split("\\s*,\\s*", -1);
-	                getColumnsFilters(elements);
-
-	                boolean resetColumns = false;
-	                if (logThrottleAngleColIdx >= 0 || logFfbColIdx >= 0 || logSdColIdx >= 0 || (logWbAfrColIdx >= 0 && isOl) ||
-	                	(logStockAfrColIdx >= 0 && !isOl) || (logAfLearningColIdx >= 0 && !isOl) || (logAfCorrectionColIdx >= 0 && !isOl) ||
-	                	logRpmColIdx >= 0 || logMafColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
-	                    if (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE))
+	            String line = null;
+	            String [] elements = null;
+	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+	            	continue;
+                getColumnsFilters(elements);
+                boolean resetColumns = false;
+                if (logThrottleAngleColIdx >= 0 || logFfbColIdx >= 0 || logSdColIdx >= 0 || (logWbAfrColIdx >= 0 && isOl) ||
+                	(logStockAfrColIdx >= 0 && !isOl) || (logAfLearningColIdx >= 0 && !isOl) || (logAfCorrectionColIdx >= 0 && !isOl) ||
+                	logRpmColIdx >= 0 || logMafColIdx >= 0 || logIatColIdx >= 0 || logMpColIdx >= 0) {
+                	if (displayDialog) {
+	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+	                    if (rc == 0)
 	                    	resetColumns = true;
-	                }
-	
-	                if (resetColumns || logThrottleAngleColIdx < 0 || logFfbColIdx < 0 || logSdColIdx < 0 || (logWbAfrColIdx < 0 && isOl) ||
-	                	(logStockAfrColIdx < 0 && !isOl) || (logAfLearningColIdx < 0 && !isOl) || (logAfCorrectionColIdx < 0 && !isOl) ||
-	                	logRpmColIdx < 0 || logMafColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
-	                	ColumnsFiltersSelection selectionWindow = new VEColumnsFiltersSelection(false);
-	                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-	                		return;
-	                }
-	                
-	                if (logClOlStatusColIdx == -1)
-	                	clValue = -1;
-	                
-	                String[] flds;
-	                String[] afrflds;
-	                boolean removed = false;
-	                int i = 2;
-	                int clol = -1;
-	                int row = getLogTableEmptyRow();
-	                double thrtlMaxChange2 = thrtlMaxChange + thrtlMaxChange / 2.0;
-	                double throttle = 0;
-	                double pThrottle = 0;
-	                double ppThrottle = 0;
-	                double afr = 0;
-	                double rpm;
-	                double ffb;
-	                double iat;
-	                clearRunTables();
-	                setCursor(new Cursor(Cursor.WAIT_CURSOR));
-	                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
-	                	line = br.readLine();
+	                    else if (rc == 2)
+	                    	displayDialog = false;
+                	}
+                }
+
+                if (resetColumns || logThrottleAngleColIdx < 0 || logFfbColIdx < 0 || logSdColIdx < 0 || (logWbAfrColIdx < 0 && isOl) ||
+                	(logStockAfrColIdx < 0 && !isOl) || (logAfLearningColIdx < 0 && !isOl) || (logAfCorrectionColIdx < 0 && !isOl) ||
+                	logRpmColIdx < 0 || logMafColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
+                	ColumnsFiltersSelection selectionWindow = new VEColumnsFiltersSelection(false);
+                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                		return;
+                }
+                
+                if (logClOlStatusColIdx == -1)
+                	clValue = -1;
+                
+                String[] flds;
+                String[] afrflds;
+                boolean removed = false;
+                int i = 2;
+                int clol = -1;
+                int row = getLogTableEmptyRow();
+                double thrtlMaxChange2 = thrtlMaxChange + thrtlMaxChange / 2.0;
+                double throttle = 0;
+                double pThrottle = 0;
+                double ppThrottle = 0;
+                double afr = 0;
+                double rpm;
+                double ffb;
+                double iat;
+                clearRunTables();
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                for (int k = 0; k <= afrRowOffset && line != null; ++k) {
+                	line = br.readLine();
+                	if (line != null)
+                		buffer.addFirst(line.split("\\s*,\\s*", -1));
+                }
+                try {
+	                while (line != null && buffer.size() > afrRowOffset) {
+	                    afrflds = buffer.getFirst();
+	                    flds = buffer.removeLast();
+	                    line = br.readLine();
 	                	if (line != null)
 	                		buffer.addFirst(line.split("\\s*,\\s*", -1));
-	                }
-	                try {
-		                while (line != null && buffer.size() > afrRowOffset) {
-		                    afrflds = buffer.getFirst();
-		                    flds = buffer.removeLast();
-		                    line = br.readLine();
-		                	if (line != null)
-		                		buffer.addFirst(line.split("\\s*,\\s*", -1));
-		                    ppThrottle = pThrottle;
-		                    pThrottle = throttle;
-	                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
-		                    try {
-		                    	if (row > 0 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
-		                    		if (!removed)
-		                    			Utils.removeRow(row--, logDataTable);
+	                    ppThrottle = pThrottle;
+	                    pThrottle = throttle;
+                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
+	                    try {
+	                    	if (row > 0 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
+	                    		if (!removed)
+	                    			Utils.removeRow(row--, logDataTable);
+	                    		removed = true;
+	                    	}
+	                    	else if (row <= 0 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
+	                            // Filters
+	                        	afr = (isOl ? Double.valueOf(afrflds[logWbAfrColIdx]) : Double.valueOf(afrflds[logStockAfrColIdx]));
+                                rpm = Double.valueOf(flds[logRpmColIdx]);
+                                ffb = Double.valueOf(flds[logFfbColIdx]);
+                                iat = Double.valueOf(flds[logIatColIdx]);
+    	                    	if (clValue != -1)
+    	                    		clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
+    	                    	boolean flag = isOl ? ((afr <= afrMax || throttle >= thrtlMin) && afr <= afrMax) : (afrMin <= afr);
+	                        	if (flag && clol == clValue && rpmMin <= rpm && ffbMin <= ffb && ffb <= ffbMax && iat <= iatMax) {
+		                    		removed = false;
+		                    		if (!isOl)
+		                    			trims.add(Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]));
+	                                Utils.ensureRowCount(row + 1, logDataTable);
+	                                logDataTable.setValueAt(rpm, row, 0);
+	                                logDataTable.setValueAt(iat, row, 1);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 2);
+	                                logDataTable.setValueAt(ffb, row, 3);
+	                                logDataTable.setValueAt(afr, row, 4);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logMafColIdx]), row, 5);
+	                                logDataTable.setValueAt(Double.valueOf(flds[logSdColIdx]), row, 6);
+	                                row += 1;
+	                        	}
+	                        	else
 		                    		removed = true;
-		                    	}
-		                    	else if (row <= 0 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
-		                            // Filters
-		                        	afr = (isOl ? Double.valueOf(afrflds[logWbAfrColIdx]) : Double.valueOf(afrflds[logStockAfrColIdx]));
-	                                rpm = Double.valueOf(flds[logRpmColIdx]);
-	                                ffb = Double.valueOf(flds[logFfbColIdx]);
-	                                iat = Double.valueOf(flds[logIatColIdx]);
-	    	                    	if (clValue != -1)
-	    	                    		clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
-	    	                    	boolean flag = isOl ? ((afr <= afrMax || throttle >= thrtlMin) && afr <= afrMax) : (afrMin <= afr);
-		                        	if (flag && clol == clValue && rpmMin <= rpm && ffbMin <= ffb && ffb <= ffbMax && iat <= iatMax) {
-			                    		removed = false;
-			                    		if (!isOl)
-			                    			trims.add(Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]));
-		                                Utils.ensureRowCount(row + 1, logDataTable);
-		                                logDataTable.setValueAt(rpm, row, 0);
-		                                logDataTable.setValueAt(iat, row, 1);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logMpColIdx]), row, 2);
-		                                logDataTable.setValueAt(ffb, row, 3);
-		                                logDataTable.setValueAt(afr, row, 4);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logMafColIdx]), row, 5);
-		                                logDataTable.setValueAt(Double.valueOf(flds[logSdColIdx]), row, 6);
-		                                row += 1;
-		                        	}
-		                        	else
-			                    		removed = true;
-		                    	}
-		                    	else
-		                    		removed = true;
-		                    }
-		                    catch (NumberFormatException e) {
-		                        logger.error(e);
-		                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-		                        return;
-		                    }
-		                    i += 1;
-		                }
+	                    	}
+	                    	else
+	                    		removed = true;
+	                    }
+	                    catch (NumberFormatException e) {
+	                        logger.error(e);
+	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+	                        return;
+	                    }
+	                    i += 1;
 	                }
-	                finally {
-	                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	                }
-	            }
+                }
+                finally {
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                }
 	        }
 	        catch (Exception e) {
 	            logger.error(e);

@@ -2224,12 +2224,14 @@ public class LogView extends FCTabbedPane implements ActionListener {
 			int idx = getSelectedIndex();
 			if (idx == 0) {
 		    	fileChooser.setMultiSelectionEnabled(false);
+	            fileChooser.setCurrentDirectory(files.get(0));
 				fileChooser.setSelectedFile(files.get(0));
 				fileChooser.approveSelection();
 				loadLogFile();
 			}
 			else if (idx == 2) {
 		    	fileChooser.setMultiSelectionEnabled(true);
+	            fileChooser.setCurrentDirectory(files.get(0));
 				fileChooser.setSelectedFiles((File[])files.toArray());
 				fileChooser.approveSelection();
 				loadWotLogFiles();

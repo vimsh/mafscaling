@@ -1209,6 +1209,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	protected void onDroppedFiles(List<File> files) {
 		if (files.size() > 0 && getSelectedIndex() == 0) {
 	    	fileChooser.setMultiSelectionEnabled(false);
+            fileChooser.setCurrentDirectory(files.get(0));
 			fileChooser.setSelectedFile(files.get(0));
 			fileChooser.approveSelection();
 			getLogColumns();

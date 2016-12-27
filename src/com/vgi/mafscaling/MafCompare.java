@@ -80,7 +80,7 @@ public class MafCompare extends JFrame {
     private static final String newMaf = "New";
     private static final int RowHeight = 17;
     private static final int ColumnWidth = 55;
-    private static final int MafTableColumnCount = 50;
+    private static final int MafTableColumnCount = 35;
 
     private ChartPanel chartPanel = null;
     private final XYSeries origMafData = new XYSeries(origMaf);

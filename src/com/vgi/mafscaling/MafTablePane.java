@@ -17,7 +17,7 @@ import javax.swing.table.DefaultTableModel;
 
 public class MafTablePane extends JScrollPane {
 	private static final long serialVersionUID = 4656913571229048807L;
-	public static final int MafTableColumnCount = 50;
+	public static final int MafTableColumnCount = 35;
 	JTable mafTable = null;
 	JLabel voltLabel = null;
 	JLabel gsLabel = null;

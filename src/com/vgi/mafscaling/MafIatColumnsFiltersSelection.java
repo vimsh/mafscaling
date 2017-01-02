@@ -25,7 +25,7 @@ import javax.swing.JEditorPane;
 public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public MafIatColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		super(isPolfTableSet, false); // MAP table support is not implemented for MAF-IAT yet
 	}
     
     protected void addColSelection() {

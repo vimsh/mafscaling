@@ -25,7 +25,7 @@ import javax.swing.JEditorPane;
 public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public LCColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		super(isPolfTableSet, false);
 	}
     
     protected void addColSelection() {

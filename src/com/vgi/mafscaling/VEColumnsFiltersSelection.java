@@ -41,7 +41,7 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
 	private boolean isOl = true;
 	
 	public VEColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		super(isPolfTableSet, false);
 	}
 	
 	public boolean getUserSettings(String[] cols) {

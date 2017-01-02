@@ -64,6 +64,7 @@ public class ClosedLoop extends AMafScaling {
     private static final long serialVersionUID = 2988105467764335997L;
     private static final Logger logger = Logger.getLogger(ClosedLoop.class);
 
+    private static final ArrayList<String> logDataTableHeaders = new ArrayList<String>(Arrays.asList("Time", "Load", "RPM", "MafV", "AFR", "STFT", "LTFT", "dV/dt", "IAT", "MAP"));
     private static final String SaveDataFileHeader = "[closed_loop run data]";
     private static final String Afr1TableName = "AFR Average";
     private static final String Afr2TableName = "AFR Cell Hit Count";
@@ -76,7 +77,7 @@ public class ClosedLoop extends AMafScaling {
     private static final String timeAxisName = "Time";
     private static final String rpmAxisName = "RPM";
     private static final String totalCorrectionDataName = "Total Correction";
-    private static final int ColumnCount = 9;
+    private static final int ColumnCount = logDataTableHeaders.size();
     private static final int AfrTableColumnCount = 15;
     private static final int AfrTableRowCount = 25;
     private static final int LogDataRowCount = 200;
@@ -88,7 +89,7 @@ public class ClosedLoop extends AMafScaling {
     private double maxDvDt = Config.getDvDtMaximumValue();
     private double maxMafV = Config.getMafVMaximumValue();
     private double maxIat = Config.getIatMaximumValue();
-    
+
     private int logClOlStatusColIdx = -1;
     private int logAfLearningColIdx = -1;
     private int logAfCorrectionColIdx = -1;
@@ -98,6 +99,7 @@ public class ClosedLoop extends AMafScaling {
     private int logTimeColIdx = -1;
     private int logMafvColIdx = -1;
     private int logIatColIdx = -1;
+    private int logMapColIdx = -1;
 
     private JTable logDataTable = null;
     private JTable afr1Table = null;
@@ -132,7 +134,7 @@ public class ClosedLoop extends AMafScaling {
         gbc_runPanel.gridx = 0;
         gbc_runPanel.gridy = 3;
         dataPanel.add(runPanel, gbc_runPanel);
-        
+
         GridBagLayout gbl_runPanel = new GridBagLayout();
         gbl_runPanel.columnWidths = new int[]{0, 0};
         gbl_runPanel.rowHeights = new int[] {0};
@@ -144,7 +146,7 @@ public class ClosedLoop extends AMafScaling {
         createLogDataTable(dataScrollPane);
         GridBagConstraints gbc_dataScrollPane = new GridBagConstraints();
         gbc_dataScrollPane.fill = GridBagConstraints.BOTH;
-        gbc_dataScrollPane.ipadx = ColumnWidth * ColumnCount;
+        gbc_dataScrollPane.ipadx = ColumnWidth * (ColumnCount - 1 /* don't calculate MAP width in */ );
         gbc_dataScrollPane.weighty = 1.0;
         gbc_dataScrollPane.gridx = 0;
         gbc_dataScrollPane.gridy = 0;
@@ -161,7 +163,7 @@ public class ClosedLoop extends AMafScaling {
         gbc_aprScrollPane.gridy = 0;
         runPanel.add(aprScrollPane, gbc_aprScrollPane);
     }
-    
+
     private void createLogDataTable(JScrollPane dataScrollPane) {
         JPanel dataRunPanel = new JPanel();
         dataScrollPane.setViewportView(dataRunPanel);
@@ -171,7 +173,7 @@ public class ClosedLoop extends AMafScaling {
         gbl_dataRunPanel.columnWeights = new double[]{0.0};
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
-        
+
         logDataTable = new JTable();
         logDataTable.getTableHeader().setReorderingAllowed(false);
         logDataTable.setModel(new DefaultTableModel(LogDataRowCount, ColumnCount));
@@ -180,15 +182,12 @@ public class ClosedLoop extends AMafScaling {
         logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
         logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        logDataTable.getColumnModel().getColumn(0).setHeaderValue("Time");
-        logDataTable.getColumnModel().getColumn(1).setHeaderValue("Load");
-        logDataTable.getColumnModel().getColumn(2).setHeaderValue("RPM");
-        logDataTable.getColumnModel().getColumn(3).setHeaderValue("MafV");
-        logDataTable.getColumnModel().getColumn(4).setHeaderValue("AFR");
-        logDataTable.getColumnModel().getColumn(5).setHeaderValue("STFT");
-        logDataTable.getColumnModel().getColumn(6).setHeaderValue("LTFT");
-        logDataTable.getColumnModel().getColumn(7).setHeaderValue("dV/dt");
-        logDataTable.getColumnModel().getColumn(8).setHeaderValue("IAT");
+
+        for (int i = 0; i < logDataTableHeaders.size(); i++) { logDataTable.getColumnModel().getColumn(i).setHeaderValue(logDataTableHeaders.get(i)); }
+        // hide MAP column from displaying
+        logDataTable.getColumnModel().getColumn(logDataTableHeaders.indexOf("MAP")).setMinWidth(0);
+        logDataTable.getColumnModel().getColumn(logDataTableHeaders.indexOf("MAP")).setMaxWidth(0);
+        
         Utils.initializeTable(logDataTable, ColumnWidth);
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -203,7 +202,7 @@ public class ClosedLoop extends AMafScaling {
 
         excelAdapter.addTable(logDataTable, true, false);
     }
-    
+
     private void createAfrDataTables(JScrollPane aprScrollPane) {
         JPanel aprRunPanel = new JPanel();
         aprScrollPane.setViewportView(aprRunPanel);
@@ -213,17 +212,17 @@ public class ClosedLoop extends AMafScaling {
         gbl_aprRunPanel.columnWeights = new double[]{0.0, 1.0};
         gbl_aprRunPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0};
         aprRunPanel.setLayout(gbl_aprRunPanel);
-        
+
         afr1Table = createAfrDataTable(aprRunPanel, Afr1TableName, 0);
         afr2Table = createAfrDataTable(aprRunPanel, Afr2TableName, 2);
     }
-    
-	private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
+
+    private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
         final JTable afrTable = new JTable() {
             private static final long serialVersionUID = 6526901361175099297L;
             public boolean isCellEditable(int row, int column) { return false; };
         };
-    	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
+        DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
         final TableColumn afrColumn = new TableColumn(0, 250);
         afrColumn.setHeaderValue(tableName);
         afrModel.addColumn(afrColumn);
@@ -232,7 +231,7 @@ public class ClosedLoop extends AMafScaling {
         lblAfrTableName.setReorderingAllowed(false);
         DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) lblAfrTableName.getDefaultRenderer();
         headerRenderer.setHorizontalAlignment(SwingConstants.LEFT);
-        
+
         GridBagConstraints gbc_lblAfrTableName = new GridBagConstraints();
         gbc_lblAfrTableName.insets = new Insets((gridy == 0 ? 0 : 5),0,0,0);
         gbc_lblAfrTableName.anchor = GridBagConstraints.PAGE_START;
@@ -240,7 +239,7 @@ public class ClosedLoop extends AMafScaling {
         gbc_lblAfrTableName.gridx = 0;
         gbc_lblAfrTableName.gridy = gridy;
         panel.add(lblAfrTableName, gbc_lblAfrTableName);
-        
+
         afrTable.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -255,7 +254,7 @@ public class ClosedLoop extends AMafScaling {
         afrTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         afrTable.setModel(new DefaultTableModel(AfrTableRowCount, AfrTableColumnCount));
         Utils.initializeTable(afrTable, ColumnWidth);
-        
+
         if (tableName.equals(Afr1TableName)) {
 	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
 	        NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
@@ -337,13 +336,13 @@ public class ClosedLoop extends AMafScaling {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
-    // COMMOMN ACTIONS RELATED FUNCTIONS
+    // COMMON ACTIONS RELATED FUNCTIONS
     //////////////////////////////////////////////////////////////////////////////////////
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (checkActionPerformed(e))
-    		return;
+        if ("loadlog".equals(e.getActionCommand()) && !polfTable.validate()) { return; }
+        if (checkActionPerformed(e)) { return; }
     	if ("dvdt".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
@@ -508,7 +507,7 @@ public class ClosedLoop extends AMafScaling {
             Utils.removeColumn(AfrTableColumnCount, table);
         Utils.clearTable(table);
     }
-    
+
     protected void clearData() {
     	super.clearData();
     	trimArray.clear();
@@ -518,7 +517,7 @@ public class ClosedLoop extends AMafScaling {
         Utils.clearTable(afr1Table);
         Utils.clearTable(afr2Table);
     }
-    
+
     protected void clearChartCheckBoxes() {
     	super.clearChartCheckBoxes();
     	checkBoxDvdtData.setSelected(false);
@@ -557,30 +556,12 @@ public class ClosedLoop extends AMafScaling {
     }
 
     private void calculateCorrectedGS() {
-        double time;
-        double load;
-        double rpm;
-        double dvdt;
-        double afr;
-        double mafv;
-        double stft;
-        double ltft;
-        double iat;
         double corr;
         double val1;
         double val2;
-        String timeStr;
-        String loadStr;
-        String rpmStr;
-        String mafvStr;
-        String afrStr;
-        String stftStr;
-        String ltftStr;
-        String dvdtStr;
-        String iatStr;
         int closestMafIdx;
         int closestRmpIdx;
-        int closestLoadIdx;
+        int closestColIdx;
         int i;
         String tableName = "Log Data";
         ArrayList<Integer> temp = new ArrayList<Integer>(gsArray.size());
@@ -602,57 +583,41 @@ public class ClosedLoop extends AMafScaling {
             afr1Table.setValueAt(polfTable.getValueAt(i, 0), i, 0);
             afr2Table.setValueAt(polfTable.getValueAt(i, 0), i, 0);
         }
-        ArrayList<Double> afrLoadArray = new ArrayList<Double>();
+        ArrayList<Double> afrColArray = new ArrayList<Double>(); // Load or MAP
         for (i = 1; i < polfTable.getColumnCount(); ++i) {
-            afrLoadArray.add(Double.valueOf(polfTable.getValueAt(0, i).toString()));
+            afrColArray.add(Double.valueOf(polfTable.getValueAt(0, i).toString()));
             Utils.ensureColumnCount(i + 1, afr1Table);
             Utils.ensureColumnCount(i + 1, afr2Table);
             afr1Table.setValueAt(polfTable.getValueAt(0, i), 0, i);
             afr2Table.setValueAt(polfTable.getValueAt(0, i), 0, i);
         }
+
+        HashMap<String, Double> row = new HashMap<String, Double>();
         Integer val;
         HashMap<Double, Integer> modeCountMap;
+        final int mapHeaderIdx = logDataTableHeaders.indexOf("MAP");
         for (i = 0; i < logDataTable.getRowCount(); ++i) {
-            timeStr = logDataTable.getValueAt(i, 0).toString();
-            loadStr = logDataTable.getValueAt(i, 1).toString();
-            rpmStr = logDataTable.getValueAt(i, 2).toString();
-            mafvStr = logDataTable.getValueAt(i, 3).toString();
-            afrStr = logDataTable.getValueAt(i, 4).toString();
-            stftStr = logDataTable.getValueAt(i, 5).toString();
-            ltftStr = logDataTable.getValueAt(i, 6).toString();
-            dvdtStr = logDataTable.getValueAt(i, 7).toString();
-            iatStr = logDataTable.getValueAt(i, 8).toString();
-            if (timeStr.isEmpty() || loadStr.isEmpty() || rpmStr.isEmpty() || mafvStr.isEmpty() ||
-            	afrStr.isEmpty() || stftStr.isEmpty() || ltftStr.isEmpty() || dvdtStr.isEmpty() || iatStr.isEmpty())
-                break;
-            if (!Utils.validateDouble(timeStr, i, 0, tableName) ||
-            	!Utils.validateDouble(loadStr, i, 1, tableName) ||
-                !Utils.validateDouble(rpmStr, i, 2, tableName) ||
-                !Utils.validateDouble(mafvStr, i, 3, tableName) ||
-                !Utils.validateDouble(afrStr, i, 4, tableName) ||
-                !Utils.validateDouble(stftStr, i, 5, tableName) ||
-                !Utils.validateDouble(ltftStr, i, 6, tableName) ||
-                !Utils.validateDouble(dvdtStr, i, 7, tableName) ||
-                !Utils.validateDouble(iatStr, i, 8, tableName))
-                return;
-            time = Double.valueOf(timeStr);
-            load = Double.valueOf(loadStr);
-            rpm = Double.valueOf(rpmStr);
-            mafv = Double.valueOf(mafvStr);
-            afr = Double.valueOf(afrStr);
-            stft = Double.valueOf(stftStr);
-            ltft = Double.valueOf(ltftStr);
-            dvdt = Double.valueOf(dvdtStr);
-            iat = Double.valueOf(iatStr);
-            corr = ltft + stft;
+            // validate cells
+            for (int j = 0; j < logDataTable.getColumnCount(); ++j)
+            {
+                String strVal = logDataTable.getValueAt(i, j).toString();
+                if (j != mapHeaderIdx || polfTable.isMap())
+                {
+                    if (strVal.isEmpty()) { break; }
+                    if (!Utils.validateDouble(strVal, i, j, tableName)) { return; }
+                }
+                row.put(logDataTableHeaders.get(j), Double.valueOf(strVal));
+            }
+
+            corr = row.get("LTFT") + row.get("STFT");
             trimArray.add(corr);
-            rpmArray.add(rpm);
-            timeArray.add(time);
-            iatArray.add(iat);
-            mafvArray.add(mafv);
-            dvdtArray.add(dvdt);
+            rpmArray.add(row.get("RPM"));
+            timeArray.add(row.get("Time"));
+            iatArray.add(row.get("IAT"));
+            mafvArray.add(row.get("MafV"));
+            dvdtArray.add(row.get("dV/dt"));
             
-            closestMafIdx = Utils.closestValueIndex(load * rpm / 60.0, gsArray);
+            closestMafIdx = Utils.closestValueIndex(row.get("Load") * row.get("RPM") / 60.0, gsArray);
             correctionMeanArray.set(closestMafIdx, (correctionMeanArray.get(closestMafIdx) * temp.get(closestMafIdx) + corr) / (temp.get(closestMafIdx) + 1));
             temp.set(closestMafIdx, temp.get(closestMafIdx) + 1);
             modeCountMap = modeCalcArray.get(closestMafIdx);
@@ -663,12 +628,12 @@ public class ClosedLoop extends AMafScaling {
             else
             	modeCountMap.put(roundedCorr, val + 1);
             
-            closestRmpIdx = Utils.closestValueIndex(rpm, afrRpmArray) + 1;
-            closestLoadIdx = Utils.closestValueIndex(load, afrLoadArray) + 1;
-            val1 = (afr1Table.getValueAt(closestRmpIdx, closestLoadIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr1Table.getValueAt(closestRmpIdx, closestLoadIdx).toString());
-            val2 = (afr2Table.getValueAt(closestRmpIdx, closestLoadIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr2Table.getValueAt(closestRmpIdx, closestLoadIdx).toString());
-            afr1Table.setValueAt((val1 * val2 + afr) / (val2 + 1.0), closestRmpIdx, closestLoadIdx);
-            afr2Table.setValueAt(val2 + 1.0, closestRmpIdx, closestLoadIdx);
+            closestRmpIdx = Utils.closestValueIndex(row.get("RPM"), afrRpmArray) + 1;
+            closestColIdx = Utils.closestValueIndex(polfTable.isMap() ? row.get("MAP") : row.get("Load"), afrColArray) + 1;
+            val1 = (afr1Table.getValueAt(closestRmpIdx, closestColIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr1Table.getValueAt(closestRmpIdx, closestColIdx).toString());
+            val2 = (afr2Table.getValueAt(closestRmpIdx, closestColIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr2Table.getValueAt(closestRmpIdx, closestColIdx).toString());
+            afr1Table.setValueAt((val1 * val2 + row.get("AFR")) / (val2 + 1.0), closestRmpIdx, closestColIdx);
+            afr2Table.setValueAt(val2 + 1.0, closestRmpIdx, closestColIdx);
         }
         
         for (i = 0; i < modeCalcArray.size(); ++i) {
@@ -1012,6 +977,7 @@ public class ClosedLoop extends AMafScaling {
         String logTimeColName = Config.getTimeColumnName();
         String logMafvColName = Config.getMafVoltageColumnName();
         String logIatColName = Config.getIatColumnName();
+        String logMapColName = Config.getMapColumnName();
         logClOlStatusColIdx = columns.indexOf(logClOlStatusColName);
         logAfLearningColIdx = columns.indexOf(logAfLearningColName);
         logAfCorrectionColIdx = columns.indexOf(logAfCorrectionColName);
@@ -1021,6 +987,7 @@ public class ClosedLoop extends AMafScaling {
         logTimeColIdx = columns.indexOf(logTimeColName);
         logMafvColIdx = columns.indexOf(logMafvColName);
         logIatColIdx = columns.indexOf(logIatColName);
+        logMapColIdx = columns.indexOf(logMapColName);
         if (logClOlStatusColIdx == -1)   { Config.setClOlStatusColumnName(Config.NO_NAME);   ret = false; }
         if (logAfLearningColIdx == -1)   { Config.setAfLearningColumnName(Config.NO_NAME);   ret = false; }
         if (logAfCorrectionColIdx == -1) { Config.setAfCorrectionColumnName(Config.NO_NAME); ret = false; }
@@ -1030,6 +997,7 @@ public class ClosedLoop extends AMafScaling {
         if (logTimeColIdx == -1)         { Config.setTimeColumnName(Config.NO_NAME);         ret = false; }
         if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
         if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
+        if (logMapColIdx == -1)          { Config.setMapColumnName(Config.NO_NAME);          if (polfTable.isMap()) ret = false; }
         clValue = Config.getClOlStatusValue();
         minCellHitCount = Config.getCLMinCellHitCount();
         afrMin = Config.getAfrMinimumValue();
@@ -1043,7 +1011,6 @@ public class ClosedLoop extends AMafScaling {
     
     protected void loadLogFile() {
         boolean displayDialog = true;
-        boolean isPolSet = polfTable.isSet();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
@@ -1055,8 +1022,10 @@ public class ClosedLoop extends AMafScaling {
 	            	continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
+
                 if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
+                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0  ||
+                	logMapColIdx >= 0 ) {
                 	if (displayDialog) {
 	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
 	                    if (rc == 0)
@@ -1067,8 +1036,8 @@ public class ClosedLoop extends AMafScaling {
                 }
 
                 if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolSet);
+                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || logMapColIdx < 0 && polfTable.isMap() ) {
+                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(polfTable.isSet(), polfTable.isMap());
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }
@@ -1086,6 +1055,7 @@ public class ClosedLoop extends AMafScaling {
                 double mafv = 0;
                 double load;
                 double iat;
+                double map;
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
                 while (line != null) {
@@ -1108,6 +1078,7 @@ public class ClosedLoop extends AMafScaling {
                         	afr = Double.valueOf(flds[logAfrColIdx]);
                         	load = Double.valueOf(flds[logLoadColIdx]);
                         	iat = Double.valueOf(flds[logIatColIdx]);
+                        	map = polfTable.isMap() ? Double.valueOf(flds[logMapColIdx]) : 0.0;
                         	if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
                                 Utils.ensureRowCount(row + 1, logDataTable);
                                 logDataTable.setValueAt(time, row, 0);
@@ -1119,6 +1090,7 @@ public class ClosedLoop extends AMafScaling {
                                 logDataTable.setValueAt(Double.valueOf(flds[logAfLearningColIdx]), row, 6);
                                 logDataTable.setValueAt(dVdt, row, 7);
                                 logDataTable.setValueAt(iat, row, 8);
+                                logDataTable.setValueAt(map, row, 9);
                                 row += 1;
                         	}
                         }

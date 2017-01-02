@@ -22,8 +22,8 @@ import java.awt.event.ActionEvent;
 
 public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
-	public CLColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+	public CLColumnsFiltersSelection(boolean isPolfTableSet, boolean isPolfTableMap) {
+		super(isPolfTableSet, isPolfTableMap);
 	}
     
     protected void addColSelection() {
@@ -34,8 +34,9 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addMAFVoltageColSelection();
         addStockAFRColSelection();
         addClOlStatusColSelection();
-    	addTimeColSelection();
-    	addIATColSelection();
+        addTimeColSelection();
+        addIATColSelection();
+        addManifoldAbsolutePressureColSelection();
     }
     
     protected void addFilterSelection() {
@@ -151,7 +152,21 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
     	}
     	else
     		Config.setIatColumnName(value);
-    	    	
+
+    	// Manifold Absolute Pressure
+    	value = mapName.getText().trim();
+    	colName = mapLabelText;
+    	if (value.isEmpty())
+    	{
+    		if (isPolfTableSet && isPolfTableMap)
+    		{
+	    		ret = false;
+	    		error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is set AND it has MAP (psi abs) axis.\n");
+    		}
+    		else { Config.setMapColumnName(Config.NO_NAME); }
+    	}
+    	else { Config.setMapColumnName(value); }
+
         // CL/OL Status
         value = clolStatusFilter.getValue().toString();
         colName = clolStatusLabelText;

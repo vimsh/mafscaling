@@ -22,8 +22,8 @@ import java.awt.event.ActionEvent;
 
 public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
-	public OLColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+	public OLColumnsFiltersSelection(boolean isPolfTableSet, boolean isPolfTableMap) {
+		super(isPolfTableSet, isPolfTableMap);
 	}
     
     protected void addColSelection() {
@@ -34,7 +34,8 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addMAFVoltageColSelection();
         addWidebandAFRColSelection();
         addThrottleAngleColSelection();
-    	addCommandedAFRColSelection();
+        addCommandedAFRColSelection();
+        addManifoldAbsolutePressureColSelection();
     }
     
     protected void addFilterSelection() {
@@ -126,23 +127,32 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
     	}
     	else
     		Config.setThrottleAngleColumnName(value);
-    	
+
     	// Commanded AFR
     	value = commAfrName.getText().trim();
-    	colName = commAfrLabelText;
-    	if (isPolfTableSet) {
-	    	if (value.isEmpty())
-	    		value = Config.NO_NAME;
-	    	Config.setCommandedAfrColumnName(value);
-    	}
-    	else {
-	    	if (value.isEmpty()) {
-	    		ret = false;
-	    		error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
-	    	}
-	    	else
-	    		Config.setCommandedAfrColumnName(value);
-    	}
+        if (value.isEmpty())
+        {
+            if (!isPolfTableSet)
+            {
+                ret = false;
+                error.append("\"").append(commAfrLabelText).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
+        }
+        else { Config.setCommandedAfrColumnName(Config.NO_NAME); }
+        }
+        else { Config.setCommandedAfrColumnName(value); }
+
+        // Manifold Absolute Pressure
+        value = mapName.getText().trim();
+        if (value.isEmpty())
+        {
+            if (isPolfTableSet && isPolfTableMap)
+            {
+                ret = false;
+                error.append("\"").append(mapLabelText).append("\" column must be specified if \"Primary Open Loop Fueling\" table is set AND it has MAP (psi abs) axis.\n");
+            }
+            else { Config.setMapColumnName(Config.NO_NAME); }
+        }
+        else { Config.setMapColumnName(value); }
     	
     	// Min MAF Voltage filter
     	Config.setMafVMinimumValue(Double.valueOf(minMafVFilter.getText()));

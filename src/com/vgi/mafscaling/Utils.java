@@ -622,24 +622,24 @@ public final class Utils {
     /**
      * Method calculates commanded afr from POL table
      * @param rpm
-     * @param load
+     * @param col
      * @param minWotEnrichment
      * @param polfTable
      * @return commanded afr
      */
-    public static double calculateCommandedAfr(double rpm, double load, double minWotEnrichment, PrimaryOpenLoopFuelingTable polfTable) {
+    public static double calculateCommandedAfr(double rpm, double col, double minWotEnrichment, PrimaryOpenLoopFuelingTable polfTable) {
         double rpmLow = 0;
         double rpmHigh = 0;
-        double loadLow = 0;
-        double loadHigh = 0;
+        double colLow = 0;
+        double colHigh = 0;
         double timingLowLow = 0;
         double timingLowHigh = 0;
         double timingHighLow = 0;
         double timingHighHigh = 0;
         int rpmRowLow = 1;
         int rpmRowHigh = 1;
-        int loadColLow = 1;
-        int loadColHigh = 1;
+        int colLowIdx = 1;
+        int colHighIdx = 1;
         int index = 1;
         double value;
 
@@ -665,42 +665,42 @@ public final class Utils {
             rpmHigh = 10000;
             rpmRowHigh = index - 1;
         }
-        // Get values for Load
+        // Get values for y
         for (index = 1; index < polfTable.getColumnCount(); ++index) {
             value = Double.valueOf(polfTable.getValueAt(0, index).toString());
-            if (load < value) {
-                loadHigh = value;
-                loadColHigh = index;
+            if (col < value) {
+                colHigh = value;
+                colHighIdx = index;
                 break;
             }
             else if (rpm == value) {
-                loadLow = loadHigh = value;
-                loadColLow = loadColHigh = index;
+                colLow = colHigh = value;
+                colLowIdx = colHighIdx = index;
                 break;
             }
             else {
-                loadLow = value;
-                loadColLow = index;
+                colLow = value;
+                colLowIdx = index;
             }
         }
         if (index == polfTable.getColumnCount()) {
-            loadHigh = 10000;
-            loadColHigh = index - 1;
+            colHigh = 10000;
+            colHighIdx = index - 1;
         }
-        timingLowLow = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColLow).toString());
+        timingLowLow = Double.valueOf(polfTable.getValueAt(rpmRowLow, colLowIdx).toString());
         if (timingLowLow > minWotEnrichment)
         	timingLowLow = minWotEnrichment;
-        timingLowHigh = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColHigh).toString());
+        timingLowHigh = Double.valueOf(polfTable.getValueAt(rpmRowLow, colHighIdx).toString());
         if (timingLowHigh > minWotEnrichment)
         	timingLowHigh = minWotEnrichment;
-        timingHighLow = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColLow).toString());
+        timingHighLow = Double.valueOf(polfTable.getValueAt(rpmRowHigh, colLowIdx).toString());
         if (timingHighLow > minWotEnrichment)
         	timingHighLow = minWotEnrichment;
-        timingHighHigh = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColHigh).toString());
+        timingHighHigh = Double.valueOf(polfTable.getValueAt(rpmRowHigh, colHighIdx).toString());
         if (timingHighHigh > minWotEnrichment)
         	timingHighHigh = minWotEnrichment;
 
-        return Utils.table3DInterpolation(load, rpm, loadLow, loadHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
+        return Utils.table3DInterpolation(col, rpm, colLow, colHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
     
     /**

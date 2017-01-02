@@ -23,7 +23,7 @@ import java.awt.event.ActionEvent;
 public class VVTColumnsFiltersSelection extends ColumnsFiltersSelection {
 	
 	public VVTColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		super(isPolfTableSet, false);
 	}
     
     protected void addColSelection() {

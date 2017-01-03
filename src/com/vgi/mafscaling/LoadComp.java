@@ -275,7 +275,7 @@ public class LoadComp extends ACompCalc {
 
                 if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
                 	logRpmColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
-                	ColumnsFiltersSelection selectionWindow = new LCColumnsFiltersSelection(false);
+                	ColumnsFiltersSelection selectionWindow = new LCColumnsFiltersSelection();
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

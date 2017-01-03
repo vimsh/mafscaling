@@ -1043,7 +1043,6 @@ public class ClosedLoop extends AMafScaling {
     
     protected void loadLogFile() {
         boolean displayDialog = true;
-        boolean isPolSet = polfTable.isSet();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
 	        BufferedReader br = null;
@@ -1068,7 +1067,7 @@ public class ClosedLoop extends AMafScaling {
 
                 if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
                 	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolSet);
+                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection();
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

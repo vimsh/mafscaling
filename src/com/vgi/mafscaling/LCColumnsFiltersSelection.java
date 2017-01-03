@@ -23,10 +23,6 @@ import java.awt.event.ActionEvent;
 import javax.swing.JEditorPane;
 
 public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
-	
-	public LCColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
-	}
     
     protected void addColSelection() {
         addRPMColSelection();

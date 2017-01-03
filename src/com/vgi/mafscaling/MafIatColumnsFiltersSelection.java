@@ -23,9 +23,10 @@ import java.awt.event.ActionEvent;
 import javax.swing.JEditorPane;
 
 public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
+	private boolean isPolfTableSet = false;
 	
 	public MafIatColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		this.isPolfTableSet = isPolfTableSet;
 	}
     
     protected void addColSelection() {
@@ -41,7 +42,7 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     	addIATColSelection();
     	addMAFColSelection();
         addClOlStatusColSelection();
-    	addCommandedAFRColSelection();
+    	addCommandedAFRColSelection(isPolfTableSet);
     }
     
     protected void addFilterSelection() {

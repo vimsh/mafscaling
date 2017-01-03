@@ -378,7 +378,7 @@ public class VECalc extends ACompCalc {
                 if (resetColumns || logThrottleAngleColIdx < 0 || logFfbColIdx < 0 || logSdColIdx < 0 || (logWbAfrColIdx < 0 && isOl) ||
                 	(logStockAfrColIdx < 0 && !isOl) || (logAfLearningColIdx < 0 && !isOl) || (logAfCorrectionColIdx < 0 && !isOl) ||
                 	logRpmColIdx < 0 || logMafColIdx < 0 || logIatColIdx < 0 || logMpColIdx < 0) {
-                	ColumnsFiltersSelection selectionWindow = new VEColumnsFiltersSelection(false);
+                	ColumnsFiltersSelection selectionWindow = new VEColumnsFiltersSelection();
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

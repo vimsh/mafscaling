@@ -21,10 +21,6 @@ package com.vgi.mafscaling;
 import java.awt.event.ActionEvent;
 
 public class VVTColumnsFiltersSelection extends ColumnsFiltersSelection {
-	
-	public VVTColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
-	}
     
     protected void addColSelection() {
         addThrottleAngleColSelection();

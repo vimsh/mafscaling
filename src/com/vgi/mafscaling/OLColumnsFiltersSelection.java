@@ -21,9 +21,10 @@ package com.vgi.mafscaling;
 import java.awt.event.ActionEvent;
 
 public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
+	private boolean isPolfTableSet = false;
 	
 	public OLColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
+		this.isPolfTableSet = isPolfTableSet;
 	}
     
     protected void addColSelection() {
@@ -34,7 +35,7 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addMAFVoltageColSelection();
         addWidebandAFRColSelection();
         addThrottleAngleColSelection();
-    	addCommandedAFRColSelection();
+    	addCommandedAFRColSelection(isPolfTableSet);
     }
     
     protected void addFilterSelection() {

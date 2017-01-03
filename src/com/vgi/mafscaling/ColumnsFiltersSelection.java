@@ -102,7 +102,6 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String minWOTEnrichmentLabelText = "Min WOT Enrichment";
     public static final String wbo2RowOffsetLabelText = "Wideband AFR Row Offset";
     public static final String olClTransitionSkipRowsLabelText = "OL/CL Transition - #Rows to Skip";
-	protected boolean isPolfTableSet;
 	protected JTable columnsTable = null;
 	protected JTextField thrtlAngleName = null;
 	protected JTextField afLearningName = null;
@@ -172,8 +171,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
 	protected int colrow;
 	protected int filtrow;
 	
-	public ColumnsFiltersSelection(boolean isPolfTableSet) {
-		this.isPolfTableSet = isPolfTableSet;
+	public ColumnsFiltersSelection() {
         doubleFmt.setMaximumFractionDigits(2);
         intFmt.setMaximumFractionDigits(0);
         intFmt.setGroupingUsed(false);
@@ -315,9 +313,9 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addCopyButton(colrow, "wbafr");
     }
     
-    protected void addCommandedAFRColSelection() {
+    protected void addCommandedAFRColSelection(boolean isOptional) {
         // Commanded AFR
-        addLabel(columnsPanel, ++colrow, commAfrLabelText + (isPolfTableSet ? " *" : ""));
+        addLabel(columnsPanel, ++colrow, commAfrLabelText + (isOptional ? " *" : ""));
         commAfrName = addColumn(colrow, Config.getCommandedAfrColumnName());
         addCopyButton(colrow, "cmdafr");
     }

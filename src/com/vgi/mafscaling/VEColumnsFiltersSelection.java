@@ -40,10 +40,6 @@ public class VEColumnsFiltersSelection extends ColumnsFiltersSelection {
 	private String[] columns = null;
 	private boolean isOl = true;
 	
-	public VEColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
-	}
-	
 	public boolean getUserSettings(String[] cols) {
 		columns = cols;
 		createScrollPane();

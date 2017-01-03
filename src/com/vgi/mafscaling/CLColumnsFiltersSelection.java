@@ -21,10 +21,6 @@ package com.vgi.mafscaling;
 import java.awt.event.ActionEvent;
 
 public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
-	
-	public CLColumnsFiltersSelection(boolean isPolfTableSet) {
-		super(isPolfTableSet);
-	}
     
     protected void addColSelection() {
         addRPMColSelection();

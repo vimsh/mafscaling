@@ -813,7 +813,7 @@ public class VVTCalc extends ACompCalc {
 
                 if (resetColumns || logThtlAngleColIdx < 0 || logRpmColIdx < 0 ||
                 	logVvt1ColIdx < 0 || logIatColIdx < 0 || logMapColIdx < 0 || logMafColIdx < 0) {
-                	ColumnsFiltersSelection selectionWindow = new VVTColumnsFiltersSelection(false);
+                	ColumnsFiltersSelection selectionWindow = new VVTColumnsFiltersSelection();
                 	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                 		return;
                 }

@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -70,21 +71,24 @@ import org.math.plot.Plot3DPanel;
 import org.math.plot.plots.HistogramPlot3D;
 
 public class LogStats extends FCTabbedPane implements ActionListener {
-	private enum Statistics {COUNT, MINIMUM, MAXIMUM, MEAN, MEDIAN, MODE, RANGE, VARIANCE, STDDEV};
-	private enum Plot3D {GRID, HIST, BAR, LINE, SCATTER};
-	private enum DataFilter {NONE, LESS, LESS_EQUAL, EQUAL, GREATER_EQUAL, GREATER};
-	private static final long serialVersionUID = -7486851151646396168L;
-	private static final Logger logger = Logger.getLogger(LogStats.class);
+    private enum Statistics {COUNT, MINIMUM, MAXIMUM, MEAN, MEDIAN, MODE, RANGE, VARIANCE, STDDEV};
+    private enum Plot3D {GRID, HIST, BAR, LINE, SCATTER};
+    private enum DataFilter {NONE, LESS, LESS_EQUAL, EQUAL, GREATER_EQUAL, GREATER};
+    private static final long serialVersionUID = -7486851151646396168L;
+    private static final Logger logger = Logger.getLogger(LogStats.class);
     private static final int ColumnWidth = 50;
     private static final int DataTableRowCount = 50;
     private static final int DataTableColumnCount = 25;
+    private static final String timeMatchString = "^\\s*time\\s*(\\(.*\\))?$";
+    private static final String SetFilters = "<html><center>Set<br>Filters</center></html>";
+    private static final String ViewFilters = "<html><center>View<br>Filters</center></html>";
     
     public class JFmtTextField extends JFormattedTextField {
-		private static final long serialVersionUID = -8767848259312656943L;
-		public JFmtTextField(NumberFormat format) {
+        private static final long serialVersionUID = -8767848259312656943L;
+        public JFmtTextField(NumberFormat format) {
             super(format);  
-		}
-		@Override  
+        }
+        @Override  
         protected void processFocusEvent(final FocusEvent e) {  
             if (e.isTemporary()) {
                 return;
@@ -99,27 +103,22 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         }  
     };
 
-    private File logFile = null;
+    private File[] logFiles = null;
+    private ArrayList<File> logFilesTodo = null;
     private JComboBox<String> xAxisColumn = null;
     private JComboBox<String> yAxisColumn = null;
     private JMultiSelectionBox dataColumn = null;
-    private JComboBox<String> filter1Column = null;
-    private JComboBox<String> filter2Column = null;
-    private JComboBox<String> filter3Column = null;
     private JComboBox<String> statistics = null;
-    private JComboBox<String> filter1ComboBox = null;
-    private JComboBox<String> filter2ComboBox = null;
-    private JComboBox<String> filter3ComboBox = null;
     private JFormattedTextField xAxisRoundTextBox = null;
     private JFormattedTextField yAxisRoundTextBox = null;
-    private JFormattedTextField filter1TextBox = null;
-    private JFormattedTextField filter2TextBox = null;
-    private JFormattedTextField filter3TextBox = null;
-    private JButton filter2Button = null;
-    private JButton filter3Button = null;
+    private ArrayList<JButton> filterButtonList = null;
+    private ArrayList<JComboBox<String>> filterComboBoxList = null;
+    private ArrayList<JComboBox<String>> filterColumnList = null;
+    private ArrayList<JFormattedTextField> filterTextBoxList = null;
     private JTable dataTable = null;
     private JPanel cntlPanel = null;
     private JLabel labelFileName = null;
+    private JButton btnSetFiltersButton = null;
     private ExcelAdapter excelAdapter = null;
     private HashMap<Double, HashMap<Double, ArrayList<Double>>> xData = null;
     private Plot3DPanel plot = null;
@@ -132,7 +131,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     private UIDefaults buttonInsets6 = new UIDefaults();
     private UIDefaults buttonInsets10 = new UIDefaults();
 
-	public LogStats(int tabPlacement) {
+    public LogStats(int tabPlacement) {
         super(tabPlacement);
         initialize();
     }
@@ -141,6 +140,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         excelAdapter = new ExcelAdapter();
         xAxisArray = new ArrayList<Double>();
         yAxisArray = new ArrayList<Double>();
+        filterButtonList = new ArrayList<JButton>();
+        filterComboBoxList = new ArrayList<JComboBox<String>>();
+        filterColumnList = new ArrayList<JComboBox<String>>();
+        filterTextBoxList = new ArrayList<JFormattedTextField>();
         createDataTab();
         createGraghTab();
         createUsageTab();
@@ -165,87 +168,85 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     }
     
     private void createControlPanel(JPanel dataPanel) {
-    	try {
-	        NumberFormat doubleFmt = NumberFormat.getNumberInstance();
-	        doubleFmt.setGroupingUsed(false);
-	        doubleFmt.setMaximumFractionDigits(2);
-	        doubleFmt.setMinimumFractionDigits(1);
-	        doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
-	        
-	        NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
-	        doubleFmtFilters.setGroupingUsed(false);
-	        doubleFmtFilters.setMaximumFractionDigits(6);
-	        doubleFmtFilters.setMinimumFractionDigits(0);
-	        doubleFmtFilters.setRoundingMode(RoundingMode.HALF_UP);
-	        
-	        buttonInsets6.put("Button.contentMargins", new Insets(6, 6, 6, 6));
-	        buttonInsets10.put("Button.contentMargins", new Insets(6, 10, 6, 10));
-	        
-	        cntlPanel = new JPanel();
-	        GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
-	        gbc_ctrlPanel.insets = insets3;
-	        gbc_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
-	        gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
-	        gbc_ctrlPanel.weightx = 1.0;
-	        gbc_ctrlPanel.gridx = 0;
-	        gbc_ctrlPanel.gridy = 0;
-	        dataPanel.add(cntlPanel, gbc_ctrlPanel);
-	        
-	        GridBagLayout gbl_cntlPanel = new GridBagLayout();
-	        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	        gbl_cntlPanel.rowHeights = new int[]{0, 0, 0, 0};
-	        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-	        gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0};
-	        cntlPanel.setLayout(gbl_cntlPanel);
-	        
-	        JButton selectLogButton = addButton(0, 0, 2, "<html><center>Select<br>Log</center></html>", "selectlog");
-	        selectLogButton.setMargin(new Insets(3, 5, 3, 5));
-	        selectLogButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
-	
-	        addLabel(0, 1, "X-Axis");
-	        xAxisColumn = addComboBox(0, 2, null);
-	        addLabel(0, 3, "X-Step");
-	        xAxisRoundTextBox = addTextFilter(0, 4, 7, doubleFmt, true);
-	
-	        addLabel(1, 1, "Y-Axis");
-	        yAxisColumn = addComboBox(1, 2, null);
-	        addLabel(1, 3, "Y-Step");
-	        yAxisRoundTextBox = addTextFilter(1, 4, 7, doubleFmt, true);
-	
-	        addLabel(2, 1, "Data");
-	        
-	        dataColumn = new JMultiSelectionBox();
-	        GridBagConstraints gbc_dataColumn = new GridBagConstraints();
-	        gbc_dataColumn.anchor = GridBagConstraints.WEST;
-	        gbc_dataColumn.insets = new Insets(3, 0, 3, 3);
-	        gbc_dataColumn.gridx = 2;
-	        gbc_dataColumn.gridy = 2;
-	        dataColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-	        cntlPanel.add(dataColumn, gbc_dataColumn);
-	
-	        addLabel(2, 3, "Stats");
-	        statistics = addComboBox(2, 4, new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Std Devn"});
-	        addLabel(0, 5, "or");
+        try {
+            NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+            doubleFmt.setGroupingUsed(false);
+            doubleFmt.setMaximumFractionDigits(2);
+            doubleFmt.setMinimumFractionDigits(1);
+            doubleFmt.setRoundingMode(RoundingMode.HALF_UP);
+            
+            NumberFormat doubleFmtFilters = NumberFormat.getNumberInstance();
+            doubleFmtFilters.setGroupingUsed(false);
+            doubleFmtFilters.setMaximumFractionDigits(6);
+            doubleFmtFilters.setMinimumFractionDigits(0);
+            doubleFmtFilters.setRoundingMode(RoundingMode.HALF_UP);
+            
+            buttonInsets6.put("Button.contentMargins", new Insets(6, 6, 6, 6));
+            buttonInsets10.put("Button.contentMargins", new Insets(6, 10, 6, 10));
+            
+            cntlPanel = new JPanel();
+            GridBagConstraints gbc_ctrlPanel = new GridBagConstraints();
+            gbc_ctrlPanel.insets = insets3;
+            gbc_ctrlPanel.anchor = GridBagConstraints.PAGE_START;
+            gbc_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+            gbc_ctrlPanel.weightx = 1.0;
+            gbc_ctrlPanel.gridx = 0;
+            gbc_ctrlPanel.gridy = 0;
+            dataPanel.add(cntlPanel, gbc_ctrlPanel);
+            
+            GridBagLayout gbl_cntlPanel = new GridBagLayout();
+            gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
+            gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+            gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
+            cntlPanel.setLayout(gbl_cntlPanel);
+            
+            JButton selectLogButton = addButton(0, 0, 2, "<html><center>Select<br>Log</center></html>", "selectlog");
+            selectLogButton.setMargin(new Insets(3, 5, 3, 5));
+            selectLogButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
+    
+            addLabel(0, 1, "X-Axis");
+            xAxisColumn = addComboBox(0, 2, null);
+            
+            addLabel(1, 1, "Y-Axis");
+            yAxisColumn = addComboBox(1, 2, null);
+            
+            addLabel(0, 3, "Data");
+            dataColumn = new JMultiSelectionBox();
+            GridBagConstraints gbc_dataColumn = new GridBagConstraints();
+            gbc_dataColumn.anchor = GridBagConstraints.WEST;
+            gbc_dataColumn.insets = new Insets(3, 0, 3, 3);
+            gbc_dataColumn.gridx = 4;
+            gbc_dataColumn.gridy = 0;
+            dataColumn.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            cntlPanel.add(dataColumn, gbc_dataColumn);
 
-	        JButton btnSetAxisButton = addButton(0, 6, 2, "<html><center>Set<br>Axis</center></html>", "setaxis");
-	        btnSetAxisButton.setMargin(new Insets(3, 8, 3, 8));
-	        btnSetAxisButton.putClientProperty("Nimbus.Overrides", buttonInsets10);
-	
-	        addLabel(0, 7, "Filters");
-	        filter2Button = addAndButton(1, 7, "f2and");
-	        filter3Button = addAndButton(2, 7, "f3and");
-	        
-	        filter1Column = addComboBox(0, 8, null);
-	        filter2Column = addComboBox(1, 8, null);
-	        filter3Column = addComboBox(2, 8, null);
+            addLabel(1, 3, "Stats");
+            statistics = addComboBox(1, 4, new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Standard Deviation"});
+            
+            addLabel(0, 5, "X-Step");
+            xAxisRoundTextBox = addTextFilter(0, 6, 7, doubleFmt, true);
+    
+            addLabel(1, 5, "Y-Step");
+            yAxisRoundTextBox = addTextFilter(1, 6, 7, doubleFmt, true);
+    
+            addLabel(0, 7, "or");
 
-	        filter1ComboBox = addComboBox(0, 9, new String[] {"", "<", "<=", "=", ">=", ">"});
-	        filter2ComboBox = addComboBox(1, 9, new String[] {"", "<", "<=", "=", ">=", ">"});
-	        filter3ComboBox = addComboBox(2, 9, new String[] {"", "<", "<=", "=", ">=", ">"});
-	        
-	        filter1TextBox = addTextFilter(0, 10, 5, doubleFmtFilters, false);
-	        filter2TextBox = addTextFilter(1, 10, 5, doubleFmtFilters, false);
-	        filter3TextBox = addTextFilter(2, 10, 5, doubleFmtFilters, false);
+            JButton btnSetAxisButton = addButton(0, 8, 2, "<html><center>Set<br>Axis</center></html>", "setaxis");
+            btnSetAxisButton.setMargin(new Insets(3, 9, 3, 9));
+            btnSetAxisButton.putClientProperty("Nimbus.Overrides", buttonInsets10);
+
+            addLabel(0, 9, "   ");
+
+            btnSetFiltersButton = addButton(0, 10, 2, SetFilters, "setfilters");
+            btnSetFiltersButton.setMargin(new Insets(3, 5, 3, 5));
+            btnSetFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets10);
+
+            JButton clearFiltersButton = addButton(0, 11, 2, "<html><center>Clear<br>Filters</center></html>", "clearfilters");
+            clearFiltersButton.setMargin(new Insets(3, 5, 3, 5));
+            clearFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
+
+            addButton(0, 12, 2, "GO", "go");
 
 	        labelFileName = new JLabel("");
 	        labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
@@ -254,20 +255,14 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 	        gbc_label.fill = GridBagConstraints.HORIZONTAL;
 	        gbc_label.insets = insets3;
 	        gbc_label.gridx = 0;
-	        gbc_label.gridy = 3;
+	        gbc_label.gridy = 2;
 	        gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length;
 	        cntlPanel.add(labelFileName, gbc_label);
-
-	        JButton clearFiltersButton = addButton(0, 11, 2, "<html><center>Clear<br>Filters</center></html>", "clearfilters");
-	        clearFiltersButton.setMargin(new Insets(3, 5, 3, 5));
-	        clearFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
-
-	        addButton(0, 12, 3, "GO", "go");
-    	}
-    	catch (Exception e) {
+        }
+        catch (Exception e) {
             logger.error(e);
             e.printStackTrace();
-    	}
+        }
     }
     
     private void createDataPanel(JPanel dataPanel) {
@@ -320,22 +315,6 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         cntlPanel.add(button, gbc_button);
         return button;
     }
-
-    private JButton addAndButton(int row, int column, String action) {
-    	JButton button = new JButton("and");
-    	button.setMargin(insets0);
-    	button.putClientProperty("Nimbus.Overrides", buttonInsets6);
-    	button.setActionCommand(action);
-    	button.addActionListener(this);
-    	GridBagConstraints gbc_button = new GridBagConstraints();
-    	gbc_button.anchor = GridBagConstraints.EAST;
-    	gbc_button.insets = new Insets(0, 0, 0, 3);
-    	gbc_button.fill = GridBagConstraints.HORIZONTAL;
-    	gbc_button.gridx = column;
-    	gbc_button.gridy = row;
-    	cntlPanel.add(button, gbc_button);
-    	return button;
-    }
     
     private void addLabel(int row, int column, String text) {
         JLabel label = new JLabel(text);
@@ -345,20 +324,20 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         gbc_label.gridx = column;
         gbc_label.gridy = row;
         if (text.equals("or")) {
-        	gbc_label.gridheight = 2;
+            gbc_label.gridheight = 2;
             gbc_label.insets = insets0;
         }
         cntlPanel.add(label, gbc_label);
     }
     
     private JComboBox<String> addComboBox(int row, int column, String[] values) {
-    	JComboBox<String> combo;
-    	if (values != null)
-    		combo = new JComboBox<String>(values);
-    	else {
-    		combo = new JComboBox<String>();
-    		combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
-    	}
+        JComboBox<String> combo;
+        if (values != null)
+            combo = new JComboBox<String>(values);
+        else {
+            combo = new JComboBox<String>();
+            combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+        }
         GridBagConstraints gbc_combo = new GridBagConstraints();
         gbc_combo.anchor = GridBagConstraints.WEST;
         gbc_combo.insets = new Insets(3, 0, 3, 3);
@@ -369,12 +348,12 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     }
     
     private JFormattedTextField addTextFilter(int row, int column, int numColumns, NumberFormat format, boolean fill) {
-    	JFormattedTextField textField = new JFormattedTextField(format);
-    	textField.setColumns(numColumns);
+        JFormattedTextField textField = new JFormattedTextField(format);
+        textField.setColumns(numColumns);
         GridBagConstraints gbc_textField = new GridBagConstraints();
         gbc_textField.anchor = GridBagConstraints.WEST;
         if (fill)
-        	gbc_textField.fill = GridBagConstraints.HORIZONTAL;
+            gbc_textField.fill = GridBagConstraints.HORIZONTAL;
         gbc_textField.insets = new Insets(3, 0, 3, 3);
         gbc_textField.gridx = column;
         gbc_textField.gridy = row;
@@ -420,13 +399,13 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         addRadioButton(cntlPanel, 4, "Scatter", "scatter");
         
         plot = new Plot3DPanel("SOUTH") {
-			private static final long serialVersionUID = 7914951068593204419L;
-			public void addPlotToolBar(String location) {
-				super.addPlotToolBar(location);
-        		super.plotToolBar.remove(7);
-        		super.plotToolBar.remove(5);
-        		super.plotToolBar.remove(4);
-        	}        	
+            private static final long serialVersionUID = 7914951068593204419L;
+            public void addPlotToolBar(String location) {
+                super.addPlotToolBar(location);
+                super.plotToolBar.remove(7);
+                super.plotToolBar.remove(5);
+                super.plotToolBar.remove(4);
+            }            
         };
         plot.setAutoBounds();
         plot.setAutoscrolls(true);
@@ -448,8 +427,8 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         plotPanel.add(plot, gbl_chartPanel);
     }
     
-	protected void addRadioButton(JPanel panel, int column, String name, String action) {
-		JRadioButton button = new JRadioButton(name);
+    protected void addRadioButton(JPanel panel, int column, String name, String action) {
+        JRadioButton button = new JRadioButton(name);
         button.setActionCommand(action);
         button.addActionListener(this);
         rbGroup.add(button);
@@ -491,18 +470,37 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private void setAxis() {
-    	ArrayList<Integer> distancePct = new ArrayList<Integer>();
-    	distancePct.add(distance);
-    	new LogStatsFixedAxis(distancePct, xAxisArray, yAxisArray);
-    	if (xAxisArray.size() > 0)
-    		xAxisRoundTextBox.setValue(null);
-    	if (yAxisArray.size() > 0)
-    		yAxisRoundTextBox.setValue(null);
-    	distance = distancePct.get(0);
+        ArrayList<Integer> distancePct = new ArrayList<Integer>();
+        distancePct.add(distance);
+        new LogStatsFixedAxis(distancePct, xAxisArray, yAxisArray);
+        if (xAxisArray.size() > 0)
+            xAxisRoundTextBox.setValue(null);
+        if (yAxisArray.size() > 0)
+            yAxisRoundTextBox.setValue(null);
+        distance = distancePct.get(0);
+    }
+    
+    private void setFilters() {
+    	String[] colNames = new String[xAxisColumn.getItemCount()];
+    	for (int i = 0; i < xAxisColumn.getItemCount(); ++i)
+    		colNames[i] = xAxisColumn.getItemAt(i);
+        new LogStatsFilters(colNames, filterButtonList, filterColumnList, filterComboBoxList, filterTextBoxList);
+        if (filterButtonList.size() > 0)
+        	btnSetFiltersButton.setText(ViewFilters);
+        else
+        	btnSetFiltersButton.setText(SetFilters);
+    }
+    
+    private void clearFilters() {
+        filterButtonList.clear();
+        filterColumnList.clear();
+        filterComboBoxList.clear();
+        filterTextBoxList.clear();
+        btnSetFiltersButton.setText(SetFilters);
     }
 
     private void selectLogColumns() {
-    	fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         getLogColumns();
@@ -512,521 +510,514 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         Object xAxis = xAxisColumn.getSelectedItem();
         Object yAxis = yAxisColumn.getSelectedItem();
         List<String> data = dataColumn.getSelectedItems();
-        Object filter1 = filter1Column.getSelectedItem();
-        Object filter2 = filter2Column.getSelectedItem();
-        Object filter3 = filter3Column.getSelectedItem();
         xAxisColumn.removeAllItems();
         yAxisColumn.removeAllItems();
         dataColumn.removeAllItems();
         dataColumn.setText("");
-        filter1Column.removeAllItems();
-        filter2Column.removeAllItems();
-        filter3Column.removeAllItems();
         labelFileName.setText("");
-        logFile = fileChooser.getSelectedFile();
+        Object[] filterArr = new Object[filterButtonList.size()];
+        for (int k = 0; k < filterButtonList.size(); ++k) {
+            filterArr[k] = filterColumnList.get(k).getSelectedItem();
+            filterColumnList.get(k).removeAllItems();
+            filterColumnList.get(k).addItem("");
+        }
+        logFiles = fileChooser.getSelectedFiles();
+        logFilesTodo = new ArrayList<File>();
         BufferedReader br = null;
-        try {
-            filter1Column.addItem("");
-            filter2Column.addItem("");
-            filter3Column.addItem("");
-            br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
-            String line = null;
-            String [] elements = null;
-            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
-            	continue;
-        	Arrays.sort(elements);
-            for (String item : elements) {
-                xAxisColumn.addItem(item);
-                yAxisColumn.addItem(item);
-                dataColumn.addItem(item);
-                filter1Column.addItem(item);
-                filter2Column.addItem(item);
-                filter3Column.addItem(item);
+        HashSet<String> columns = new HashSet<String>();
+        String logTimeColName = Config.getLogTimeColumnName();
+        
+        for (File logFile : logFiles) {
+            try {
+                br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
+                String line = null;
+                String [] elements = null;
+                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                    continue;
+                if (logFilesTodo.size() == 0) {
+                    logFilesTodo.add(logFile);
+                    Arrays.sort(elements);
+                    for (String item : elements) {
+                        if (logFiles.length > 1 && (item.equals(logTimeColName) || item.toLowerCase().matches(timeMatchString)))
+                            continue;
+                        xAxisColumn.addItem(item);
+                        yAxisColumn.addItem(item);
+                        dataColumn.addItem(item);
+                        for (int k = 0; k < filterButtonList.size(); ++k)
+                            filterColumnList.get(k).addItem(item);
+                    }
+                }
+                else {
+                    columns.clear();
+                    for (String item : elements)
+                        columns.add(item);
+                    boolean skipFile = false;
+                    for (int i = 1; i < xAxisColumn.getItemCount(); ++i) {
+                        if (!columns.contains(xAxisColumn.getItemAt(i))) {
+                            skipFile = true;
+                            JOptionPane.showMessageDialog(null, "File " + logFile.getName() + " does not have column '" + xAxisColumn.getItemAt(i) + "'\nSkipping file...", "Missing column", JOptionPane.WARNING_MESSAGE);
+                            break;
+                        }
+                    }
+                    if (skipFile)
+                        continue;
+                    logFilesTodo.add(logFile);
+                }
+            }
+            catch (Exception e) {
+                logger.error(e);
+                JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+            }
+            finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
             }
         }
-        catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-        }
-        finally {
-        	if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {
-                    logger.error(e);
-                }
-        	}
-        }
         if (xAxis != null)
-        	xAxisColumn.setSelectedItem(xAxis);
+            xAxisColumn.setSelectedItem(xAxis);
         if (yAxis != null)
-        	yAxisColumn.setSelectedItem(yAxis);
+            yAxisColumn.setSelectedItem(yAxis);
         if (data != null)
-        	dataColumn.setSelectedItems(data);
-        if (filter1 != null)
-        	filter1Column.setSelectedItem(filter1);
-        if (filter2 != null)
-        	filter2Column.setSelectedItem(filter2);
-        if (filter3 != null)
-        	filter3Column.setSelectedItem(filter3);
-        labelFileName.setText("[" + logFile.getName() + "]");
+            dataColumn.setSelectedItems(data);
+        for (int k = filterButtonList.size() - 1; k >= 0 ; --k) {
+            if (filterArr[k] != null) {
+                filterColumnList.get(k).setSelectedItem(filterArr[k]);
+                if (filterColumnList.get(k).getSelectedIndex() == -1 || filterColumnList.get(k).getSelectedItem().equals("")) {
+                	filterButtonList.remove(k);
+                	filterComboBoxList.remove(k);
+                	filterColumnList.remove(k);
+                	filterTextBoxList.remove(k);
+                }
+            }
+        }
+        if (filterButtonList.size() > 0) {
+        	filterButtonList.set(0, null);
+        	btnSetFiltersButton.setText(ViewFilters);
+        }
+        else
+        	btnSetFiltersButton.setText(SetFilters);
+        	
+        StringBuffer sb = new StringBuffer("");
+        for (File logFile : logFilesTodo)
+            sb.append(logFile.getName()).append(", ");
+        sb.delete(sb.length() - 2, sb.length());
+        labelFileName.setText("[" + sb.toString() + "]");
     }
     
     private Statistics getStatId() {
-    	if (statistics.getSelectedItem() == null)
-    		return Statistics.MEAN;
-    	String name = (String)statistics.getSelectedItem();
-    	if ("Count".equals(name))
-    		return Statistics.COUNT;
-    	if ("Minimum".equals(name))
-    		return Statistics.MINIMUM;
-    	if ("Maximum".equals(name))
-    		return Statistics.MAXIMUM;
-    	if ("Mean".equals(name))
-    		return Statistics.MEAN;
-    	if ("Median".equals(name))
-    		return Statistics.MEDIAN;
-    	if ("Mode".equals(name))
-    		return Statistics.MODE;
-    	if ("Range".equals(name))
-    		return Statistics.RANGE;
-    	if ("Variance".equals(name))
-    		return Statistics.VARIANCE;
-    	if ("Std Devn".equals(name))
-    		return Statistics.STDDEV;
-		return Statistics.MEAN;
+        if (statistics.getSelectedItem() == null)
+            return Statistics.MEAN;
+        String name = (String)statistics.getSelectedItem();
+        if ("Count".equals(name))
+            return Statistics.COUNT;
+        if ("Minimum".equals(name))
+            return Statistics.MINIMUM;
+        if ("Maximum".equals(name))
+            return Statistics.MAXIMUM;
+        if ("Mean".equals(name))
+            return Statistics.MEAN;
+        if ("Median".equals(name))
+            return Statistics.MEDIAN;
+        if ("Mode".equals(name))
+            return Statistics.MODE;
+        if ("Range".equals(name))
+            return Statistics.RANGE;
+        if ("Variance".equals(name))
+            return Statistics.VARIANCE;
+        if ("Std Devn".equals(name))
+            return Statistics.STDDEV;
+        return Statistics.MEAN;
     }
     
     private DataFilter getType(JComboBox<String> filter) {
-    	if (filter.getSelectedItem() == null)
-    		return DataFilter.NONE;
-    	String name = (String)filter.getSelectedItem();
-    	if ("<".equals(name))
-    		return DataFilter.LESS;
-    	if ("<=".equals(name))
-    		return DataFilter.LESS_EQUAL;
-    	if ("=".equals(name))
-    		return DataFilter.EQUAL;
-    	if (">=".equals(name))
-    		return DataFilter.GREATER_EQUAL;
-    	if (">".equals(name))
-    		return DataFilter.GREATER;
-    	return DataFilter.NONE;
+        if (filter.getSelectedItem() == null)
+            return DataFilter.NONE;
+        String name = (String)filter.getSelectedItem();
+        if ("<".equals(name))
+            return DataFilter.LESS;
+        if ("<=".equals(name))
+            return DataFilter.LESS_EQUAL;
+        if ("=".equals(name))
+            return DataFilter.EQUAL;
+        if (">=".equals(name))
+            return DataFilter.GREATER_EQUAL;
+        if (">".equals(name))
+            return DataFilter.GREATER;
+        return DataFilter.NONE;
     }
     
     private int getFilterRounding(JFormattedTextField filterTextBox) {
-    	int rounding = 0;
-		String filterString = filterTextBox.getText();
-		if (filterString.indexOf('.') != -1) {
-			filterString = filterString.substring(filterString.indexOf('.'));
-			rounding = filterString.length() - 1;
-		}
-		return rounding;
+        int rounding = 0;
+        String filterString = filterTextBox.getText();
+        if (filterString.indexOf('.') != -1) {
+            filterString = filterString.substring(filterString.indexOf('.'));
+            rounding = filterString.length() - 1;
+        }
+        return rounding;
     }
     
     private boolean checkAgainstFilter(double value, DataFilter type, double filter, int rounding) {
-    	boolean ret = true;
-    	switch (type) {
-    	case LESS:
-    		if (value >= filter)
-    			ret = false;
-    		break;
-    	case LESS_EQUAL:
-    		if (value > filter)
-    			ret = false;
-    		break;
-    	case EQUAL:
-        	double rndVal = value;
-        	if (rounding > 0) {
-        		double multiplier = Math.pow(10.0, rounding);
-        		rndVal = Math.round(value * multiplier) / multiplier;
-        	}
-        	else
-        		rndVal = Math.round(value);
-    		if (!Utils.equals(rndVal, filter))
-    			ret = false;
-    		break;
-    	case GREATER_EQUAL:
-    		if (value < filter)
-    			ret = false;
-    		break;
-    	case GREATER:
-    		if (value <= filter)
-    			ret = false;
-    		break;
-    	default:
-    		break;
-    	}
+        boolean ret = true;
+        switch (type) {
+        case LESS:
+            if (value >= filter)
+                ret = false;
+            break;
+        case LESS_EQUAL:
+            if (value > filter)
+                ret = false;
+            break;
+        case EQUAL:
+            double rndVal = value;
+            if (rounding > 0) {
+                double multiplier = Math.pow(10.0, rounding);
+                rndVal = Math.round(value * multiplier) / multiplier;
+            }
+            else
+                rndVal = Math.round(value);
+            if (!Utils.equals(rndVal, filter))
+                ret = false;
+            break;
+        case GREATER_EQUAL:
+            if (value < filter)
+                ret = false;
+            break;
+        case GREATER:
+            if (value <= filter)
+                ret = false;
+            break;
+        default:
+            break;
+        }
         return ret;
     }
 
     private void processLog() {
-    	// Get and validate required fields
-    	Utils.clearTable(dataTable);
-    	int xAxisArraySize = xAxisArray.size();
-    	int yAxisArraySize = yAxisArray.size();
-    	if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItems() == null)
-    		return;
-    	if (xAxisRoundTextBox.getValue() == null && xAxisArraySize == 0) {
-    		JOptionPane.showMessageDialog(null, "X-Axis scaling is not set. Please set 'Step' or X-Axis values.", "Error", JOptionPane.ERROR_MESSAGE);
-    		return;
-    	}
-    	if (yAxisRoundTextBox.getValue() == null && yAxisArraySize == 0) {
-    		JOptionPane.showMessageDialog(null, "Y-Axis scaling is not set. Please set 'Step' or Y-Axis values.", "Error", JOptionPane.ERROR_MESSAGE);
-    		return;
-    	}
-    	double xRound = Double.NaN;
-    	if (xAxisRoundTextBox.getValue() != null) {
-    		xRound = (((Number)xAxisRoundTextBox.getValue()).doubleValue());
-        	if (xRound < 0.01) {
-        		JOptionPane.showMessageDialog(null, "Incorrect X-Axis scaling, minimum allowed is 0.01", "Error", JOptionPane.ERROR_MESSAGE);
-        		return;
-        	}
-    	}
-    	double yRound = Double.NaN;
-    	if (yAxisRoundTextBox.getValue() != null) {
-    		yRound = (((Number)yAxisRoundTextBox.getValue()).doubleValue());
-	    	if (yRound < 0.01) {
-	    		JOptionPane.showMessageDialog(null, "Incorrect Y-Axis scaling, minimum allowed is 0.01", "Error", JOptionPane.ERROR_MESSAGE);
-	    		return;
-	    	}
-    	}
+        // Get and validate required fields
+        Utils.clearTable(dataTable);
+        int xAxisArraySize = xAxisArray.size();
+        int yAxisArraySize = yAxisArray.size();
+        if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItems() == null) {
+        	JOptionPane.showMessageDialog(null, "lease select X-Axis, Y-Axis, and Data columns.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (xAxisRoundTextBox.getValue() == null && xAxisArraySize == 0) {
+            JOptionPane.showMessageDialog(null, "X-Axis scaling is not set. Please set 'Step' or X-Axis values.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (yAxisRoundTextBox.getValue() == null && yAxisArraySize == 0) {
+            JOptionPane.showMessageDialog(null, "Y-Axis scaling is not set. Please set 'Step' or Y-Axis values.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        double xRound = Double.NaN;
+        if (xAxisRoundTextBox.getValue() != null) {
+            xRound = (((Number)xAxisRoundTextBox.getValue()).doubleValue());
+            if (xRound < 0.01) {
+                JOptionPane.showMessageDialog(null, "Incorrect X-Axis scaling, minimum allowed is 0.01", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        double yRound = Double.NaN;
+        if (yAxisRoundTextBox.getValue() != null) {
+            yRound = (((Number)yAxisRoundTextBox.getValue()).doubleValue());
+            if (yRound < 0.01) {
+                JOptionPane.showMessageDialog(null, "Incorrect Y-Axis scaling, minimum allowed is 0.01", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	Statistics statid = getStatId();
-    	String xAxisColName = (String)xAxisColumn.getSelectedItem();
-    	String yAxisColName = (String)yAxisColumn.getSelectedItem();
-    	List<String> dataColNames = dataColumn.getSelectedItems();
-    	
-    	// Get filters
-    	String filter1ColName = null;
-    	String filter2ColName = null;
-    	String filter3ColName = null;
-    	if (filter1Column.getSelectedItem() != null)
-    		filter1ColName = (String)filter1Column.getSelectedItem();
-    	if (filter2Column.getSelectedItem() != null)
-    		filter2ColName = (String)filter2Column.getSelectedItem();
-    	if (filter3Column.getSelectedItem() != null)
-    		filter3ColName = (String)filter3Column.getSelectedItem();
-    	
-    	DataFilter filter1Type = getType(filter1ComboBox);
-    	DataFilter filter2Type = getType(filter2ComboBox);
-    	DataFilter filter3Type = getType(filter3ComboBox);
-    	
-    	double filter1 = Double.NaN;
-    	double filter2 = Double.NaN;
-    	double filter3 = Double.NaN;
-    	if (filter1TextBox.getValue() != null)
-    		filter1 = (((Number)filter1TextBox.getValue()).doubleValue());
-    	if (filter2TextBox.getValue() != null)
-    		filter2 = (((Number)filter2TextBox.getValue()).doubleValue());
-    	if (filter3TextBox.getValue() != null)
-    		filter3 = (((Number)filter3TextBox.getValue()).doubleValue());
-    	
-    	int filter1Rounding = getFilterRounding(filter1TextBox);
-    	int filter2Rounding = getFilterRounding(filter2TextBox);
-    	int filter3Rounding = getFilterRounding(filter3TextBox);
-    	
-    	boolean useFilter1 = false;
-    	boolean useFilter2 = false;
-    	boolean useFilter3 = false;
-    	boolean isFilter2And = true;
-    	boolean isFilter3And = true;
-    	boolean passFilters;
-    	if (filter1ColName != null && !filter1ColName.isEmpty() && filter1Type != DataFilter.NONE && !Double.isNaN(filter1))
-    		useFilter1 = true;
-    	if (filter2ColName != null && !filter2ColName.isEmpty() && filter2Type != DataFilter.NONE && !Double.isNaN(filter2)) {
-    		useFilter2 = true;
-    		if ("or".equals(filter2Button.getText()))
-    			isFilter2And = false;
-    	}
-    	if (filter3ColName != null && !filter3ColName.isEmpty() && filter3Type != DataFilter.NONE && !Double.isNaN(filter3)) {
-    		useFilter3 = true;
-    		if ("or".equals(filter3Button.getText()))
-    			isFilter3And = false;
-    	}
+        Statistics statid = getStatId();
+        String xAxisColName = (String)xAxisColumn.getSelectedItem();
+        String yAxisColName = (String)yAxisColumn.getSelectedItem();
+        List<String> dataColNames = dataColumn.getSelectedItems();
+        
+        // Get filters
+        DataFilter[] filterTypeArr = new DataFilter[filterButtonList.size()];
+        String[] filterColNameArr = new String[filterButtonList.size()];
+        double[] filterArr = new double[filterButtonList.size()];
+        int[] filterRoundingArr = new int[filterButtonList.size()];
+        boolean[] useFilterArr = new boolean[filterButtonList.size()];
+        boolean[] isFilterAndArr = new boolean[filterButtonList.size()];
+        
+        for (int k = 0; k < filterButtonList.size(); ++k) {
+            filterTypeArr[k] = getType(filterComboBoxList.get(k));
+            if (filterColumnList.get(k).getSelectedItem() != null)
+                filterColNameArr[k] = (String)filterColumnList.get(k).getSelectedItem();
+            filterArr[k] = (filterTextBoxList.get(k).getValue() != null ? (((Number)filterTextBoxList.get(k).getValue()).doubleValue()) : Double.NaN);
+            filterRoundingArr[k] = getFilterRounding(filterTextBoxList.get(k));
+            if (!filterColNameArr[k].isEmpty() && filterTypeArr[k] != DataFilter.NONE && !Double.isNaN(filterArr[k])) {
+                useFilterArr[k] = true;
+                isFilterAndArr[k] = (k > 0 && "or".equals(filterButtonList.get(k).getText()) ? false : true);
+            }
+        }
+        
+        TreeSet<Double> xVals = new TreeSet<Double>();
+        TreeSet<Double> yVals = new TreeSet<Double>();
+        // data struct where first hash set is X-Axis containing second hash set which is Y-Axis containing array of values
+        xData = new HashMap<Double, HashMap<Double, ArrayList<Double>>>();
 
-    	// Process log file
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
-            String line = null;
-            String [] elements = null;
-            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
-            	continue;
-            ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
-            int xColIdx = columns.indexOf(xAxisColName);
-            int yColIdx = columns.indexOf(yAxisColName);
-            ArrayList<Integer> vColIdxArray = new ArrayList<Integer>();
-            for (String dataColName : dataColNames)
-            	vColIdxArray.add(columns.indexOf(dataColName));
-            int fltr1ColIdx = -1;
-            if (useFilter1)
-            	fltr1ColIdx = columns.indexOf(filter1ColName);
-            int fltr2ColIdx = -1;
-            if (useFilter2)
-            	fltr2ColIdx = columns.indexOf(filter2ColName);
-            int fltr3ColIdx = -1;
-            if (useFilter3)
-            	fltr3ColIdx = columns.indexOf(filter3ColName);
-            double x, y, val, dst, totdst;
-            double distratio = distance / 100.0;
-            double f1 = 0;
-            double f2 = 0;
-            double f3 = 0;
-            int idx = 0;
-            int lastXIdx = xAxisArraySize - 1;
-            int lastYIdx = yAxisArraySize - 1;
-            int i = 2;
-            boolean skip;
-            int tmColIdx = -1;
-            // data struct where first hash set is X-Axis containing second hash set which is Y-Axis containing array of values
-            xData = new HashMap<Double, HashMap<Double, ArrayList<Double>>>();
-            HashMap<Double, ArrayList<Double>> yData;
-            ArrayList<Double> data;
-            TreeSet<Double> xVals = new TreeSet<Double>();
-            TreeSet<Double> yVals = new TreeSet<Double>();
+        // Process log files
+        for (File logFile : logFilesTodo) {
+            BufferedReader br = null;
             try {
-            	line = br.readLine();
-                while (line != null) {
-                	elements = line.split("\\s*,\\s*", -1);
-                	if (i == 2) {
-	                	if (useFilter1 && elements[fltr1ColIdx].matches(Utils.tmRegex))
-	                		tmColIdx = fltr1ColIdx;
-	                	else if (useFilter2 && elements[fltr2ColIdx].matches(Utils.tmRegex))
-	                		tmColIdx = fltr2ColIdx;
-	                	else if (useFilter3 && elements[fltr3ColIdx].matches(Utils.tmRegex))
-	                		tmColIdx = fltr3ColIdx;
-	                	else if (elements[xColIdx].matches(Utils.tmRegex))
-	                		tmColIdx = xColIdx;
-	                	else if (elements[yColIdx].matches(Utils.tmRegex))
-	                		tmColIdx = yColIdx;
-	                	if (tmColIdx >= 0)
-                    		Utils.resetBaseTime(elements[tmColIdx]);
-                	}
-                	if (tmColIdx >= 0)
-                		elements[tmColIdx] = String.valueOf(Utils.parseTime(elements[tmColIdx]));
-                	if (useFilter1) {
-                        if (!Pattern.matches(Utils.fpRegex, elements[fltr1ColIdx])) {
-                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 1, column " + (fltr1ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                            return;
+                br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
+                String line = null;
+                String [] elements = null;
+                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                    continue;
+                ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
+                int xColIdx = columns.indexOf(xAxisColName);
+                int yColIdx = columns.indexOf(yAxisColName);
+                ArrayList<Integer> vColIdxArray = new ArrayList<Integer>();
+                for (String dataColName : dataColNames)
+                    vColIdxArray.add(columns.indexOf(dataColName));
+                int[] fltrColIdxArr = new int[filterButtonList.size()];
+                double fltrVal;
+                for (int k = 0; k < filterButtonList.size(); ++k)
+                    fltrColIdxArr[k] = (useFilterArr[k] ? columns.indexOf(filterColNameArr[k]) : -1);
+                double x, y, val, dst, totdst;
+                double distratio = distance / 100.0;
+                int idx = 0;
+                int lastXIdx = xAxisArraySize - 1;
+                int lastYIdx = yAxisArraySize - 1;
+                int i = 2;
+                boolean skip;
+                int tmColIdx = -1;
+                HashMap<Double, ArrayList<Double>> yData;
+                ArrayList<Double> data;
+                try {
+                    line = br.readLine();
+                    while (line != null) {
+                        elements = line.split("\\s*,\\s*", -1);
+                        if (i == 2) {
+                            boolean found = false;
+                            for (int k = 0; !found && k < filterButtonList.size(); ++k) {
+                                if (useFilterArr[k] && elements[fltrColIdxArr[k]].matches(Utils.tmRegex))
+                                    tmColIdx = fltrColIdxArr[k];
+                                    found = true;
+                            }
+                            if (!found) {
+                                if (elements[xColIdx].matches(Utils.tmRegex))
+                                    tmColIdx = xColIdx;
+                                else if (elements[yColIdx].matches(Utils.tmRegex))
+                                    tmColIdx = yColIdx;
+                            }
+                            if (tmColIdx >= 0)
+                                Utils.resetBaseTime(elements[tmColIdx]);
                         }
-                        f1 = Utils.parseValue(elements[fltr1ColIdx]);
-                	}
-                	if (useFilter2) {
-                        if (!Pattern.matches(Utils.fpRegex, elements[fltr2ColIdx])) {
-                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 2, column " + (fltr2ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        f2 = Utils.parseValue(elements[fltr2ColIdx]);
-                	}
-                	if (useFilter3) {
-                        if (!Pattern.matches(Utils.fpRegex, elements[fltr3ColIdx])) {
-                            JOptionPane.showMessageDialog(null, "Invalid value for Filter 3, column " + (fltr3ColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        f3 = Utils.parseValue(elements[fltr3ColIdx]);
-                	}
-
-                	passFilters = (!useFilter1 || checkAgainstFilter(f1, filter1Type, filter1, filter1Rounding));
-                	if (isFilter2And)
-                		passFilters = (passFilters && (!useFilter2 || checkAgainstFilter(f2, filter2Type, filter2, filter2Rounding)));
-                	else
-                		passFilters = (passFilters || (!useFilter2 || checkAgainstFilter(f2, filter2Type, filter2, filter2Rounding)));
-                	if (isFilter3And)
-                		passFilters = (passFilters && (!useFilter3 || checkAgainstFilter(f3, filter3Type, filter3, filter3Rounding)));
-                	else
-                		passFilters = (passFilters || (!useFilter3 || checkAgainstFilter(f3, filter3Type, filter3, filter3Rounding)));
-
-                	if (passFilters) {
-                        if (!Pattern.matches(Utils.fpRegex, elements[xColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[xColIdx])) {
-                            JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        if (!Pattern.matches(Utils.fpRegex, elements[yColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[yColIdx])) {
-                            JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
-                            return;
-                        }
-                        skip = false;
-                    	if (Double.isNaN(xRound)) {
-                    		val = Utils.parseValue(elements[xColIdx]);
-                    		idx = Utils.closestValueIndex(val, xAxisArray);
-                    		x = xAxisArray.get(idx);
-                    		if (distance < 50 && xAxisArraySize > 1) {
-                    			if (val < x) {
-                    				dst = x - val;
-                    				if (idx == 0)
-                    					totdst = xAxisArray.get(idx + 1) - x;
-                    				else
-	                    				totdst = x - xAxisArray.get(idx - 1);
-                    			}
-                    			else {
-                    				dst = val - x;
-                    				if (idx == lastXIdx)
-                    					totdst = x - xAxisArray.get(idx - 1);
-                    				else
-                    					totdst = xAxisArray.get(idx + 1) - x;
-                    			}
-                    			if (distratio < dst / totdst)
-                    				skip = true;
-                    		}
-                    	}
-                    	else {
-                    		x = Utils.round(Utils.parseValue(elements[xColIdx]), xRound);
-                    		xVals.add(x);
-                    	}
-                    	if (Double.isNaN(yRound)) {
-                    		val = Utils.parseValue(elements[yColIdx]);
-                    		idx = Utils.closestValueIndex(val, yAxisArray);
-                    		y = yAxisArray.get(idx);
-                    		if (distance < 50 && yAxisArraySize > 1) {
-                    			if (val < y) {
-                    				dst = y - val;
-                    				if (idx == 0)
-                    					totdst = yAxisArray.get(idx + 1) - y;
-                    				else
-	                    				totdst = y - yAxisArray.get(idx - 1);
-                    			}
-                    			else {
-                    				dst = val - y;
-                    				if (idx == lastYIdx)
-                    					totdst = y - yAxisArray.get(idx - 1);
-                    				else
-                    					totdst = yAxisArray.get(idx + 1) - y;
-                    			}
-                    			if (distratio < dst / totdst)
-                    				skip = true;
-                    		}
-                    	}
-                    	else {
-                    		y = Utils.round(Utils.parseValue(elements[yColIdx]), yRound);
-                    		yVals.add(y);
-                    	}
-                    	val = 0;
-                    	for (Integer vColIdx : vColIdxArray) {
-                            if (!Pattern.matches(Utils.fpRegex, elements[vColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[vColIdx])) {
-                                JOptionPane.showMessageDialog(null, "Invalid value for Data, column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                        if (tmColIdx >= 0)
+                            elements[tmColIdx] = String.valueOf(Utils.parseTime(elements[tmColIdx]));
+                        // Check if value passes all filters
+                        boolean passFilters = true;
+                        for (int k = 0; k < filterButtonList.size() && useFilterArr[k]; ++k) {
+                            if (!Pattern.matches(Utils.fpRegex, elements[fltrColIdxArr[k]])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for Filter " + k + ", file " + logFile.getName() + ", column " + (fltrColIdxArr[k] + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
-                    		val += Utils.parseValue(elements[vColIdx]);
-                    	}
-                        yData = xData.get(x);
-                        if (yData == null) {
-                        	yData = new HashMap<Double, ArrayList<Double>>();
-                        	xData.put(x, yData);
+                            fltrVal = Utils.parseValue(elements[fltrColIdxArr[k]]);
+                            if (isFilterAndArr[k])
+                                passFilters = (passFilters && checkAgainstFilter(fltrVal, filterTypeArr[k], filterArr[k], filterRoundingArr[k]));
+                            else
+                                passFilters = (passFilters || checkAgainstFilter(fltrVal, filterTypeArr[k], filterArr[k], filterRoundingArr[k]));
                         }
-                        data = yData.get(y);
-                        if (data == null) {
-                        	data = new ArrayList<Double>();
-                        	yData.put(y, data);
+                        // Value should be processed
+                        if (passFilters) {
+                            if (!Pattern.matches(Utils.fpRegex, elements[xColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[xColIdx])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, file " + logFile.getName() + ", column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                            if (!Pattern.matches(Utils.fpRegex, elements[yColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[yColIdx])) {
+                                JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, file " + logFile.getName() + ", column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+                            skip = false;
+                            if (Double.isNaN(xRound)) {
+                                val = Utils.parseValue(elements[xColIdx]);
+                                idx = Utils.closestValueIndex(val, xAxisArray);
+                                x = xAxisArray.get(idx);
+                                if (distance < 50 && xAxisArraySize > 1) {
+                                    if (val < x) {
+                                        dst = x - val;
+                                        if (idx == 0)
+                                            totdst = xAxisArray.get(idx + 1) - x;
+                                        else
+                                            totdst = x - xAxisArray.get(idx - 1);
+                                    }
+                                    else {
+                                        dst = val - x;
+                                        if (idx == lastXIdx)
+                                            totdst = x - xAxisArray.get(idx - 1);
+                                        else
+                                            totdst = xAxisArray.get(idx + 1) - x;
+                                    }
+                                    if (distratio < dst / totdst)
+                                        skip = true;
+                                }
+                            }
+                            else {
+                                x = Utils.round(Utils.parseValue(elements[xColIdx]), xRound);
+                                xVals.add(x);
+                            }
+                            if (Double.isNaN(yRound)) {
+                                val = Utils.parseValue(elements[yColIdx]);
+                                idx = Utils.closestValueIndex(val, yAxisArray);
+                                y = yAxisArray.get(idx);
+                                if (distance < 50 && yAxisArraySize > 1) {
+                                    if (val < y) {
+                                        dst = y - val;
+                                        if (idx == 0)
+                                            totdst = yAxisArray.get(idx + 1) - y;
+                                        else
+                                            totdst = y - yAxisArray.get(idx - 1);
+                                    }
+                                    else {
+                                        dst = val - y;
+                                        if (idx == lastYIdx)
+                                            totdst = y - yAxisArray.get(idx - 1);
+                                        else
+                                            totdst = yAxisArray.get(idx + 1) - y;
+                                    }
+                                    if (distratio < dst / totdst)
+                                        skip = true;
+                                }
+                            }
+                            else {
+                                y = Utils.round(Utils.parseValue(elements[yColIdx]), yRound);
+                                yVals.add(y);
+                            }
+                            val = 0;
+                            for (Integer vColIdx : vColIdxArray) {
+                                if (!Pattern.matches(Utils.fpRegex, elements[vColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[vColIdx])) {
+                                    JOptionPane.showMessageDialog(null, "Invalid value for Data, file " + logFile.getName() + ", column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                    return;
+                                }
+                                val += Utils.parseValue(elements[vColIdx]);
+                            }
+                            yData = xData.get(x);
+                            if (yData == null) {
+                                yData = new HashMap<Double, ArrayList<Double>>();
+                                xData.put(x, yData);
+                            }
+                            data = yData.get(y);
+                            if (data == null) {
+                                data = new ArrayList<Double>();
+                                yData.put(y, data);
+                            }
+                            if (!skip)
+                                data.add(val);
                         }
-                        if (!skip)
-                        	data.add(val);
-                	}
-                    line = br.readLine();
-                    i += 1;
+                        line = br.readLine();
+                        i += 1;
+                    }
                 }
-                if (xVals.size() > 0) {
-                	xAxisArray.clear();
-                	xAxisArray.addAll(xVals);
+                catch (Exception e) {
+                    logger.error(e);
+                    JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
                 }
-                if (yVals.size() > 0) {
-                	yAxisArray.clear();
-                	yAxisArray.addAll(yVals);
-                }
-                processData(statid);
             }
             catch (Exception e) {
                 logger.error(e);
-                JOptionPane.showMessageDialog(null, e, "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+            }
+            finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
             }
         }
-        catch (Exception e) {
-            logger.error(e);
-            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        if (xVals.size() > 0) {
+            xAxisArray.clear();
+            xAxisArray.addAll(xVals);
         }
-        finally {
-            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        	if (br != null) {
-                try {
-                    br.close();
-                }
-                catch (IOException e) {
-                    logger.error(e);
-                }
-        	}
+        if (yVals.size() > 0) {
+            yAxisArray.clear();
+            yAxisArray.addAll(yVals);
         }
+        processData(statid);
+        setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
     }
     
     public void processData(Statistics id) {
         try {
-	        Utils.ensureColumnCount(xAxisArray.size() + 1, dataTable);
-	        Utils.ensureRowCount(yAxisArray.size() + 1, dataTable);
-	        int x = 0;
-	        int y = 0;
-	        double val = 0;
-	        HashMap<Double, ArrayList<Double>> xentry;
-	        ArrayList<Double> yentry;
-	        for (double xval : xAxisArray) {
-	        	dataTable.setValueAt(xval, 0, ++x);
-	        	xentry = xData.get(xval);
-	        	if (xentry == null)
-	        		continue;
-	        	y = 0;
-		        for (double yval : yAxisArray) {
-		        	dataTable.setValueAt(yval, ++y, 0);
-		        	yentry = xentry.get(yval);
-		        	if (yentry == null || yentry.size() == 0)
-		        		continue;
-	        		switch (id) {
-	        		case COUNT:
-	        			val = yentry.size();
-	        			break;
-	        		case MINIMUM:
-	        			val = Collections.min(yentry);
-	        			break;
-	        		case MAXIMUM:
-	        			val = Collections.max(yentry);
-	        			break;
-	        		case MEAN:
-	        			val = Utils.mean(yentry);
-	        			break;
-	        		case MEDIAN:
-	        			val = Utils.median(yentry);
-	        			break;
-	        		case MODE:
-	        			val = Utils.mode(yentry);
-	        			break;
-	        		case RANGE:
-	        			val = Utils.range(yentry);
-	        			break;
-	        		case VARIANCE:
-	        			val = Utils.variance(yentry);
-	        			break;
-	        		case STDDEV:
-	        			val = Utils.standardDeviation(yentry);
-	        			break;
-	        		}
-	            	dataTable.setValueAt(Double.isNaN(val) ? "" : val, y, x);
-		        	
-		        }
-	        }
-	        if (xData.size() > 0) {
-	        	int i;
-		        // remove extra rows
-		        for (i = dataTable.getRowCount() - 1; i >= 0 && dataTable.getValueAt(i, 0).toString().equals(""); --i)
-		            Utils.removeRow(i, dataTable);
-		        // remove extra columns
-		        for (i = dataTable.getColumnCount() - 1; i >= 0 && dataTable.getValueAt(0, i).toString().equals(""); --i)
-		            Utils.removeColumn(i, dataTable);
-		        Utils.colorTable(dataTable);
-	        }
-	        else {
-	        	Utils.clearTable(dataTable);
-	        }
-	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
-	        button.setSelected(true);
-	        display3D(Plot3D.GRID);
+            Utils.ensureColumnCount(xAxisArray.size() + 1, dataTable);
+            Utils.ensureRowCount(yAxisArray.size() + 1, dataTable);
+            int x = 0;
+            int y = 0;
+            double val = 0;
+            HashMap<Double, ArrayList<Double>> xentry;
+            ArrayList<Double> yentry;
+            for (double xval : xAxisArray) {
+                dataTable.setValueAt(xval, 0, ++x);
+                xentry = xData.get(xval);
+                if (xentry == null)
+                    continue;
+                y = 0;
+                for (double yval : yAxisArray) {
+                    dataTable.setValueAt(yval, ++y, 0);
+                    yentry = xentry.get(yval);
+                    if (yentry == null || yentry.size() == 0)
+                        continue;
+                    switch (id) {
+                    case COUNT:
+                        val = yentry.size();
+                        break;
+                    case MINIMUM:
+                        val = Collections.min(yentry);
+                        break;
+                    case MAXIMUM:
+                        val = Collections.max(yentry);
+                        break;
+                    case MEAN:
+                        val = Utils.mean(yentry);
+                        break;
+                    case MEDIAN:
+                        val = Utils.median(yentry);
+                        break;
+                    case MODE:
+                        val = Utils.mode(yentry);
+                        break;
+                    case RANGE:
+                        val = Utils.range(yentry);
+                        break;
+                    case VARIANCE:
+                        val = Utils.variance(yentry);
+                        break;
+                    case STDDEV:
+                        val = Utils.standardDeviation(yentry);
+                        break;
+                    }
+                    dataTable.setValueAt(Double.isNaN(val) ? "" : val, y, x);
+                    
+                }
+            }
+            if (xData.size() > 0) {
+                int i;
+                // remove extra rows
+                for (i = dataTable.getRowCount() - 1; i >= 0 && dataTable.getValueAt(i, 0).toString().equals(""); --i)
+                    Utils.removeRow(i, dataTable);
+                // remove extra columns
+                for (i = dataTable.getColumnCount() - 1; i >= 0 && dataTable.getValueAt(0, i).toString().equals(""); --i)
+                    Utils.removeColumn(i, dataTable);
+                Utils.colorTable(dataTable);
+            }
+            else {
+                Utils.clearTable(dataTable);
+            }
+            JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
+            button.setSelected(true);
+            display3D(Plot3D.GRID);
         }
         catch (Exception e) {
             logger.error(e);
@@ -1035,184 +1026,161 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     }
 
     private void addGridPlot() {
-    	if (xData == null || xData.size() == 0)
-    		return;
+        if (xData == null || xData.size() == 0)
+            return;
         TreeMap<Double, Integer> xAxisMap = new TreeMap<Double, Integer>();
         TreeMap<Double, Integer> yAxisMap = new TreeMap<Double, Integer>();
         for (Map.Entry<Double, HashMap<Double, ArrayList<Double>>> xentry : xData.entrySet()) {
-        	xAxisMap.put(xentry.getKey(), 0);
-        	for (Map.Entry<Double, ArrayList<Double>> yentry : xentry.getValue().entrySet())
-        		yAxisMap.put(yentry.getKey(), 0);
+            xAxisMap.put(xentry.getKey(), 0);
+            for (Map.Entry<Double, ArrayList<Double>> yentry : xentry.getValue().entrySet())
+                yAxisMap.put(yentry.getKey(), 0);
         }
         double[] x = new double[xAxisMap.size()];
         int i = 0;
         for (Double key : xAxisMap.keySet())
-        	x[i++] = key;
+            x[i++] = key;
         double[] y = new double[yAxisMap.size()];
         i = 0;
         for (Double key : yAxisMap.keySet())
-        	y[i++] = key;
+            y[i++] = key;
         double[][] z = Utils.doubleZArray(dataTable, x, y);
         Color[][] colors = Utils.doubleColorArray(dataTable, x, y);
         plot.addGridPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, x, y, z);
     }
     
     private void addHistogramPlot(Color[] colors, double[][] xyzArray) {
-    	double minXDiff = Double.NaN;
-    	double minYDiff = Double.NaN;
-    	double diff;
-    	for (int i = 1; i < dataTable.getColumnCount() - 1; ++i) {
-    		diff = Double.valueOf(dataTable.getValueAt(0, i + 1).toString()) - Double.valueOf(dataTable.getValueAt(0, i).toString());
-    		if (diff < minXDiff || Double.isNaN(minXDiff))
-    			minXDiff = diff;
-    	}
-    	for (int i = 1; i < dataTable.getRowCount() - 1; ++i) {
-    		diff = Double.valueOf(dataTable.getValueAt(i + 1, 0).toString()) - Double.valueOf(dataTable.getValueAt(i, 0).toString());
-    		if (diff < minYDiff || Double.isNaN(minYDiff))
-    			minYDiff = diff;
-    	}
+        double minXDiff = Double.NaN;
+        double minYDiff = Double.NaN;
+        double diff;
+        for (int i = 1; i < dataTable.getColumnCount() - 1; ++i) {
+            diff = Double.valueOf(dataTable.getValueAt(0, i + 1).toString()) - Double.valueOf(dataTable.getValueAt(0, i).toString());
+            if (diff < minXDiff || Double.isNaN(minXDiff))
+                minXDiff = diff;
+        }
+        for (int i = 1; i < dataTable.getRowCount() - 1; ++i) {
+            diff = Double.valueOf(dataTable.getValueAt(i + 1, 0).toString()) - Double.valueOf(dataTable.getValueAt(i, 0).toString());
+            if (diff < minYDiff || Double.isNaN(minYDiff))
+                minYDiff = diff;
+        }
         plot.addPlot(new HistogramPlot3D(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors, xyzArray, minXDiff, minYDiff));
     }
 
     private void addBarLineScatterPlot(Plot3D type) {
-    	if (xData == null || xData.size() == 0)
-    		return;
-    	int k = 0;
-    	String val;
-    	double X, Y;
+        if (xData == null || xData.size() == 0)
+            return;
+        int k = 0;
+        String val;
+        double X, Y;
         double[][] array = new double[dataTable.getColumnCount() * dataTable.getRowCount()][3];
 
         BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
         ArrayList<Color> colors = new ArrayList<Color>();
-    	for (int i = 1; i < dataTable.getColumnCount(); ++i) {
-    		val = dataTable.getValueAt(0, i).toString();
-    		if (val.isEmpty())
-    			break;
-    		X = Double.valueOf(val.toString());
-    		for (int j = 1; j < dataTable.getRowCount(); ++j) {
-    			val = dataTable.getValueAt(j, 0).toString();
-    			if (val.isEmpty())
-    				break;
-    			Y = Double.valueOf(val.toString());
-    			val = dataTable.getValueAt(j, i).toString();
-    			if (!val.isEmpty()) {
-    				colors.add(renderer.getColorAt(j, i));
-    				array[k][0] = X;
-    				array[k][1] = Y;
-    				array[k++][2] = Double.valueOf(val);
-    			}
-    		}
-    	}
-    	double[][] xyzArray = new double[k][3];
-    	for (k = 0; k < xyzArray.length; ++k)
-    		System.arraycopy(array[k], 0, xyzArray[k], 0, 3);
+        for (int i = 1; i < dataTable.getColumnCount(); ++i) {
+            val = dataTable.getValueAt(0, i).toString();
+            if (val.isEmpty())
+                break;
+            X = Double.valueOf(val.toString());
+            for (int j = 1; j < dataTable.getRowCount(); ++j) {
+                val = dataTable.getValueAt(j, 0).toString();
+                if (val.isEmpty())
+                    break;
+                Y = Double.valueOf(val.toString());
+                val = dataTable.getValueAt(j, i).toString();
+                if (!val.isEmpty()) {
+                    colors.add(renderer.getColorAt(j, i));
+                    array[k][0] = X;
+                    array[k][1] = Y;
+                    array[k++][2] = Double.valueOf(val);
+                }
+            }
+        }
+        double[][] xyzArray = new double[k][3];
+        for (k = 0; k < xyzArray.length; ++k)
+            System.arraycopy(array[k], 0, xyzArray[k], 0, 3);
         switch (type) {
         case BAR:
             plot.addBarPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case HIST:
-        	addHistogramPlot(colors.toArray(new Color[colors.size()]), xyzArray);
+            addHistogramPlot(colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case LINE:
             plot.addLinePlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
             break;
         case SCATTER:
             plot.addScatterPlot(dataColumn.getSelectedItemsString() + " " + statistics.getSelectedItem().toString(), colors.toArray(new Color[colors.size()]), xyzArray);
-		default:
-			break;
+        default:
+            break;
         }
     }
 
     private void display3D(Plot3D type) {
-    	plot.removeAllPlots();
+        plot.removeAllPlots();
         switch (type) {
         case GRID:
-        	addGridPlot();
+            addGridPlot();
             break;
         case HIST:
-        	addBarLineScatterPlot(type);
+            addBarLineScatterPlot(type);
             break;
         case BAR:
-        	addBarLineScatterPlot(type);
+            addBarLineScatterPlot(type);
             break;
         case LINE:
-        	addBarLineScatterPlot(type);
+            addBarLineScatterPlot(type);
             break;
         case SCATTER:
-        	addBarLineScatterPlot(type);
+            addBarLineScatterPlot(type);
             break;
         default:
-        	return;
+            return;
         }
         plot.setAxisLabel(0, xAxisColumn.getSelectedItem().toString());
         plot.setAxisLabel(1, yAxisColumn.getSelectedItem().toString());
         plot.setAxisLabel(2, dataColumn.getSelectedItemsString());
     }
     
-    private void clearFilters() {
-    	filter1Column.setSelectedItem(null);
-    	filter2Column.setSelectedItem(null);
-    	filter3Column.setSelectedItem(null);
-    	filter1ComboBox.setSelectedItem(null);
-    	filter2ComboBox.setSelectedItem(null);
-    	filter3ComboBox.setSelectedItem(null);
-    	filter1TextBox.setValue(null);
-    	filter2TextBox.setValue(null);
-    	filter3TextBox.setValue(null);	
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if ("selectlog".equals(e.getActionCommand()))
+            selectLogColumns();
+        else if ("go".equals(e.getActionCommand()))
+            processLog();
+        else if ("setaxis".equals(e.getActionCommand()))
+            setAxis();
+        else if ("setfilters".equals(e.getActionCommand()))
+            setFilters();
+        else if ("clearfilters".equals(e.getActionCommand()))
+            clearFilters();
+        else if ("grid".equals(e.getActionCommand())) {
+            if (xData != null)
+                display3D(Plot3D.GRID);
+        }
+        else if ("hist".equals(e.getActionCommand())) {
+            if (xData != null)
+                display3D(Plot3D.HIST);
+        }
+        else if ("bar".equals(e.getActionCommand())) {
+            if (xData != null)
+                display3D(Plot3D.BAR);
+        }
+        else if ("line".equals(e.getActionCommand())) {
+            if (xData != null)
+                display3D(Plot3D.LINE);
+        }
+        else if ("scatter".equals(e.getActionCommand())) {
+            if (xData != null)
+                display3D(Plot3D.SCATTER);
+        }
     }
     
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		if ("selectlog".equals(e.getActionCommand()))
-            selectLogColumns();
-		else if ("go".equals(e.getActionCommand()))
-            processLog();
-		else if ("setaxis".equals(e.getActionCommand()))
-            setAxis();
-		else if ("grid".equals(e.getActionCommand())) {
-	    	if (xData != null)
-	    		display3D(Plot3D.GRID);
-		}
-		else if ("hist".equals(e.getActionCommand())) {
-	    	if (xData != null)
-	    		display3D(Plot3D.HIST);
-		}
-		else if ("bar".equals(e.getActionCommand())) {
-	    	if (xData != null)
-	    		display3D(Plot3D.BAR);
-		}
-		else if ("line".equals(e.getActionCommand())) {
-	    	if (xData != null)
-	    		display3D(Plot3D.LINE);
-		}
-		else if ("scatter".equals(e.getActionCommand())) {
-	    	if (xData != null)
-	    		display3D(Plot3D.SCATTER);
-		}
-		else if ("clearfilters".equals(e.getActionCommand())) {
-	    	clearFilters();
-		}
-		else if ("f2and".equals(e.getActionCommand())) {
-			if ("and".equals(filter2Button.getText()))
-				filter2Button.setText("or");
-			else
-				filter2Button.setText("and");
-		}
-		else if ("f3and".equals(e.getActionCommand())) {
-			if ("and".equals(filter3Button.getText()))
-				filter3Button.setText("or");
-			else
-				filter3Button.setText("and");
-		}
-	}
-	
-	protected void onDroppedFiles(List<File> files) {
-		if (files.size() > 0 && getSelectedIndex() == 0) {
-	    	fileChooser.setMultiSelectionEnabled(false);
+    protected void onDroppedFiles(List<File> files) {
+        if (files.size() > 0 && getSelectedIndex() == 0) {
+            fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setCurrentDirectory(files.get(0));
-			fileChooser.setSelectedFile(files.get(0));
-			fileChooser.approveSelection();
-			getLogColumns();
-		}
-	}
+            fileChooser.setSelectedFile(files.get(0));
+            fileChooser.approveSelection();
+            getLogColumns();
+        }
+    }
 }

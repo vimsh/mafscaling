@@ -195,9 +195,9 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             dataPanel.add(cntlPanel, gbc_ctrlPanel);
             
             GridBagLayout gbl_cntlPanel = new GridBagLayout();
-            gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             gbl_cntlPanel.rowHeights = new int[]{0, 0, 0};
-            gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+            gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.0, 1.0};
             gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
             cntlPanel.setLayout(gbl_cntlPanel);
             
@@ -225,10 +225,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             statistics = addComboBox(1, 4, new String[] {"Count", "Minimum", "Maximum", "Mean", "Median", "Mode", "Range", "Variance", "Standard Deviation"});
             
             addLabel(0, 5, "X-Step");
-            xAxisRoundTextBox = addTextFilter(0, 6, 7, doubleFmt, true);
+            xAxisRoundTextBox = addTextField(0, 6, 5, doubleFmt, true);
     
             addLabel(1, 5, "Y-Step");
-            yAxisRoundTextBox = addTextFilter(1, 6, 7, doubleFmt, true);
+            yAxisRoundTextBox = addTextField(1, 6, 5, doubleFmt, true);
     
             addLabel(0, 7, "or");
 
@@ -236,17 +236,15 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             btnSetAxisButton.setMargin(new Insets(3, 9, 3, 9));
             btnSetAxisButton.putClientProperty("Nimbus.Overrides", buttonInsets10);
 
-            addLabel(0, 9, "   ");
-
-            btnSetFiltersButton = addButton(0, 10, 2, SetFilters, "setfilters");
+            btnSetFiltersButton = addButton(0, 9, 2, SetFilters, "setfilters");
             btnSetFiltersButton.setMargin(new Insets(3, 5, 3, 5));
-            btnSetFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets10);
+            btnSetFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
 
-            JButton clearFiltersButton = addButton(0, 11, 2, "<html><center>Clear<br>Filters</center></html>", "clearfilters");
+            JButton clearFiltersButton = addButton(0, 10, 2, "<html><center>Clear<br>Filters</center></html>", "clearfilters");
             clearFiltersButton.setMargin(new Insets(3, 5, 3, 5));
             clearFiltersButton.putClientProperty("Nimbus.Overrides", buttonInsets6);
 
-            addButton(0, 12, 2, "GO", "go");
+            addButton(0, 11, 2, "GO", "go");
 
 	        labelFileName = new JLabel("");
 	        labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
@@ -347,14 +345,17 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         return combo;
     }
     
-    private JFormattedTextField addTextFilter(int row, int column, int numColumns, NumberFormat format, boolean fill) {
+    private JFormattedTextField addTextField(int row, int column, int numColumns, NumberFormat format, boolean fill) {
         JFormattedTextField textField = new JFormattedTextField(format);
         textField.setColumns(numColumns);
+        textField.setMinimumSize(textField.getPreferredSize());
+        textField.setMaximumSize(textField.getPreferredSize());
         GridBagConstraints gbc_textField = new GridBagConstraints();
         gbc_textField.anchor = GridBagConstraints.WEST;
         if (fill)
             gbc_textField.fill = GridBagConstraints.HORIZONTAL;
         gbc_textField.insets = new Insets(3, 0, 3, 3);
+        //gbc_textField.weightx = 1;
         gbc_textField.gridx = column;
         gbc_textField.gridy = row;
         cntlPanel.add(textField, gbc_textField);
@@ -606,7 +607,8 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         StringBuffer sb = new StringBuffer("");
         for (File logFile : logFilesTodo)
             sb.append(logFile.getName()).append(", ");
-        sb.delete(sb.length() - 2, sb.length());
+        if (sb.length() >= 2)
+        	sb.delete(sb.length() - 2, sb.length());
         labelFileName.setText("[" + sb.toString() + "]");
     }
     
@@ -1176,10 +1178,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     
     protected void onDroppedFiles(List<File> files) {
         if (files.size() > 0 && getSelectedIndex() == 0) {
-            fileChooser.setMultiSelectionEnabled(true);
+	    	fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setCurrentDirectory(files.get(0));
-            fileChooser.setSelectedFile(files.get(0));
-            fileChooser.approveSelection();
+			fileChooser.setSelectedFiles((File[])files.toArray());
+			fileChooser.approveSelection();
             getLogColumns();
         }
     }

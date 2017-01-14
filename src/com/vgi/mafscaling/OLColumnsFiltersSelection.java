@@ -21,11 +21,11 @@ package com.vgi.mafscaling;
 import java.awt.event.ActionEvent;
 
 public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
-	private boolean isPolfTableSet = false;
-	
-	public OLColumnsFiltersSelection(boolean isPolfTableSet) {
-		this.isPolfTableSet = isPolfTableSet;
-	}
+    private boolean isPolfTableSet = false;
+    
+    public OLColumnsFiltersSelection(boolean isPolfTableSet) {
+        this.isPolfTableSet = isPolfTableSet;
+    }
     
     protected void addColSelection() {
         addRPMColSelection();
@@ -35,11 +35,11 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addMAFVoltageColSelection();
         addWidebandAFRColSelection();
         addThrottleAngleColSelection();
-    	addCommandedAFRColSelection(isPolfTableSet);
+        addCommandedAFRColSelection(isPolfTableSet);
     }
     
     protected void addFilterSelection() {
-    	addMAFVoltageMinimumFilter();
+        addMAFVoltageMinimumFilter();
         minMafVFilter.setText(String.valueOf(Config.getMafVMinimumValue()));
         addWOTStationaryPointFilter();
         wotStationaryPointFilter.setValue(Config.getWOTStationaryPointValue());
@@ -54,133 +54,133 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
     }
     
     protected boolean validate(StringBuffer error) {
-    	boolean ret = true;
-    	String value;
-    	String colName;
-    	
-    	// Engine Speed
-    	value = rpmName.getText().trim();
-    	colName = rpmLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setRpmColumnName(value);
-    	
-    	// Engine Load
-    	value = loadName.getText().trim();
-    	colName = loadLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setLoadColumnName(value);
+        boolean ret = true;
+        String value;
+        String colName;
+        
+        // Engine Speed
+        value = rpmName.getText().trim();
+        colName = rpmLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setRpmColumnName(value);
+        
+        // Engine Load
+        value = loadName.getText().trim();
+        colName = loadLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setLoadColumnName(value);
 
-    	// AFR Learning
-    	value = afLearningName.getText().trim();
-    	colName = afLearningLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfLearningColumnName(value);
-    	
-    	// AFR Correction
-    	value = afCorrectionName.getText().trim();
-    	colName = afCorrectionLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfCorrectionColumnName(value);
-    	
-    	// Maf Voltage
-    	value = mafVName.getText().trim();
-    	colName = mafVLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setMafVoltageColumnName(value);
+        // AFR Learning
+        value = afLearningName.getText().trim();
+        colName = afLearningLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfLearningColumnName(value);
+        
+        // AFR Correction
+        value = afCorrectionName.getText().trim();
+        colName = afCorrectionLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfCorrectionColumnName(value);
+        
+        // Maf Voltage
+        value = mafVName.getText().trim();
+        colName = mafVLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setMafVoltageColumnName(value);
 
-    	// Wideband AFR
-    	value = wbAfrName.getText().trim();
-    	colName = wbAfrLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setWidebandAfrColumnName(value);
-    	
-    	// Throttle Angle
-    	value = thrtlAngleName.getText().trim();
-    	colName = thrtlAngleLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setThrottleAngleColumnName(value);
-    	
-    	// Commanded AFR
-    	value = commAfrName.getText().trim();
-    	colName = commAfrLabelText;
-    	if (isPolfTableSet) {
-	    	if (value.isEmpty())
-	    		value = Config.NO_NAME;
-	    	Config.setCommandedAfrColumnName(value);
-    	}
-    	else {
-	    	if (value.isEmpty()) {
-	    		ret = false;
-	    		error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
-	    	}
-	    	else
-	    		Config.setCommandedAfrColumnName(value);
-    	}
-    	
-    	// Min MAF Voltage filter
-    	Config.setMafVMinimumValue(Double.valueOf(minMafVFilter.getText()));
-    	
-    	// WOT Stationary point
-    	Config.setWOTStationaryPointValue(Integer.valueOf(wotStationaryPointFilter.getValue().toString()));
-    	
-    	// Afr Error filter
-    	Config.setWidebandAfrErrorPercentValue(Double.valueOf(afrErrorFilter.getText()));
-    	
-    	// WOT Enrichment
-    	Config.setWOTEnrichmentValue(Double.valueOf(wotEnrichmentField.getText()));
-    	
-    	// WBO2 Row Offset
-    	Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
-    	
-    	// OL/CL Transition Skip Rows
-    	Config.setOLCLTransitionSkipRows(Integer.valueOf(olClTransitionSkipRowsField.getText()));
-    	
-    	return ret;
+        // Wideband AFR
+        value = wbAfrName.getText().trim();
+        colName = wbAfrLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setWidebandAfrColumnName(value);
+        
+        // Throttle Angle
+        value = thrtlAngleName.getText().trim();
+        colName = thrtlAngleLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setThrottleAngleColumnName(value);
+        
+        // Commanded AFR
+        value = commAfrName.getText().trim();
+        colName = commAfrLabelText;
+        if (isPolfTableSet) {
+            if (value.isEmpty())
+                value = Config.NO_NAME;
+            Config.setCommandedAfrColumnName(value);
+        }
+        else {
+            if (value.isEmpty()) {
+                ret = false;
+                error.append("\"").append(colName).append("\" column must be specified if \"Primary Open Loop Fueling\" table is not set.\n");
+            }
+            else
+                Config.setCommandedAfrColumnName(value);
+        }
+        
+        // Min MAF Voltage filter
+        Config.setMafVMinimumValue(Double.valueOf(minMafVFilter.getText()));
+        
+        // WOT Stationary point
+        Config.setWOTStationaryPointValue(Integer.valueOf(wotStationaryPointFilter.getValue().toString()));
+        
+        // Afr Error filter
+        Config.setWidebandAfrErrorPercentValue(Double.valueOf(afrErrorFilter.getText()));
+        
+        // WOT Enrichment
+        Config.setWOTEnrichmentValue(Double.valueOf(wotEnrichmentField.getText()));
+        
+        // WBO2 Row Offset
+        Config.setWBO2RowOffset(Integer.valueOf(wbo2RowOffsetField.getText()));
+        
+        // OL/CL Transition Skip Rows
+        Config.setOLCLTransitionSkipRows(Integer.valueOf(olClTransitionSkipRowsField.getText()));
+        
+        return ret;
     }
     
     protected boolean processDefaultButton(ActionEvent e) {
-    	if ("minmafv".equals(e.getActionCommand()))
-        	minMafVFilter.setText(Config.DefaultMafVMinimum);
+        if ("minmafv".equals(e.getActionCommand()))
+            minMafVFilter.setText(Config.DefaultMafVMinimum);
         else if ("wotpoint".equals(e.getActionCommand()))
-        	wotStationaryPointFilter.setValue(Integer.valueOf(Config.DefaultWOTStationaryPoint));
+            wotStationaryPointFilter.setValue(Integer.valueOf(Config.DefaultWOTStationaryPoint));
         else if ("afrerr".equals(e.getActionCommand()))
-        	afrErrorFilter.setText(Config.DefaultWidebandAfrErrorPercent);
+            afrErrorFilter.setText(Config.DefaultWidebandAfrErrorPercent);
         else if ("wotenrich".equals(e.getActionCommand()))
-        	wotEnrichmentField.setText(Config.DefaultWOTEnrichment);
+            wotEnrichmentField.setText(Config.DefaultWOTEnrichment);
         else if ("wbo2offset".equals(e.getActionCommand()))
-        	wbo2RowOffsetField.setText(Config.DefaultWBO2RowOffset);
+            wbo2RowOffsetField.setText(Config.DefaultWBO2RowOffset);
         else if ("olcltransit".equals(e.getActionCommand()))
-        	olClTransitionSkipRowsField.setText(Config.DefaultOLCLTransitionSkipRows);
+            olClTransitionSkipRowsField.setText(Config.DefaultOLCLTransitionSkipRows);
         else
-        	return false;
+            return false;
         return true;
     }
 }

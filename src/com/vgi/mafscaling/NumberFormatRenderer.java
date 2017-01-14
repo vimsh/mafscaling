@@ -43,7 +43,7 @@ class NumberFormatRenderer extends BgColorFormatRenderer {
      * @param formatMatrix
      */
     public void setFormats(Format[][] formatMatrix) {
-    	formats = formatMatrix;
+        formats = formatMatrix;
     }
 
     /**
@@ -62,7 +62,7 @@ class NumberFormatRenderer extends BgColorFormatRenderer {
      */
     public void setFormatAt(Format format, int row, int column) {
         if (formats != null && row < formats.length && column < formats[0].length)
-        	formats[row][column] = format;
+            formats[row][column] = format;
     }
     
     /**
@@ -78,15 +78,15 @@ class NumberFormatRenderer extends BgColorFormatRenderer {
         if (value == null)
             value = "";
         else if (formats != null) {
-        	if (Pattern.matches(Utils.fpRegex, value.toString())) {
-            	int frow = row;
-	        	if (frow >= formats.length)
-	        		frow = formats.length - 1;
-            	int fcol = column;
-	        	if (fcol >= formats[frow].length)
-	        		fcol = formats[frow].length - 1;
-	        	value = formats[frow][fcol].format(Double.valueOf(value.toString()));
-        	}
+            if (Pattern.matches(Utils.fpRegex, value.toString())) {
+                int frow = row;
+                if (frow >= formats.length)
+                    frow = formats.length - 1;
+                int fcol = column;
+                if (fcol >= formats[frow].length)
+                    fcol = formats[frow].length - 1;
+                value = formats[frow][fcol].format(Double.valueOf(value.toString()));
+            }
         }
         else if (Pattern.matches(Utils.fpRegex, value.toString()))
             value = formatter.format(Double.valueOf(value.toString()));

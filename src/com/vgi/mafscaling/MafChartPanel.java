@@ -44,33 +44,33 @@ import org.jfree.data.xy.XYSeriesCollection;
 public class MafChartPanel implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
     private static final Logger logger = Logger.getLogger(MafChartPanel.class);
     private ChartPanel chartPanel = null;
-	private IMafChartHolder chartHolder = null;
+    private IMafChartHolder chartHolder = null;
     private XYItemEntity xyItemEntity = null;
     private HashSet<Integer> pointDraggableSet = null;
     private boolean AllowPointMove = true;
     private boolean IsMovable = false;
     private double initialMovePointY = 0;
 
-	public MafChartPanel(JFreeChart chart, IMafChartHolder holder) {
-		pointDraggableSet = new HashSet<Integer>();
-		chartPanel = new ChartPanel(chart, true, true, true, true, true);
-		chartHolder = holder;
-		chartPanel.setFocusable(true);
-		chartPanel.setAutoscrolls(true);
-		chartPanel.setMouseZoomable(false);
-		chartPanel.addMouseMotionListener(this);
-		chartPanel.addMouseListener(this);
-		chartPanel.addMouseWheelListener(this);
-		chartPanel.addKeyListener(this);
-	}
-	
-	public void enablePointsDrag(int seriesIndex) {
-		pointDraggableSet.add(seriesIndex);
-	}
-	
-	public ChartPanel getChartPanel() {
-		return chartPanel;
-	}
+    public MafChartPanel(JFreeChart chart, IMafChartHolder holder) {
+        pointDraggableSet = new HashSet<Integer>();
+        chartPanel = new ChartPanel(chart, true, true, true, true, true);
+        chartHolder = holder;
+        chartPanel.setFocusable(true);
+        chartPanel.setAutoscrolls(true);
+        chartPanel.setMouseZoomable(false);
+        chartPanel.addMouseMotionListener(this);
+        chartPanel.addMouseListener(this);
+        chartPanel.addMouseWheelListener(this);
+        chartPanel.addKeyListener(this);
+    }
+    
+    public void enablePointsDrag(int seriesIndex) {
+        pointDraggableSet.add(seriesIndex);
+    }
+    
+    public ChartPanel getChartPanel() {
+        return chartPanel;
+    }
 
     public void movePoint(MouseEvent event) {
         try {
@@ -114,9 +114,9 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
         if (e.getScrollType() != MouseWheelEvent.WHEEL_UNIT_SCROLL)
             return;
         if (e.getWheelRotation() < 0)
-        	zoomChartAxis(chartPanel, true);
+            zoomChartAxis(chartPanel, true);
         else
-        	zoomChartAxis(chartPanel, false);
+            zoomChartAxis(chartPanel, false);
     }
     
     public void mouseDragged(MouseEvent e) {
@@ -131,7 +131,7 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
     }
     
     public void mousePressed(MouseEvent e) {
-		chartPanel.requestFocusInWindow();
+        chartPanel.requestFocusInWindow();
         Insets insets = chartPanel.getInsets();
         int x = (int) ((e.getX() - insets.left) / chartPanel.getScaleX());
         int y = (int) ((e.getY() - insets.top) / chartPanel.getScaleY());
@@ -162,33 +162,33 @@ public class MafChartPanel implements MouseListener, MouseMotionListener, MouseW
     public void mouseMoved(MouseEvent arg0) {
     }
 
-	@Override
-	public void keyPressed(KeyEvent e) {
-		if (!chartPanel.hasFocus())
-			return;
-		int keyCode = e.getKeyCode();
-		if (keyCode < KeyEvent.VK_LEFT || keyCode > KeyEvent.VK_DOWN)
-			return;
-	    ValueAxis axis = null;
-	    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT)
-	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getDomainAxis();
-	    else
-	        axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getRangeAxis();
-	    if (axis != null) {
-		    double delta = (axis.getUpperBound()- axis.getLowerBound()) / 100.0;
-		    if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_DOWN)
-		    	axis.setRange(axis.getLowerBound()- delta, axis.getUpperBound() - delta);
-		    else if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_RIGHT)
-		    	axis.setRange(axis.getLowerBound() + delta, axis.getUpperBound() + delta);
-	    }
-	}
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (!chartPanel.hasFocus())
+            return;
+        int keyCode = e.getKeyCode();
+        if (keyCode < KeyEvent.VK_LEFT || keyCode > KeyEvent.VK_DOWN)
+            return;
+        ValueAxis axis = null;
+        if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_RIGHT)
+            axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getDomainAxis();
+        else
+            axis = ((XYPlot)chartPanel.getChart().getXYPlot()).getRangeAxis();
+        if (axis != null) {
+            double delta = (axis.getUpperBound()- axis.getLowerBound()) / 100.0;
+            if (keyCode == KeyEvent.VK_LEFT || keyCode == KeyEvent.VK_DOWN)
+                axis.setRange(axis.getLowerBound()- delta, axis.getUpperBound() - delta);
+            else if (keyCode == KeyEvent.VK_UP || keyCode == KeyEvent.VK_RIGHT)
+                axis.setRange(axis.getLowerBound() + delta, axis.getUpperBound() + delta);
+        }
+    }
 
-	@Override
-	public void keyReleased(KeyEvent arg0) {
-	}
+    @Override
+    public void keyReleased(KeyEvent arg0) {
+    }
 
-	@Override
-	public void keyTyped(KeyEvent arg0) {
-	}
+    @Override
+    public void keyTyped(KeyEvent arg0) {
+    }
 
 }

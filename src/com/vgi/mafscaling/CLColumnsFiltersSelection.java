@@ -30,16 +30,16 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addMAFVoltageColSelection();
         addStockAFRColSelection();
         addClOlStatusColSelection();
-    	addTimeColSelection();
-    	addIATColSelection();
+        addTimeColSelection();
+        addIATColSelection();
     }
     
     protected void addFilterSelection() {
-    	addCLOLStatusFilter();
-    	clolStatusFilter.setValue(Config.getClOlStatusValue());
-    	addMAFVoltageMaximumFilter();
+        addCLOLStatusFilter();
+        clolStatusFilter.setValue(Config.getClOlStatusValue());
+        addMAFVoltageMaximumFilter();
         maxMafVFilter.setText(String.valueOf(Config.getMafVMaximumValue()));
-    	addEngineLoadMinimumFilter();
+        addEngineLoadMinimumFilter();
         minEngineLoadFilter.setText(String.valueOf(Config.getLoadMinimumValue()));
         addIATMaximumFilter();
         maxIatFilter.setText(String.valueOf(Config.getIatMaximumValue()));
@@ -50,155 +50,155 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addDvDtMaximumFilter();
         maxDvdtFilter.setText(String.valueOf(Config.getDvDtMaximumValue()));
         addCellHitCountMinimumFilter();
-    	minCellHitCountFilter.setText(String.valueOf(Config.getCLMinCellHitCount()));
+        minCellHitCountFilter.setText(String.valueOf(Config.getCLMinCellHitCount()));
     }
     
     protected boolean validate(StringBuffer error) {
-    	boolean ret = true;
-    	String value;
-    	String colName;
-    	
-    	// Engine Speed
-    	value = rpmName.getText().trim();
-    	colName = rpmLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setRpmColumnName(value);
-    	
-    	// Engine Load
-    	value = loadName.getText().trim();
-    	colName = loadLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setLoadColumnName(value);
+        boolean ret = true;
+        String value;
+        String colName;
+        
+        // Engine Speed
+        value = rpmName.getText().trim();
+        colName = rpmLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setRpmColumnName(value);
+        
+        // Engine Load
+        value = loadName.getText().trim();
+        colName = loadLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setLoadColumnName(value);
 
-    	// AFR Learning
-    	value = afLearningName.getText().trim();
-    	colName = afLearningLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfLearningColumnName(value);
-    	
-    	// AFR Correction
-    	value = afCorrectionName.getText().trim();
-    	colName = afCorrectionLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfCorrectionColumnName(value);
-    	
-    	// Maf Voltage
-    	value = mafVName.getText().trim();
-    	colName = mafVLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setMafVoltageColumnName(value);
+        // AFR Learning
+        value = afLearningName.getText().trim();
+        colName = afLearningLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfLearningColumnName(value);
+        
+        // AFR Correction
+        value = afCorrectionName.getText().trim();
+        colName = afCorrectionLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfCorrectionColumnName(value);
+        
+        // Maf Voltage
+        value = mafVName.getText().trim();
+        colName = mafVLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setMafVoltageColumnName(value);
 
-    	// CL/OL Status
-    	value = clolStatusName.getText().trim();
-    	colName = clolStatusLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setClOlStatusColumnName(value);
+        // CL/OL Status
+        value = clolStatusName.getText().trim();
+        colName = clolStatusLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setClOlStatusColumnName(value);
 
-    	// Stock AFR
-    	value = stockAfrName.getText().trim();
-    	colName = stockAfrLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfrColumnName(value);
-    	
-    	// Time
-    	value = timeName.getText().trim();
-    	colName = timeLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setTimeColumnName(value);
-    	
-    	// Intake Air Temperature
-    	value = iatName.getText().trim();
-    	colName = iatLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setIatColumnName(value);
-    	    	
+        // Stock AFR
+        value = stockAfrName.getText().trim();
+        colName = stockAfrLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfrColumnName(value);
+        
+        // Time
+        value = timeName.getText().trim();
+        colName = timeLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setTimeColumnName(value);
+        
+        // Intake Air Temperature
+        value = iatName.getText().trim();
+        colName = iatLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setIatColumnName(value);
+                
         // CL/OL Status
         value = clolStatusFilter.getValue().toString();
         colName = clolStatusLabelText;
         if (value.isEmpty() || value.equals("-1")) {
-        	ret = false;
-        	error.append("\"").append(colName).append("\" value must be specified\n");
+            ret = false;
+            error.append("\"").append(colName).append("\" value must be specified\n");
         }
         else
-        	Config.setClOlStatusValue(Integer.valueOf(value));
-    	
-    	// Max MAF Voltage filter
-    	Config.setMafVMaximumValue(Double.valueOf(maxMafVFilter.getText()));
-    	
-    	// Engine Load filter
-    	Config.setLoadMinimumValue(Double.valueOf(minEngineLoadFilter.getText()));
-    	
-    	// Minimum Cell Hit Count Filter
-		Config.setCLMinCellHitCount(Integer.valueOf(minCellHitCountFilter.getText()));
-		
-    	// IAT filter
-    	Config.setIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
-    	
-    	// AFR filters
-    	Config.setAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
-    	Config.setAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
-    	
-    	// dV/dt filter
-    	Config.setDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
-    	
-    	return ret;
+            Config.setClOlStatusValue(Integer.valueOf(value));
+        
+        // Max MAF Voltage filter
+        Config.setMafVMaximumValue(Double.valueOf(maxMafVFilter.getText()));
+        
+        // Engine Load filter
+        Config.setLoadMinimumValue(Double.valueOf(minEngineLoadFilter.getText()));
+        
+        // Minimum Cell Hit Count Filter
+        Config.setCLMinCellHitCount(Integer.valueOf(minCellHitCountFilter.getText()));
+        
+        // IAT filter
+        Config.setIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
+        
+        // AFR filters
+        Config.setAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
+        Config.setAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
+        
+        // dV/dt filter
+        Config.setDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
+        
+        return ret;
     }
     
     protected boolean processDefaultButton(ActionEvent e) {
-    	if ("maxmafv".equals(e.getActionCommand()))
-        	maxMafVFilter.setText(Config.DefaultMafVMaximum);
+        if ("maxmafv".equals(e.getActionCommand()))
+            maxMafVFilter.setText(Config.DefaultMafVMaximum);
         else if ("clolstatus".equals(e.getActionCommand()))
-        	clolStatusFilter.setValue(Integer.valueOf(Config.DefaultClOlStatusValue));
+            clolStatusFilter.setValue(Integer.valueOf(Config.DefaultClOlStatusValue));
         else if ("minengload".equals(e.getActionCommand()))
-        	minEngineLoadFilter.setText(Config.DefaultLoadMinimum);
+            minEngineLoadFilter.setText(Config.DefaultLoadMinimum);
         else if ("maxiat".equals(e.getActionCommand()))
-        	maxIatFilter.setText(Config.DefaultIATMaximum);
+            maxIatFilter.setText(Config.DefaultIATMaximum);
         else if ("maxafr".equals(e.getActionCommand()))
-        	maxAfrFilter.setText(Config.DefaultAfrMaximum);
+            maxAfrFilter.setText(Config.DefaultAfrMaximum);
         else if ("minafr".equals(e.getActionCommand()))
-        	minAfrFilter.setText(Config.DefaultAfrMinimum);
+            minAfrFilter.setText(Config.DefaultAfrMinimum);
         else if ("maxdvdt".equals(e.getActionCommand()))
-        	maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
+            maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
         else if ("minhitcnt".equals(e.getActionCommand()))
-        	minCellHitCountFilter.setText(Config.DefaultCLMinCellHitCount);
+            minCellHitCountFilter.setText(Config.DefaultCLMinCellHitCount);
         else
-        	return false;
+            return false;
         return true;
     }
 }

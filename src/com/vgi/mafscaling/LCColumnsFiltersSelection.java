@@ -30,15 +30,15 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         addAFLearningColSelection();
         addAFCorrectionColSelection();
         addMAFVoltageColSelection();
-    	addStockAFRColSelection();
-    	addManifoldPressureColSelection();
-    	addTimeColSelection();
-    	addIATColSelection();
+        addStockAFRColSelection();
+        addManifoldPressureColSelection();
+        addTimeColSelection();
+        addIATColSelection();
         addCruiseStatusColSelection();
     }
     
     protected void addFilterSelection() {
-    	addLoadCompInRatioFlag();
+        addLoadCompInRatioFlag();
         isLoadCompInRatioBool.setSelected(Config.getIsLoadCompInRatio());
         addAtmPressureFilter();
         atmPressureFilter.setText(String.valueOf(Config.getAtmPressureValue()));
@@ -64,189 +64,189 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         addDvDtMaximumFilter();
         maxDvdtFilter.setText(String.valueOf(Config.getLCDvDtMaximumValue()));
         addCellHitCountMinimumFilter();
-    	minCellHitCountFilter.setText(String.valueOf(Config.getLCMinCellHitCount()));
-    	addCruiseStatusFilter();
-    	cruiseStatusFilter.setValue(Config.getCruiseStatusValue());
-    	addCorrectionAppliedValue();
-    	correctionAppliedValue.setValue(Config.getLCCorrectionAppliedValue());
-    	
-    	for (Component c : filtersPanel.getComponents()) {
-    		if (c instanceof JEditorPane) {
-    			JEditorPane label = (JEditorPane)c;
-    			if (label.getText().startsWith("Remove data where RPM is above"))
-    				label.setText(label.getText() + " (hint: check max RPM in Load Comp table)");
-    		}
-    	}
+        minCellHitCountFilter.setText(String.valueOf(Config.getLCMinCellHitCount()));
+        addCruiseStatusFilter();
+        cruiseStatusFilter.setValue(Config.getCruiseStatusValue());
+        addCorrectionAppliedValue();
+        correctionAppliedValue.setValue(Config.getLCCorrectionAppliedValue());
+        
+        for (Component c : filtersPanel.getComponents()) {
+            if (c instanceof JEditorPane) {
+                JEditorPane label = (JEditorPane)c;
+                if (label.getText().startsWith("Remove data where RPM is above"))
+                    label.setText(label.getText() + " (hint: check max RPM in Load Comp table)");
+            }
+        }
     }
     
     protected boolean validate(StringBuffer error) {
-    	boolean ret = true;
-    	String value;
-    	String colName;
-    	
-    	// Engine Speed
-    	value = rpmName.getText().trim();
-    	colName = rpmLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setRpmColumnName(value);
+        boolean ret = true;
+        String value;
+        String colName;
+        
+        // Engine Speed
+        value = rpmName.getText().trim();
+        colName = rpmLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setRpmColumnName(value);
 
-    	// AFR Learning
-    	value = afLearningName.getText().trim();
-    	colName = afLearningLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfLearningColumnName(value);
-    	
-    	// AFR Correction
-    	value = afCorrectionName.getText().trim();
-    	colName = afCorrectionLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfCorrectionColumnName(value);
-    	
-    	// Maf Voltage
-    	value = mafVName.getText().trim();
-    	colName = mafVLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setMafVoltageColumnName(value);
+        // AFR Learning
+        value = afLearningName.getText().trim();
+        colName = afLearningLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfLearningColumnName(value);
+        
+        // AFR Correction
+        value = afCorrectionName.getText().trim();
+        colName = afCorrectionLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfCorrectionColumnName(value);
+        
+        // Maf Voltage
+        value = mafVName.getText().trim();
+        colName = mafVLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setMafVoltageColumnName(value);
 
-    	// MP
-    	value = mpName.getText().trim();
-    	colName = mpLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setMpColumnName(value);
-    	
-    	// Throttle Angle
-    	value = thrtlAngleName.getText().trim();
-    	colName = thrtlAngleLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setThrottleAngleColumnName(value);
+        // MP
+        value = mpName.getText().trim();
+        colName = mpLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setMpColumnName(value);
+        
+        // Throttle Angle
+        value = thrtlAngleName.getText().trim();
+        colName = thrtlAngleLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setThrottleAngleColumnName(value);
 
-    	// Cruise/Non-cruise Status
-    	Config.setCruiseStatusColumnName(cruiseStatusName.getText().trim());
+        // Cruise/Non-cruise Status
+        Config.setCruiseStatusColumnName(cruiseStatusName.getText().trim());
 
-    	// Stock AFR
-    	value = stockAfrName.getText().trim();
-    	colName = stockAfrLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setAfrColumnName(value);
-    	
-    	// Time
-    	value = timeName.getText().trim();
-    	colName = timeLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setTimeColumnName(value);
-    	
-    	// Intake Air Temperature
-    	value = iatName.getText().trim();
-    	colName = iatLabelText;
-    	if (value.isEmpty()) {
-    		ret = false;
-    		error.append("\"").append(colName).append("\" column must be specified\n");
-    	}
-    	else
-    		Config.setIatColumnName(value);
-    	
+        // Stock AFR
+        value = stockAfrName.getText().trim();
+        colName = stockAfrLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setAfrColumnName(value);
+        
+        // Time
+        value = timeName.getText().trim();
+        colName = timeLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setTimeColumnName(value);
+        
+        // Intake Air Temperature
+        value = iatName.getText().trim();
+        colName = iatLabelText;
+        if (value.isEmpty()) {
+            ret = false;
+            error.append("\"").append(colName).append("\" column must be specified\n");
+        }
+        else
+            Config.setIatColumnName(value);
+        
         // Load Compensation values in ratio
-    	Config.setIsLoadCompInRatio(isLoadCompInRatioBool.isSelected());
-    	
-    	// Atm Pressure filters
-    	Config.setAtmPressureValue(Double.valueOf(atmPressureFilter.getText()));
-    	
-    	// Throttle Change % Maximum
-    	Config.setThrottleChangeMaxValue(Integer.valueOf(thrtlChangeMaxFilter.getValue().toString()));
-    	
-    	// RPM filters
-    	Config.setRPMMaximumValue(Integer.valueOf(maxRPMFilter.getText()));
-    	Config.setRPMMinimumValue(Integer.valueOf(minRPMFilter.getText()));
-    	
-    	// Minimum Cell Hit Count Filter
-		Config.setLCMinCellHitCount(Integer.valueOf(minCellHitCountFilter.getText()));
-		
-    	// IAT filter
-    	Config.setLCIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
-    	
-    	// AFR filters
-    	Config.setLCAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
-    	Config.setLCAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
-    	
-    	// MP filters
-    	Config.setLCMPMaximumValue(Double.valueOf(maxMPFilter.getText()));
-    	Config.setLCMPMinimumValue(Double.valueOf(minMPFilter.getText()));
-    	
-    	// dV/dt filter
-    	Config.setLCDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
-    	
-    	// Cruise/Non-cruise Status
-    	value = cruiseStatusFilter.getValue().toString();
-    	if (!value.isEmpty())
-    		Config.setCruiseStatusValue(Integer.valueOf(value));
-    	
-    	// Correction applied
-    	Config.setLCCorrectionAppliedValue(Integer.valueOf(correctionAppliedValue.getValue().toString()));
-    	
-    	return ret;
+        Config.setIsLoadCompInRatio(isLoadCompInRatioBool.isSelected());
+        
+        // Atm Pressure filters
+        Config.setAtmPressureValue(Double.valueOf(atmPressureFilter.getText()));
+        
+        // Throttle Change % Maximum
+        Config.setThrottleChangeMaxValue(Integer.valueOf(thrtlChangeMaxFilter.getValue().toString()));
+        
+        // RPM filters
+        Config.setRPMMaximumValue(Integer.valueOf(maxRPMFilter.getText()));
+        Config.setRPMMinimumValue(Integer.valueOf(minRPMFilter.getText()));
+        
+        // Minimum Cell Hit Count Filter
+        Config.setLCMinCellHitCount(Integer.valueOf(minCellHitCountFilter.getText()));
+        
+        // IAT filter
+        Config.setLCIatMaximumValue(Double.valueOf(maxIatFilter.getText()));
+        
+        // AFR filters
+        Config.setLCAfrMaximumValue(Double.valueOf(maxAfrFilter.getText()));
+        Config.setLCAfrMinimumValue(Double.valueOf(minAfrFilter.getText()));
+        
+        // MP filters
+        Config.setLCMPMaximumValue(Double.valueOf(maxMPFilter.getText()));
+        Config.setLCMPMinimumValue(Double.valueOf(minMPFilter.getText()));
+        
+        // dV/dt filter
+        Config.setLCDvDtMaximumValue(Double.valueOf(maxDvdtFilter.getText()));
+        
+        // Cruise/Non-cruise Status
+        value = cruiseStatusFilter.getValue().toString();
+        if (!value.isEmpty())
+            Config.setCruiseStatusValue(Integer.valueOf(value));
+        
+        // Correction applied
+        Config.setLCCorrectionAppliedValue(Integer.valueOf(correctionAppliedValue.getValue().toString()));
+        
+        return ret;
     }
     
     protected boolean processDefaultButton(ActionEvent e) {
-    	if ("thrtlchange".equals(e.getActionCommand()))
-        	thrtlChangeMaxFilter.setValue(Integer.valueOf(Config.DefaultThrottleChangeMax));
+        if ("thrtlchange".equals(e.getActionCommand()))
+            thrtlChangeMaxFilter.setValue(Integer.valueOf(Config.DefaultThrottleChangeMax));
         else if ("maxrpm".equals(e.getActionCommand()))
-        	maxRPMFilter.setText(Config.DefaultRPMMaximum);
+            maxRPMFilter.setText(Config.DefaultRPMMaximum);
         else if ("minrpm".equals(e.getActionCommand()))
-        	minRPMFilter.setText(Config.DefaultRPMMinimum);
+            minRPMFilter.setText(Config.DefaultRPMMinimum);
         else if ("maxiat".equals(e.getActionCommand()))
-        	maxIatFilter.setText(Config.DefaultLCIATMaximum);
+            maxIatFilter.setText(Config.DefaultLCIATMaximum);
         else if ("maxafr".equals(e.getActionCommand()))
-        	maxAfrFilter.setText(Config.DefaultLCAfrMaximum);
+            maxAfrFilter.setText(Config.DefaultLCAfrMaximum);
         else if ("minafr".equals(e.getActionCommand()))
-        	minAfrFilter.setText(Config.DefaultLCAfrMinimum);
+            minAfrFilter.setText(Config.DefaultLCAfrMinimum);
         else if ("maxmp".equals(e.getActionCommand()))
-        	maxMPFilter.setText(Config.DefaultMPMaximum);
+            maxMPFilter.setText(Config.DefaultMPMaximum);
         else if ("minmp".equals(e.getActionCommand()))
-        	minMPFilter.setText(Config.DefaultMPMinimum);
+            minMPFilter.setText(Config.DefaultMPMinimum);
         else if ("maxdvdt".equals(e.getActionCommand()))
-        	maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
+            maxDvdtFilter.setText(Config.DefaultDvDtMaximum);
         else if ("minhitcnt".equals(e.getActionCommand()))
-        	minCellHitCountFilter.setText(Config.DefaultLCMinCellHitCount);
+            minCellHitCountFilter.setText(Config.DefaultLCMinCellHitCount);
         else if ("cruisestatus".equals(e.getActionCommand()))
-        	cruiseStatusFilter.setValue(Integer.valueOf(Config.DefaultCruiseStatusValue));
+            cruiseStatusFilter.setValue(Integer.valueOf(Config.DefaultCruiseStatusValue));
         else if ("corrapply".equals(e.getActionCommand()))
-        	correctionAppliedValue.setValue(Integer.valueOf(Config.DefaultCorrectionAppliedValue));
+            correctionAppliedValue.setValue(Integer.valueOf(Config.DefaultCorrectionAppliedValue));
         else if ("atmpress".equals(e.getActionCommand()))
-        	atmPressureFilter.setText(Config.DefaultAtmPressure);
+            atmPressureFilter.setText(Config.DefaultAtmPressure);
         else
-        	return false;
+            return false;
         return true;
     }
 }

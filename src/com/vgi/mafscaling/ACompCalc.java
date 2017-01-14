@@ -67,35 +67,35 @@ import org.jfree.util.ShapeUtilities;
 import org.math.plot.Plot3DPanel;
 
 public abstract class ACompCalc extends FCTabbedPane implements ActionListener, IMafChartHolder {
-	private static final long serialVersionUID = 5944026307547635365L;
-	private static final Logger logger = Logger.getLogger(ACompCalc.class);
-	protected static final String dvdtAxisName = "dV / dt";
+    private static final long serialVersionUID = 5944026307547635365L;
+    private static final Logger logger = Logger.getLogger(ACompCalc.class);
+    protected static final String dvdtAxisName = "dV / dt";
     protected static final String trendDataName = "Trend";
     protected static final int ColumnWidth = 60;
     protected static final int TableWidth = 250;
     protected static final int TableRowCount = 20;
     protected static final int LogDataRowCount = 200;
     protected JScrollPane dataScrollPane = null;
-	protected JTable origTable = null;
-	protected JTable newTable = null;
-	protected JTable corrTable = null;
-	protected JTable corrCountTable = null;
-	protected JTable logDataTable = null;
-	protected JCheckBox compareTableCheckBox = null;
-	protected ButtonGroup rbGroup = null;
-	protected ChartPanel chartPanel = null;
-	protected Plot3DPanel plot3d = null;
-	protected ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
-	protected ArrayList<Double> xAxisArray = null;
-	protected ArrayList<Double> yAxisArray = null;
-	protected ArrayList<ArrayList<Double>> savedNewTable = new ArrayList<ArrayList<Double>>();
-	protected List<XYSeries> corrData = new ArrayList<XYSeries>();
-	protected XYSeries runData = new XYSeries(dvdtAxisName);
-	protected XYSeries trendData = new XYSeries(trendDataName);
-	protected String origTableName;
-	protected String newTableName;
-	protected String corrTableName;
-	protected String corrCountTableName;
+    protected JTable origTable = null;
+    protected JTable newTable = null;
+    protected JTable corrTable = null;
+    protected JTable corrCountTable = null;
+    protected JTable logDataTable = null;
+    protected JCheckBox compareTableCheckBox = null;
+    protected ButtonGroup rbGroup = null;
+    protected ChartPanel chartPanel = null;
+    protected Plot3DPanel plot3d = null;
+    protected ArrayList<ExcelAdapter> excelAdapterList = new ArrayList<ExcelAdapter>();
+    protected ArrayList<Double> xAxisArray = null;
+    protected ArrayList<Double> yAxisArray = null;
+    protected ArrayList<ArrayList<Double>> savedNewTable = new ArrayList<ArrayList<Double>>();
+    protected List<XYSeries> corrData = new ArrayList<XYSeries>();
+    protected XYSeries runData = new XYSeries(dvdtAxisName);
+    protected XYSeries trendData = new XYSeries(trendDataName);
+    protected String origTableName;
+    protected String newTableName;
+    protected String corrTableName;
+    protected String corrCountTableName;
     protected String x3dAxisName;
     protected String y3dAxisName;
     protected String z3dAxisName;
@@ -118,21 +118,21 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected abstract String usage();
     
     protected void selectLogFile() {
-    	fileChooser.setMultiSelectionEnabled(true);
+        fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         loadLogFile();
     }
-	
-	protected void onDroppedFiles(List<File> files) {
-		if (files.size() > 0 && getSelectedIndex() == 0) {
-	    	fileChooser.setMultiSelectionEnabled(true);
+    
+    protected void onDroppedFiles(List<File> files) {
+        if (files.size() > 0 && getSelectedIndex() == 0) {
+            fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setCurrentDirectory(files.get(0));
-			fileChooser.setSelectedFiles((File[])files.toArray());
-			fileChooser.approveSelection();
-			loadLogFile();
-		}
-	}
+            fileChooser.setSelectedFiles((File[])files.toArray());
+            fileChooser.approveSelection();
+            loadLogFile();
+        }
+    }
 
     protected void initialize(String[] logColumns) {
         createDataTab(logColumns);
@@ -209,7 +209,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             
             for (int i = 0; i < columns.length; ++i)
-            	logDataTable.getColumnModel().getColumn(i).setHeaderValue(columns[i]);
+                logDataTable.getColumnModel().getColumn(i).setHeaderValue(columns[i]);
             Utils.initializeTable(logDataTable, ColumnWidth);
 
             
@@ -224,7 +224,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             gbc.gridy = 1;
             panel.add(logDataTable, gbc);
 
-	        ExcelAdapter excelAdapter = new ExcelAdapter();
+            ExcelAdapter excelAdapter = new ExcelAdapter();
             excelAdapter.addTable(logDataTable, true, false);
             excelAdapterList.add(excelAdapter);
     }
@@ -240,13 +240,13 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         plotPanel.setLayout(gbl_plotPanel);
                 
         plot3d = new Plot3DPanel("SOUTH") {
-			private static final long serialVersionUID = 7914951068593204419L;
-			public void addPlotToolBar(String location) {
-				super.addPlotToolBar(location);
-        		super.plotToolBar.remove(7);
-        		super.plotToolBar.remove(5);
-        		super.plotToolBar.remove(4);
-        	}        	
+            private static final long serialVersionUID = 7914951068593204419L;
+            public void addPlotToolBar(String location) {
+                super.addPlotToolBar(location);
+                super.plotToolBar.remove(7);
+                super.plotToolBar.remove(5);
+                super.plotToolBar.remove(4);
+            }            
         };
         plot3d.setAutoBounds();
         plot3d.setAutoscrolls(true);
@@ -277,40 +277,40 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected JTable createDataTable(JPanel panel, String tableName, int gridy, boolean isOriginalTable) {
-    	return createDataTable(panel, tableName, TableRowCount, TableRowCount, 0, gridy, isOriginalTable, true, true);
+        return createDataTable(panel, tableName, TableRowCount, TableRowCount, 0, gridy, isOriginalTable, true, true);
     }
     
     protected JTable createDataTable(JPanel panel, String tableName, int colCount, int gridx, boolean isOriginalTable) {
-    	return createDataTable(panel, tableName, colCount, TableRowCount, gridx, 0, isOriginalTable, true, false);
+        return createDataTable(panel, tableName, colCount, TableRowCount, gridx, 0, isOriginalTable, true, false);
     }
     
     private JTable createDataTable(JPanel panel, String tableName, int colCount, int rowCount, int gridx, int gridy, boolean isOriginalTable, boolean extendRows, boolean extendCols) {
         final JTable table;
         ExcelAdapter excelAdapter;
         if (isOriginalTable) {
-	        table = new JTable() {
-				private static final long serialVersionUID = 3218402382894083287L;
-				public boolean isCellEditable(int row, int column) { return false; };
-	        };
-	        excelAdapter = new ExcelAdapter() {
-	    	    protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
-	    	    	super.onPaste(table, extendRows, extendCols);
-	    	    	validateTable(table);
-	    	    	clearRunTables();
-	    	    }
-	    	};
-	    	excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
+            table = new JTable() {
+                private static final long serialVersionUID = 3218402382894083287L;
+                public boolean isCellEditable(int row, int column) { return false; };
+            };
+            excelAdapter = new ExcelAdapter() {
+                protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+                    super.onPaste(table, extendRows, extendCols);
+                    validateTable(table);
+                    clearRunTables();
+                }
+            };
+            excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
             excelAdapterList.add(excelAdapter);
         }
         else {
-        	table = new JTable() {
-				private static final long serialVersionUID = -3754572906310312568L;
-	        };
-	        excelAdapter = new ExcelAdapter();
-	        excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
+            table = new JTable() {
+                private static final long serialVersionUID = -3754572906310312568L;
+            };
+            excelAdapter = new ExcelAdapter();
+            excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
             excelAdapterList.add(excelAdapter);
         }
-    	DefaultTableColumnModel tableModel = new DefaultTableColumnModel();
+        DefaultTableColumnModel tableModel = new DefaultTableColumnModel();
         final TableColumn tableColumn = new TableColumn(0, (colCount == 1 ? ColumnWidth : TableWidth));
         tableColumn.setHeaderValue(tableName);
         tableModel.addColumn(tableColumn);
@@ -331,26 +331,26 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         table.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-            	tableColumn.setWidth(table.getWidth());
+                tableColumn.setWidth(table.getWidth());
             }
         });
         table.addMouseListener(new MouseAdapter() {
-        	public void mouseReleased(MouseEvent event) {
-        		JTable evenTable =(JTable)event.getSource();
-        		int[] cols = evenTable.getSelectedColumns();
-        		int[] rows = evenTable.getSelectedRows();
-        		int lastColIdx = cols.length - 1;
-        		int lastRowIdx = rows.length - 1;
-        		JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
-        		for (JTable t : tables) {
-        			if (t == null || t == evenTable)
-        				continue;
-        			if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
-        				t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
-        				t.setRowSelectionInterval(rows[0], rows[lastRowIdx]);
-        			}
-        		}
-        	}
+            public void mouseReleased(MouseEvent event) {
+                JTable evenTable =(JTable)event.getSource();
+                int[] cols = evenTable.getSelectedColumns();
+                int[] rows = evenTable.getSelectedRows();
+                int lastColIdx = cols.length - 1;
+                int lastRowIdx = rows.length - 1;
+                JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+                for (JTable t : tables) {
+                    if (t == null || t == evenTable)
+                        continue;
+                    if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
+                        t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
+                        t.setRowSelectionInterval(rows[0], rows[lastRowIdx]);
+                    }
+                }
+            }
         });
         
         table.setName(tableName);
@@ -375,13 +375,13 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         return table;
     }
 
-	protected void createChart(JPanel plotPanel, String xAxisName, String yAxisName) {
+    protected void createChart(JPanel plotPanel, String xAxisName, String yAxisName) {
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         chart.setBorderVisible(true);
 
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
-		chartPanel.setAutoscrolls(true);
-		chartPanel.setMouseZoomable(false);
+        chartPanel.setAutoscrolls(true);
+        chartPanel.setMouseZoomable(false);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
@@ -410,13 +410,13 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         lineRenderer.setSeriesShape(0, ShapeUtilities.createDiamond((float) 2.5));
 
         lineRenderer.setLegendItemLabelGenerator(
-        		new StandardXYSeriesLabelGenerator() {
-					private static final long serialVersionUID = 7593430826693873496L;
-					public String generateLabel(XYDataset dataset, int series) {
-						XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
-						return xys.getDescription();
-					}
-        		}
+                new StandardXYSeriesLabelGenerator() {
+                    private static final long serialVersionUID = 7593430826693873496L;
+                    public String generateLabel(XYDataset dataset, int series) {
+                        XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
+                        return xys.getDescription();
+                    }
+                }
         );
 
         NumberAxis xAxis = new NumberAxis(xAxisName);
@@ -453,10 +453,10 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         legend.setItemFont(new Font("Arial", 0, 10));
         legend.setPosition(RectangleEdge.TOP);
         chart.addLegend(legend);
-	}
+    }
     
     protected void createUsageTab() {
-    	final Desktop desktop = Desktop.getDesktop(); 
+        final Desktop desktop = Desktop.getDesktop(); 
         JTextPane usageTextArea = new JTextPane();
         usageTextArea.setMargin(new Insets(10, 10, 10, 10));
         usageTextArea.setContentType("text/html");
@@ -468,7 +468,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
                     try {
-                    	desktop.browse(new URI(e.getURL().toString()));
+                        desktop.browse(new URI(e.getURL().toString()));
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
@@ -483,7 +483,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         add(textScrollPane, "<html><div style='text-align: center;'>U<br>s<br>a<br>g<br>e</div></html>");
     }
     
-	protected JButton addButton(JPanel panel, int column, String name, String action, int align) {
+    protected JButton addButton(JPanel panel, int column, String name, String action, int align) {
         JButton button = new JButton(name);
         button.setActionCommand(action);
         button.addActionListener(this);
@@ -498,7 +498,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         return button;
     }
 
-	protected void addLabel(JPanel panel, int column, String text) {
+    protected void addLabel(JPanel panel, int column, String text) {
         JLabel label = new JLabel(text);
         GridBagConstraints gbc_label = new GridBagConstraints();
         gbc_label.anchor = GridBagConstraints.EAST;
@@ -508,7 +508,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         panel.add(label, gbc_label);
     }
     
-	protected JComboBox<String> addComboBox(JPanel panel, int column, String[] values) {
+    protected JComboBox<String> addComboBox(JPanel panel, int column, String[] values) {
         JComboBox<String> combo = new JComboBox<String>(values);
         combo.setSelectedIndex(0);
         GridBagConstraints gbc_combo = new GridBagConstraints();
@@ -520,8 +520,8 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         return combo;
     }
     
-	protected JCheckBox addCheckBox(JPanel panel, int column, String name, String action) {
-		JCheckBox check = new JCheckBox(name);
+    protected JCheckBox addCheckBox(JPanel panel, int column, String name, String action) {
+        JCheckBox check = new JCheckBox(name);
         check.setActionCommand(action);
         check.addActionListener(this);
         GridBagConstraints gbc_check = new GridBagConstraints();
@@ -532,8 +532,8 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         return check;
     }
 
-	protected void addRadioButton(JPanel panel, int column, String name, String action) {
-		JRadioButton button = new JRadioButton(name);
+    protected void addRadioButton(JPanel panel, int column, String name, String action) {
+        JRadioButton button = new JRadioButton(name);
         button.setActionCommand(action);
         button.addActionListener(this);
         rbGroup.add(button);
@@ -546,56 +546,56 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected boolean getAxisData() {
-    	try {
-    		if (Utils.isTableEmpty(origTable)) {
+        try {
+            if (Utils.isTableEmpty(origTable)) {
                 JOptionPane.showMessageDialog(null, "PLease paste " + origTable.getName() + " table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
                 return false;
-    		}
-    		xAxisArray = new ArrayList<Double>();
-    		yAxisArray = new ArrayList<Double>();
-	        for (int i = 1; i < origTable.getColumnCount(); ++i)
-	        	xAxisArray.add(Double.valueOf(origTable.getValueAt(0, i).toString()));
-	        for (int i = 1; i < origTable.getRowCount(); ++i)
-	        	yAxisArray.add(Double.valueOf(origTable.getValueAt(i, 0).toString()));
-	        if (xAxisArray.size() > 0 && yAxisArray.size() > 0)
-	        	return true;
-    	}
-    	catch (Exception e) {
+            }
+            xAxisArray = new ArrayList<Double>();
+            yAxisArray = new ArrayList<Double>();
+            for (int i = 1; i < origTable.getColumnCount(); ++i)
+                xAxisArray.add(Double.valueOf(origTable.getValueAt(0, i).toString()));
+            for (int i = 1; i < origTable.getRowCount(); ++i)
+                yAxisArray.add(Double.valueOf(origTable.getValueAt(i, 0).toString()));
+            if (xAxisArray.size() > 0 && yAxisArray.size() > 0)
+                return true;
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, "Invalid value in " + origTable.getName() + " table: " + e, "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
-    	}
-    	return false;
+        }
+        return false;
     }
     
     protected void clearTables() {
-    	clearRunTable(origTable);
-    	clearRunTables();
+        clearRunTable(origTable);
+        clearRunTables();
     }
     
     protected void clearLogDataTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	try {
-	        while (LogDataRowCount < logDataTable.getRowCount())
-	            Utils.removeRow(LogDataRowCount, logDataTable);
-	        Utils.clearTable(logDataTable);
-	        clear2dChartData();
-	        plot3d.removeAllPlots();
-    	}
-    	finally {
+        try {
+            while (LogDataRowCount < logDataTable.getRowCount())
+                Utils.removeRow(LogDataRowCount, logDataTable);
+            Utils.clearTable(logDataTable);
+            clear2dChartData();
+            plot3d.removeAllPlots();
+        }
+        finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    	}
+        }
     }
     
     protected int getLogTableEmptyRow() {
-    	if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return 0;
-    	if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return logDataTable.getRowCount();
-    	for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
-    		if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())
-    			return i + 1;
-    	}
-    	return 0;
+        if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
+            return 0;
+        if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
+            return logDataTable.getRowCount();
+        for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
+            if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())
+                return i + 1;
+        }
+        return 0;
     }
     
     protected boolean validateTable(JTable table) {
@@ -603,7 +603,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             return false;
         // check if table is empty
         if (Utils.isTableEmpty(table))
-        	return true;
+            return true;
         // check paste format
         if (!table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
             ((table.getColumnCount() > 1 || table.getRowCount() > 1) && !((table.getValueAt(0, 0).toString().equals(""))) &&
@@ -617,16 +617,16 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             if (table.getColumnCount() > 1 && table.getValueAt(0, 1).toString().equals("")) {
                 Utils.removeRow(0, table);
                 for (int i = table.getColumnCount() - 2; i >= 0; --i)
-                	table.setValueAt(table.getValueAt(0, i), 0, i + 1);
+                    table.setValueAt(table.getValueAt(0, i), 0, i + 1);
                 table.setValueAt("", 0, 0);
             }
             // paste is probably from excel
             else {
-            	// just blank out the first cell if tabe is 3D
-            	if (table.getColumnCount() > 1)
-            		table.setValueAt("", 0, 0);
-            	else
-            		Utils.removeRow(0, table);
+                // just blank out the first cell if tabe is 3D
+                if (table.getColumnCount() > 1)
+                    table.setValueAt("", 0, 0);
+                else
+                    Utils.removeRow(0, table);
             }
         }
         // remove extra rows
@@ -643,7 +643,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                     continue;
                 val = table.getValueAt(i, j).toString();
                 if (val.equals(""))
-                	table.setValueAt("0", i, j);
+                    table.setValueAt("0", i, j);
                 else if (!Pattern.matches(Utils.fpRegex, val)) {
                     JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
@@ -657,9 +657,9 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected void calculate() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-	    	clearRunTables();
+            clearRunTables();
             if (getAxisData() && processLog())
-            	displayData();
+                displayData();
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -672,135 +672,135 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
 
     protected boolean plotTime2dChartData(String xAxisName, ArrayList<Double> xarr, String yAxisName, ArrayList<Double> yarr) {
-    	clear2dChartData();
-    	if (setXYSeries(runData, xarr, yarr)) {
-	    	double paddingX = runData.getMaxX() * 0.05;
-	    	double paddingY = runData.getMaxY() * 0.05;
-	        XYPlot plot = chartPanel.getChart().getXYPlot();
-	    	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getDomainAxis(0).setLabel(xAxisName);
-	    	plot.getRangeAxis(0).setLabel(yAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, false);
-	        return true;
-    	}
+        clear2dChartData();
+        if (setXYSeries(runData, xarr, yarr)) {
+            double paddingX = runData.getMaxX() * 0.05;
+            double paddingY = runData.getMaxY() * 0.05;
+            XYPlot plot = chartPanel.getChart().getXYPlot();
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getDomainAxis(0).setLabel(xAxisName);
+            plot.getRangeAxis(0).setLabel(yAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, false);
+            return true;
+        }
         return false;
     }
 
     protected boolean plotRel2dChartData(String xAxisName, ArrayList<Double> xarr, String yAxisName, ArrayList<Double> yarr) {
-    	clear2dChartData();
+        clear2dChartData();
         if (setXYSeries(runData, xarr, yarr)) {
-	        double[] ols = Regression.getOLSRegression(chartPanel.getChart().getXYPlot().getDataset(1), 0);
-	        Function2D curve = new LineFunction2D(ols[0], ols[1]);
-	        trendData.clear();
-	        trendData.add(runData.getMinX(), curve.getValue(runData.getMinX()));
-	        trendData.add(runData.getMaxX(), curve.getValue(runData.getMaxX()));
-	        double paddingX = runData.getMaxX() * 0.05;
-	        double paddingY = runData.getMaxY() * 0.05;
-	        XYPlot plot = chartPanel.getChart().getXYPlot();
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getDomainAxis(0).setLabel(xAxisName);
-	    	plot.getRangeAxis(0).setLabel(yAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, true);
-	        return true;
+            double[] ols = Regression.getOLSRegression(chartPanel.getChart().getXYPlot().getDataset(1), 0);
+            Function2D curve = new LineFunction2D(ols[0], ols[1]);
+            trendData.clear();
+            trendData.add(runData.getMinX(), curve.getValue(runData.getMinX()));
+            trendData.add(runData.getMaxX(), curve.getValue(runData.getMaxX()));
+            double paddingX = runData.getMaxX() * 0.05;
+            double paddingY = runData.getMaxY() * 0.05;
+            XYPlot plot = chartPanel.getChart().getXYPlot();
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getDomainAxis(0).setLabel(xAxisName);
+            plot.getRangeAxis(0).setLabel(yAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, true);
+            return true;
         }
         return false;
     }
 
     protected boolean plotCorrectionData(String xAxisName, String yAxisName) {
-    	XYSeries series;
+        XYSeries series;
         runData.clear();
         trendData.clear();
         clear2dChartData();
         XYPlot plot = chartPanel.getChart().getXYPlot();
-    	XYSeriesCollection lineDataset = (XYSeriesCollection) plot.getDataset(0);
-    	DecimalFormat df = new DecimalFormat(".00");
-    	String val;
-    	int i = 0;
-    	int j = 0;
-    	if (!Utils.isTableEmpty(corrTable)) {
-    		try {
-		    	for (i = 1; i < corrTable.getColumnCount(); ++i) {
-		    		val = corrTable.getValueAt(0, i).toString();
-		    		series = new XYSeries(df.format(Double.valueOf(val)));
-		    		for (j = 1; j < corrTable.getRowCount(); ++j) { 
-		    			if (corrTable.getValueAt(j, i) != null) {
-		    				val = corrTable.getValueAt(j, i).toString();
-		    				if (!val.isEmpty())
-		    					series.add(Double.valueOf(corrTable.getValueAt(j, 0).toString()), Double.valueOf(val));
-		    			}
-		    		}
-		    		if (series.getItemCount() > 0) {
-		    			corrData.add(series);
-		    			series.setDescription(series.getKey().toString());
-		    	        lineDataset.addSeries(series);
-		    		}
-		    	}
-		    	plot.getDomainAxis(0).setAutoRange(true);
-		    	plot.getRangeAxis(0).setAutoRange(true);
-		    	plot.getDomainAxis(0).setLabel(xAxisName);
-		    	plot.getRangeAxis(0).setLabel(yAxisName);
-		        plot.getRenderer(0).setSeriesVisible(0, false);
+        XYSeriesCollection lineDataset = (XYSeriesCollection) plot.getDataset(0);
+        DecimalFormat df = new DecimalFormat(".00");
+        String val;
+        int i = 0;
+        int j = 0;
+        if (!Utils.isTableEmpty(corrTable)) {
+            try {
+                for (i = 1; i < corrTable.getColumnCount(); ++i) {
+                    val = corrTable.getValueAt(0, i).toString();
+                    series = new XYSeries(df.format(Double.valueOf(val)));
+                    for (j = 1; j < corrTable.getRowCount(); ++j) { 
+                        if (corrTable.getValueAt(j, i) != null) {
+                            val = corrTable.getValueAt(j, i).toString();
+                            if (!val.isEmpty())
+                                series.add(Double.valueOf(corrTable.getValueAt(j, 0).toString()), Double.valueOf(val));
+                        }
+                    }
+                    if (series.getItemCount() > 0) {
+                        corrData.add(series);
+                        series.setDescription(series.getKey().toString());
+                        lineDataset.addSeries(series);
+                    }
+                }
+                plot.getDomainAxis(0).setAutoRange(true);
+                plot.getRangeAxis(0).setAutoRange(true);
+                plot.getDomainAxis(0).setLabel(xAxisName);
+                plot.getRangeAxis(0).setLabel(yAxisName);
+                plot.getRenderer(0).setSeriesVisible(0, false);
             }
             catch (NumberFormatException e) {
                 logger.error(e);
                 JOptionPane.showMessageDialog(null, "Error parsing number from " + corrTable.getName() + " table, cell(" + i + " : " + j + "): " + e, "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-    	}
+        }
         return true;
     }
     
     protected void plot3dCorrection() {
         plot3d.removeAllPlots();
-    	if (!Utils.isTableEmpty(corrTable)) {
-    		try {
-		        double[] x = new double[xAxisArray.size()];
-		        int i = 0;
-		        for (i = 0; i < xAxisArray.size(); ++i)
-		        	x[i] = xAxisArray.get(i);
-		        double[] y = new double[yAxisArray.size()];
-		        for (i = 0; i < yAxisArray.size(); ++i)
-		        	y[i] = yAxisArray.get(i);
-		        double[][] z = Utils.doubleZArray(corrTable, x, y);
-		        Color[][] tableColors = Utils.generateTableColorMatrix(corrTable, 1, 1, y.length + 1, x.length + 1);
-		        Color[][] colors = new Color[y.length][x.length];
-		        for (int j = 1; j < tableColors.length; ++j)
-			        for (i = 1; i < tableColors[j].length; ++i)
-			        	colors[j - 1][i - 1] = tableColors[j][i];		        
-		        plot3d.addGridPlot("Average Error % Plot", colors, x, y, z);
+        if (!Utils.isTableEmpty(corrTable)) {
+            try {
+                double[] x = new double[xAxisArray.size()];
+                int i = 0;
+                for (i = 0; i < xAxisArray.size(); ++i)
+                    x[i] = xAxisArray.get(i);
+                double[] y = new double[yAxisArray.size()];
+                for (i = 0; i < yAxisArray.size(); ++i)
+                    y[i] = yAxisArray.get(i);
+                double[][] z = Utils.doubleZArray(corrTable, x, y);
+                Color[][] tableColors = Utils.generateTableColorMatrix(corrTable, 1, 1, y.length + 1, x.length + 1);
+                Color[][] colors = new Color[y.length][x.length];
+                for (int j = 1; j < tableColors.length; ++j)
+                    for (i = 1; i < tableColors[j].length; ++i)
+                        colors[j - 1][i - 1] = tableColors[j][i];                
+                plot3d.addGridPlot("Average Error % Plot", colors, x, y, z);
             }
             catch (Exception e) {
                 logger.error(e);
                 JOptionPane.showMessageDialog(null, "Error: " + e, "Error", JOptionPane.ERROR_MESSAGE);
             }
-    	}
+        }
     }
     
     protected void clearRunTables() {
-    	clearRunTable(newTable);
-    	clearRunTable(corrTable);
-    	clearRunTable(corrCountTable);
-    	savedNewTable.clear();
-    	compareTableCheckBox.setSelected(false);
+        clearRunTable(newTable);
+        clearRunTable(corrTable);
+        clearRunTable(corrCountTable);
+        savedNewTable.clear();
+        compareTableCheckBox.setSelected(false);
     }
     
     protected void clearRunTable(JTable table) {
         if (table == origTable)
-        	table.setModel(new DefaultTableModel(newTable.getRowCount(), newTable.getColumnCount()));
+            table.setModel(new DefaultTableModel(newTable.getRowCount(), newTable.getColumnCount()));
         else
-        	table.setModel(new DefaultTableModel(origTable.getRowCount(), origTable.getColumnCount()));
+            table.setModel(new DefaultTableModel(origTable.getRowCount(), origTable.getColumnCount()));
         Utils.initializeTable(table, ColumnWidth);
         formatTable(table);
     }
 
     protected void clear2dChartData() {
         XYPlot plot = chartPanel.getChart().getXYPlot();
-    	XYSeriesCollection lineDataset = (XYSeriesCollection) plot.getDataset(0);
-    	for (XYSeries series : corrData)
-    		lineDataset.removeSeries(series);
-    	corrData.clear();
+        XYSeriesCollection lineDataset = (XYSeriesCollection) plot.getDataset(0);
+        for (XYSeries series : corrData)
+            lineDataset.removeSeries(series);
+        corrData.clear();
     }
 
     protected boolean setXYSeries(XYSeries series, ArrayList<Double> xarr, ArrayList<Double> yarr) {
@@ -814,46 +814,46 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected boolean setCompareTables() {
-    	if (origTable.getColumnCount() != newTable.getColumnCount() || origTable.getRowCount() != newTable.getRowCount())
-    		return false;
-    	ArrayList<Double> row;
-    	double v1, v2;
-    	Utils.clearTableColors(newTable);
-    	savedNewTable.clear();
-    	for (int i = 1; i < origTable.getRowCount(); ++i) {
-    		row = new ArrayList<Double>();
-    		savedNewTable.add(row);
-    		for (int j = 1; j < origTable.getColumnCount(); ++j) {
-    			try {
-    				v1 = Double.valueOf(origTable.getValueAt(i, j).toString());
-    				v2 = Double.valueOf(newTable.getValueAt(i, j).toString());
-    				row.add(v2);
-    				v2 = v2 - v1;
-    				if (v2 == 0)
-        				newTable.setValueAt("", i, j);
-    				else
-    					newTable.setValueAt(v2, i, j);
-    			}
-    			catch (Exception e) {
-    				unsetCompareTables();
-    				return false;
-    			}
-    		}
-    	}
-    	Utils.colorTable(newTable);
-    	return true;
+        if (origTable.getColumnCount() != newTable.getColumnCount() || origTable.getRowCount() != newTable.getRowCount())
+            return false;
+        ArrayList<Double> row;
+        double v1, v2;
+        Utils.clearTableColors(newTable);
+        savedNewTable.clear();
+        for (int i = 1; i < origTable.getRowCount(); ++i) {
+            row = new ArrayList<Double>();
+            savedNewTable.add(row);
+            for (int j = 1; j < origTable.getColumnCount(); ++j) {
+                try {
+                    v1 = Double.valueOf(origTable.getValueAt(i, j).toString());
+                    v2 = Double.valueOf(newTable.getValueAt(i, j).toString());
+                    row.add(v2);
+                    v2 = v2 - v1;
+                    if (v2 == 0)
+                        newTable.setValueAt("", i, j);
+                    else
+                        newTable.setValueAt(v2, i, j);
+                }
+                catch (Exception e) {
+                    unsetCompareTables();
+                    return false;
+                }
+            }
+        }
+        Utils.colorTable(newTable);
+        return true;
     }
     
     protected void unsetCompareTables() {
-    	Utils.clearTableColors(newTable);
-    	ArrayList<Double> row;
-    	for (int i = 0; i < savedNewTable.size(); ++i) {
-    		row = savedNewTable.get(i);
-    		for (int j = 0; j < row.size(); ++j)
-    			newTable.setValueAt(row.get(j), i + 1, j + 1);
-    	}
-    	Utils.colorTable(newTable);
-    	savedNewTable.clear();
+        Utils.clearTableColors(newTable);
+        ArrayList<Double> row;
+        for (int i = 0; i < savedNewTable.size(); ++i) {
+            row = savedNewTable.get(i);
+            for (int j = 0; j < row.size(); ++j)
+                newTable.setValueAt(row.get(j), i + 1, j + 1);
+        }
+        Utils.colorTable(newTable);
+        savedNewTable.clear();
     }
 
     protected boolean checkActionPerformed(ActionEvent e) {
@@ -869,34 +869,34 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             clearTables();
         }
         else if ("go".equals(e.getActionCommand())) {
-        	calculate();
+            calculate();
         }
         else if ("loadlog".equals(e.getActionCommand())) {
             selectLogFile();
         }
         else if ("hidelogtable".equals(e.getActionCommand())) {
-        	JCheckBox checkBox = (JCheckBox)e.getSource();
-        	if (checkBox.isSelected())
-        		dataScrollPane.setVisible(false);
-        	else
-        		dataScrollPane.setVisible(true);
-        	fireStateChanged();
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected())
+                dataScrollPane.setVisible(false);
+            else
+                dataScrollPane.setVisible(true);
+            fireStateChanged();
         }
         else if ("comparetables".equals(e.getActionCommand())) {
-        	JCheckBox checkBox = (JCheckBox)e.getSource();
-        	if (checkBox.isSelected()) {
-        		if (!setCompareTables())
-        			checkBox.setSelected(false);
-        	}
-        	else
-        		unsetCompareTables();
-        	fireStateChanged();
+            JCheckBox checkBox = (JCheckBox)e.getSource();
+            if (checkBox.isSelected()) {
+                if (!setCompareTables())
+                    checkBox.setSelected(false);
+            }
+            else
+                unsetCompareTables();
+            fireStateChanged();
         }
         else
-        	return false;
+            return false;
         return true;
     }
     
-	public void onMovePoint(int itemIndex, double valueX, double valueY) {
-	}
+    public void onMovePoint(int itemIndex, double valueX, double valueY) {
+    }
 }

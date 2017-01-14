@@ -53,10 +53,10 @@ import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
 public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolder, ActionListener {
-	private static final long serialVersionUID = -1494227355521802829L;
-	protected static final int ColumnWidth = 55;
-	protected static final String MafTableName = "Current MAF Scaling";
-	protected static final String currentDataName = "Current";
+    private static final long serialVersionUID = -1494227355521802829L;
+    protected static final int ColumnWidth = 55;
+    protected static final String MafTableName = "Current MAF Scaling";
+    protected static final String currentDataName = "Current";
     protected static final String correctedDataName = "Corrected";
     protected static final String smoothedDataName = "Smoothed";
     protected static final String mafCurveDataName = "Smoothed Maf Curve";
@@ -64,12 +64,12 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     protected static final String smoothedSlopeDataName = "Smoothed Maf Slope";
     protected static final String XAxisName = "MAF Sensor (Voltage)";
     protected static final String Y1AxisName = "Mass Airflow (g/s)";
-	protected final ExcelAdapter excelAdapter = new ExcelAdapter();
-	protected PrimaryOpenLoopFuelingTable polfTable = null;
-	protected MafCompare mafCompare = null;
-	protected MafChartPanel mafChartPanel = null;
-	protected JTable mafTable = null;
-	protected JTable mafSmoothingTable = null;
+    protected final ExcelAdapter excelAdapter = new ExcelAdapter();
+    protected PrimaryOpenLoopFuelingTable polfTable = null;
+    protected MafCompare mafCompare = null;
+    protected MafChartPanel mafChartPanel = null;
+    protected JTable mafTable = null;
+    protected JTable mafSmoothingTable = null;
     protected JCheckBox checkBoxSmoothing = null;
     protected JComboBox<String> smoothComboBox = null;
     protected JCheckBox checkBoxCurrentMaf = null;
@@ -100,8 +100,8 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
 
     public AMafScaling(int tabPlacement, PrimaryOpenLoopFuelingTable table, MafCompare comparer) {
         super(tabPlacement);
-    	polfTable = table;
-    	mafCompare = comparer;
+        polfTable = table;
+        mafCompare = comparer;
     }
     
     protected void initialize() {
@@ -122,21 +122,21 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     protected abstract String usage();
     
     protected void selectLogFile() {
-    	fileChooser.setMultiSelectionEnabled(true);
+        fileChooser.setMultiSelectionEnabled(true);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         loadLogFile();
     }
-	
-	protected void onDroppedFiles(List<File> files) {
-		if (files.size() > 0 && getSelectedIndex() == 0) {
-	    	fileChooser.setMultiSelectionEnabled(true);
+    
+    protected void onDroppedFiles(List<File> files) {
+        if (files.size() > 0 && getSelectedIndex() == 0) {
+            fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setCurrentDirectory(files.get(0));
-			fileChooser.setSelectedFiles((File[])files.toArray());
-			fileChooser.approveSelection();
-			loadLogFile();
-		}
-	}
+            fileChooser.setSelectedFiles((File[])files.toArray());
+            fileChooser.approveSelection();
+            loadLogFile();
+        }
+    }
 
     
     protected void createDataTab() {
@@ -155,69 +155,69 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         createRunPanel(dataPanel);
     }
     
-	protected void createControlPanel(JPanel dataPanel) {
-	    JPanel cntlPanel = new JPanel();
-	    GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
-	    gbl_ctrlPanel.insets = insets3;
-	    gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
-	    gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
-	    gbl_ctrlPanel.gridx = 0;
-	    gbl_ctrlPanel.gridy = 0;
-	    dataPanel.add(cntlPanel, gbl_ctrlPanel);
-	    
-	    GridBagLayout gbl_cntlPanel = new GridBagLayout();
-	    gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
-	    gbl_cntlPanel.rowHeights = new int[]{0, 0};
-	    gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-	    gbl_cntlPanel.rowWeights = new double[]{0};
-	    cntlPanel.setLayout(gbl_cntlPanel);
-	    
-	    addButton(cntlPanel, 0, "Clear Maf Data", "clearmaf", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 1, "Clear Run Data", "clearrun", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 2, "Clear All", "clearall", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 3, "Load", "load", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 4, "Save", "save", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 5, "GO", "go", GridBagConstraints.EAST);
-	}
+    protected void createControlPanel(JPanel dataPanel) {
+        JPanel cntlPanel = new JPanel();
+        GridBagConstraints gbl_ctrlPanel = new GridBagConstraints();
+        gbl_ctrlPanel.insets = insets3;
+        gbl_ctrlPanel.anchor = GridBagConstraints.NORTH;
+        gbl_ctrlPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbl_ctrlPanel.gridx = 0;
+        gbl_ctrlPanel.gridy = 0;
+        dataPanel.add(cntlPanel, gbl_ctrlPanel);
+        
+        GridBagLayout gbl_cntlPanel = new GridBagLayout();
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.rowHeights = new int[]{0, 0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.rowWeights = new double[]{0};
+        cntlPanel.setLayout(gbl_cntlPanel);
+        
+        addButton(cntlPanel, 0, "Clear Maf Data", "clearmaf", GridBagConstraints.WEST);
+        addButton(cntlPanel, 1, "Clear Run Data", "clearrun", GridBagConstraints.WEST);
+        addButton(cntlPanel, 2, "Clear All", "clearall", GridBagConstraints.WEST);
+        addButton(cntlPanel, 3, "Load", "load", GridBagConstraints.WEST);
+        addButton(cntlPanel, 4, "Save", "save", GridBagConstraints.WEST);
+        addButton(cntlPanel, 5, "GO", "go", GridBagConstraints.EAST);
+    }
     
-	protected void createMafPanel(JPanel dataPanel) {
-		MafTablePane mafScrollPane = new MafTablePane(ColumnWidth, MafTableName, true, true);
-		mafTable = mafScrollPane.getJTable();
-	    excelAdapter.addTable(mafTable, false, false, false, false, false, false, false, false, true);
-	    GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
-	    gbc_mafScrollPane.ipady = 30;
-	    gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
-	    gbc_mafScrollPane.insets = insets0;
-	    gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
-	    gbc_mafScrollPane.gridx = 0;
-	    gbc_mafScrollPane.gridy = 1;
-	    dataPanel.add(mafScrollPane, gbc_mafScrollPane);
-	}
+    protected void createMafPanel(JPanel dataPanel) {
+        MafTablePane mafScrollPane = new MafTablePane(ColumnWidth, MafTableName, true, true);
+        mafTable = mafScrollPane.getJTable();
+        excelAdapter.addTable(mafTable, false, false, false, false, false, false, false, false, true);
+        GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
+        gbc_mafScrollPane.ipady = 30;
+        gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafScrollPane.insets = insets0;
+        gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_mafScrollPane.gridx = 0;
+        gbc_mafScrollPane.gridy = 1;
+        dataPanel.add(mafScrollPane, gbc_mafScrollPane);
+    }
     
-	protected void createRunControlPanel(JPanel dataPanel) {
-	    JPanel dataRunButtonPanel = new JPanel();
-	    dataRunButtonPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
-	    GridBagConstraints gbc_dataRunButtonPanel = new GridBagConstraints();
-	    gbc_dataRunButtonPanel.anchor = GridBagConstraints.PAGE_START;
-	    gbc_dataRunButtonPanel.weightx = 1.0;
-	    gbc_dataRunButtonPanel.insets = insets0;
-	    gbc_dataRunButtonPanel.fill = GridBagConstraints.HORIZONTAL;
-	    gbc_dataRunButtonPanel.gridx = 0;
-	    gbc_dataRunButtonPanel.gridy = 2;
-	    dataPanel.add(dataRunButtonPanel, gbc_dataRunButtonPanel);
-	
-	    GridBagLayout gbl_dataRunButtonPanel = new GridBagLayout();
-	    gbl_dataRunButtonPanel.columnWidths = new int[]{0, 0};
-	    gbl_dataRunButtonPanel.rowHeights = new int[]{0, 0};
-	    gbl_dataRunButtonPanel.columnWeights = new double[]{0.0, 1.0};
-	    gbl_dataRunButtonPanel.rowWeights = new double[]{0};
-	    dataRunButtonPanel.setLayout(gbl_dataRunButtonPanel);
-	
-	    addButton(dataRunButtonPanel, 0, "POL Fueling", "fueling", GridBagConstraints.WEST);
-	    addButton(dataRunButtonPanel, 1, "Load Log", "loadlog", GridBagConstraints.WEST);
-	}
-	
-	protected JPanel createGraphPlotPanel(JPanel cntlPanel) {
+    protected void createRunControlPanel(JPanel dataPanel) {
+        JPanel dataRunButtonPanel = new JPanel();
+        dataRunButtonPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
+        GridBagConstraints gbc_dataRunButtonPanel = new GridBagConstraints();
+        gbc_dataRunButtonPanel.anchor = GridBagConstraints.PAGE_START;
+        gbc_dataRunButtonPanel.weightx = 1.0;
+        gbc_dataRunButtonPanel.insets = insets0;
+        gbc_dataRunButtonPanel.fill = GridBagConstraints.HORIZONTAL;
+        gbc_dataRunButtonPanel.gridx = 0;
+        gbc_dataRunButtonPanel.gridy = 2;
+        dataPanel.add(dataRunButtonPanel, gbc_dataRunButtonPanel);
+    
+        GridBagLayout gbl_dataRunButtonPanel = new GridBagLayout();
+        gbl_dataRunButtonPanel.columnWidths = new int[]{0, 0};
+        gbl_dataRunButtonPanel.rowHeights = new int[]{0, 0};
+        gbl_dataRunButtonPanel.columnWeights = new double[]{0.0, 1.0};
+        gbl_dataRunButtonPanel.rowWeights = new double[]{0};
+        dataRunButtonPanel.setLayout(gbl_dataRunButtonPanel);
+    
+        addButton(dataRunButtonPanel, 0, "POL Fueling", "fueling", GridBagConstraints.WEST);
+        addButton(dataRunButtonPanel, 1, "Load Log", "loadlog", GridBagConstraints.WEST);
+    }
+    
+    protected JPanel createGraphPlotPanel(JPanel cntlPanel) {
         JPanel plotPanel = new JPanel();
         GridBagLayout gbl_plotPanel = new GridBagLayout();
         gbl_plotPanel.columnWidths = new int[] {0};
@@ -235,9 +235,9 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         gbl_ctrlPanel.gridy = 0;
         plotPanel.add(cntlPanel, gbl_ctrlPanel);
         return plotPanel;
-	}
-	
-	protected void createChart(JPanel plotPanel, String y2AxisName) {
+    }
+    
+    protected void createChart(JPanel plotPanel, String y2AxisName) {
         JFreeChart chart = ChartFactory.createScatterPlot(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         chart.setBorderVisible(true);
         mafChartPanel = new MafChartPanel(chart, this);
@@ -276,13 +276,13 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         mafChartPanel.enablePointsDrag(0);
 
         lineRenderer.setLegendItemLabelGenerator(
-        		new StandardXYSeriesLabelGenerator() {
-					private static final long serialVersionUID = 7593430826693873496L;
-					public String generateLabel(XYDataset dataset, int series) {
-						XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
-						return xys.getDescription();
-					}
-        		}
+                new StandardXYSeriesLabelGenerator() {
+                    private static final long serialVersionUID = 7593430826693873496L;
+                    public String generateLabel(XYDataset dataset, int series) {
+                        XYSeries xys = ((XYSeriesCollection)dataset).getSeries(series);
+                        return xys.getDescription();
+                    }
+                }
         );
 
         ValueAxis mafvDomain = new NumberAxis(XAxisName);
@@ -324,8 +324,8 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         legend.setItemFont(new Font("Arial", 0, 10));
         legend.setPosition(RectangleEdge.TOP);
         chart.addLegend(legend);
-	}
-	
+    }
+    
     protected void createGraphCommonControls(JPanel cntlPanel, int column) {
         checkBoxCurrentMaf = addCheckBox(cntlPanel, column, "Current", "current");
         checkBoxCorrectedMaf = addCheckBox(cntlPanel, ++column, "Corrected", "corrected");
@@ -334,7 +334,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         checkBoxSmoothing = addCheckBox(cntlPanel, ++column, "Smoothing:", "smoothing");
         smoothComboBox = addComboBox(cntlPanel, ++column, new String[]{ " 3 ", " 5 ", " 7 " });
         btnSmoothButton = addButton(cntlPanel, ++column, "Apply", "smooth", GridBagConstraints.WEST);
-	    addButton(cntlPanel, ++column, "Reset", "smoothreset", GridBagConstraints.WEST);
+        addButton(cntlPanel, ++column, "Reset", "smoothreset", GridBagConstraints.WEST);
     }
 
     protected void createMafSmoothingPanel(JPanel plotPanel) {
@@ -377,7 +377,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
 
         UIDefaults nimbusInsets = new UIDefaults();
         nimbusInsets.put("Button.contentMargins", insets3);
-    	
+        
         btnPlusButton = new JButton("<html><div style='text-align: center; font-weight: bold;'>+</div></html>");
         btnPlusButton.setActionCommand("plus");
         btnPlusButton.addActionListener(this);
@@ -398,9 +398,9 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         gbc_ctrl.gridy++;
         mafSmoothingPanel.add(btnMinusButton, gbc_ctrl);
 
-		MafTablePane mafSmoothingPane = new MafTablePane(ColumnWidth, null, false, false);
-		mafSmoothingPane.hideRowHeaders();
-		mafSmoothingTable = mafSmoothingPane.getJTable();
+        MafTablePane mafSmoothingPane = new MafTablePane(ColumnWidth, null, false, false);
+        mafSmoothingPane.hideRowHeaders();
+        mafSmoothingTable = mafSmoothingPane.getJTable();
         excelAdapter.addTable(mafSmoothingTable, false, true, true, false, false, true, false, false, true);
         
         GridBagConstraints gbc_mafSmoothingPane = new GridBagConstraints();
@@ -418,9 +418,9 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         mafIncDecTextField.setVisible(false);
         btnPlusButton.setVisible(false);
         btnMinusButton.setVisible(false);
-	}
+    }
     
-	protected JButton addButton(JPanel panel, int column, String name, String action, int align) {
+    protected JButton addButton(JPanel panel, int column, String name, String action, int align) {
         JButton button = new JButton(name);
         button.setActionCommand(action);
         button.addActionListener(this);
@@ -435,8 +435,8 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         return button;
     }
     
-	protected JCheckBox addCheckBox(JPanel panel, int column, String name, String action) {
-		JCheckBox check = new JCheckBox(name);
+    protected JCheckBox addCheckBox(JPanel panel, int column, String name, String action) {
+        JCheckBox check = new JCheckBox(name);
         check.setActionCommand(action);
         check.addActionListener(this);
         GridBagConstraints gbc_check = new GridBagConstraints();
@@ -447,7 +447,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         return check;
     }
     
-	protected JComboBox<String> addComboBox(JPanel panel, int column, String[] values) {
+    protected JComboBox<String> addComboBox(JPanel panel, int column, String[] values) {
         JComboBox<String> combo = new JComboBox<String>(values);
         combo.setSelectedIndex(0);
         combo.setEnabled(false);
@@ -460,7 +460,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         return combo;
     }
 
-	protected boolean getMafTableData(ArrayList<Double> voltArray, ArrayList<Double> gsArray) {
+    protected boolean getMafTableData(ArrayList<Double> voltArray, ArrayList<Double> gsArray) {
         String value;
         for (int i = 0; i < mafTable.getColumnCount(); ++i) {
             for (int j = 0; j < mafTable.getRowCount(); ++j) {
@@ -480,56 +480,56 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         return true;
     }
     
-	protected void clearMafTable() {
+    protected void clearMafTable() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	try {
-	        while (MafTablePane.MafTableColumnCount < mafTable.getColumnCount())
-	            Utils.removeColumn(MafTablePane.MafTableColumnCount, mafTable);
-	        Utils.clearTable(mafTable);
-    	}
-    	finally {
+        try {
+            while (MafTablePane.MafTableColumnCount < mafTable.getColumnCount())
+                Utils.removeColumn(MafTablePane.MafTableColumnCount, mafTable);
+            Utils.clearTable(mafTable);
+        }
+        finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    	}
+        }
     }
-	
+    
 
     
-	protected void clearData() {
-    	mafvArray.clear();
-    	rpmArray.clear();
+    protected void clearData() {
+        mafvArray.clear();
+        rpmArray.clear();
         voltArray.clear();
         gsArray.clear();
         gsCorrected.clear();
         smoothGsArray.clear();
     }
     
-	protected void clearNotRunDataCheckboxes() {
-    	if (checkBoxRunData.isSelected()) {
-    		checkBoxRunData.setSelected(false);
-    		runData.clear();
-    	}
-    	if (checkBoxCurrentMaf.isSelected()) {
-    		checkBoxCurrentMaf.setSelected(false);
-    		currMafData.clear();
-    	}
-    	if (checkBoxCorrectedMaf.isSelected()) {
-    		checkBoxCorrectedMaf.setSelected(false);
-    		corrMafData.clear();
-    	}
-    	if (checkBoxSmoothedMaf.isSelected()) {
-    		checkBoxSmoothedMaf.setSelected(false);
-    		smoothMafData.clear();
-    	}
+    protected void clearNotRunDataCheckboxes() {
+        if (checkBoxRunData.isSelected()) {
+            checkBoxRunData.setSelected(false);
+            runData.clear();
+        }
+        if (checkBoxCurrentMaf.isSelected()) {
+            checkBoxCurrentMaf.setSelected(false);
+            currMafData.clear();
+        }
+        if (checkBoxCorrectedMaf.isSelected()) {
+            checkBoxCorrectedMaf.setSelected(false);
+            corrMafData.clear();
+        }
+        if (checkBoxSmoothedMaf.isSelected()) {
+            checkBoxSmoothedMaf.setSelected(false);
+            smoothMafData.clear();
+        }
     }
     
-	protected void clearChartCheckBoxes() {
+    protected void clearChartCheckBoxes() {
         checkBoxRunData.setSelected(false);
         checkBoxCurrentMaf.setSelected(false);
         checkBoxCorrectedMaf.setSelected(false);
         checkBoxSmoothedMaf.setSelected(false);
     }
-	
-	protected void enableSmoothingView(boolean flag) {
+    
+    protected void enableSmoothingView(boolean flag) {
         if (smoothGsArray.size() == 0) {
             checkBoxSmoothing.setSelected(false);
             return;
@@ -545,7 +545,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         if (flag == true) {
             lblMafIncDec.setVisible(true);
             mafIncDecTextField.setVisible(true);
-        	btnPlusButton.setVisible(true);
+            btnPlusButton.setVisible(true);
             btnMinusButton.setVisible(true);
             setCorrectedMafData();
             plotSmoothingLineSlopes();
@@ -556,7 +556,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         else {
             lblMafIncDec.setVisible(false);
             mafIncDecTextField.setVisible(false);
-        	btnPlusButton.setVisible(false);
+            btnPlusButton.setVisible(false);
             btnMinusButton.setVisible(false);
             currMafData.setDescription(currentDataName);
             corrMafData.setDescription(correctedDataName);
@@ -564,7 +564,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         }
     }
     
-	protected void clearChartData() {
+    protected void clearChartData() {
         runData.clear();
         currMafData.clear();
         corrMafData.clear();
@@ -576,18 +576,18 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             return;
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-	        smoothGsArray.clear();
-	        smoothGsArray.addAll(gsCorrected);
-	        setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
-	        corrMafData.clear();
-	        onSmoothReset();
+            smoothGsArray.clear();
+            smoothGsArray.addAll(gsCorrected);
+            setXYTable(mafSmoothingTable, voltArray, smoothGsArray);
+            corrMafData.clear();
+            onSmoothReset();
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
     
-	protected void changeMafSmoothingCellValue(boolean add) {
+    protected void changeMafSmoothingCellValue(boolean add) {
         if (!Pattern.matches(Utils.fpRegex, mafIncDecTextField.getText())) {
             JOptionPane.showMessageDialog(null, "Invalid Maf Scaling increment/decrement value", "Invalid value", JOptionPane.ERROR_MESSAGE);
             return;
@@ -647,7 +647,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     }
     
     protected void createUsageTab() {
-    	final Desktop desktop = Desktop.getDesktop();
+        final Desktop desktop = Desktop.getDesktop();
         JTextPane  usageTextArea = new JTextPane();
         usageTextArea.setMargin(new Insets(10, 10, 10, 10));
         usageTextArea.setContentType("text/html");
@@ -659,7 +659,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
                     try {
-                    	desktop.browse(new URI(e.getURL().toString()));
+                        desktop.browse(new URI(e.getURL().toString()));
                     } catch (Exception e1) {
                         e1.printStackTrace();
                     }
@@ -707,43 +707,43 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         int start = cols[0];
         int end = cols[cols.length - 1];
         try {
-	        int movWind;
-	        int i;
-	        ArrayList<Double> tmpArray = new ArrayList<Double>();
-	        if (degree == 3) {
-	            movWind = 1;
-	            for (i = movWind + start; i + movWind <= end; ++i)
-	                tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
-	                             0.5  * smoothGsArray.get(i) + 
-	                             0.25 * smoothGsArray.get(i + 1));
-	            for (i = 0; i < tmpArray.size(); ++i)
-	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-	        }
-	        if (degree == 5) {
-	            movWind = 2;
-	            for (i = movWind + start; i + movWind <= end; ++i)
-	                tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
-	                             0.2 * smoothGsArray.get(i - 1) + 
-	                             0.4 * smoothGsArray.get(i) + 
-	                             0.2 * smoothGsArray.get(i + 1) +
-	                             0.1 * smoothGsArray.get(i + 2));
-	            for (i = 0; i < tmpArray.size(); ++i)
-	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-	        }
-	        if (degree == 7) {
-	            movWind = 3;
-	            for (i = movWind + start; i + movWind <= end; ++i)
-	                tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
-	                             0.1  * smoothGsArray.get(i - 2) + 
-	                             0.15 * smoothGsArray.get(i - 1) + 
-	                             0.4  * smoothGsArray.get(i) + 
-	                             0.15 * smoothGsArray.get(i + 1) +
-	                             0.1  * smoothGsArray.get(i + 2) +
-	                             0.05 * smoothGsArray.get(i + 3));
-	            for (i = 0; i < tmpArray.size(); ++i)
-	                smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-	        }
-	        plotSmoothingLineSlopes();
+            int movWind;
+            int i;
+            ArrayList<Double> tmpArray = new ArrayList<Double>();
+            if (degree == 3) {
+                movWind = 1;
+                for (i = movWind + start; i + movWind <= end; ++i)
+                    tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
+                                 0.5  * smoothGsArray.get(i) + 
+                                 0.25 * smoothGsArray.get(i + 1));
+                for (i = 0; i < tmpArray.size(); ++i)
+                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+            }
+            if (degree == 5) {
+                movWind = 2;
+                for (i = movWind + start; i + movWind <= end; ++i)
+                    tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
+                                 0.2 * smoothGsArray.get(i - 1) + 
+                                 0.4 * smoothGsArray.get(i) + 
+                                 0.2 * smoothGsArray.get(i + 1) +
+                                 0.1 * smoothGsArray.get(i + 2));
+                for (i = 0; i < tmpArray.size(); ++i)
+                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+            }
+            if (degree == 7) {
+                movWind = 3;
+                for (i = movWind + start; i + movWind <= end; ++i)
+                    tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
+                                 0.1  * smoothGsArray.get(i - 2) + 
+                                 0.15 * smoothGsArray.get(i - 1) + 
+                                 0.4  * smoothGsArray.get(i) + 
+                                 0.15 * smoothGsArray.get(i + 1) +
+                                 0.1  * smoothGsArray.get(i + 2) +
+                                 0.05 * smoothGsArray.get(i + 3));
+                for (i = 0; i < tmpArray.size(); ++i)
+                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
+            }
+            plotSmoothingLineSlopes();
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -795,7 +795,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             clearMafTable();
         }
         else if ("clearrun".equals(e.getActionCommand())) {
-        	clearRunTables();
+            clearRunTables();
         }
         else if ("clearall".equals(e.getActionCommand())) {
             clearMafTable();
@@ -811,8 +811,8 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             calculateMafScaling();
         }
         else if ("compare".equals(e.getActionCommand())) {
-        	mafCompare.setReferenceMafTables(mafTable, mafSmoothingTable);
-        	mafCompare.setVisible(true);
+            mafCompare.setReferenceMafTables(mafTable, mafSmoothingTable);
+            mafCompare.setVisible(true);
         }
         else if ("smooth".equals(e.getActionCommand())) {
             smoothCurve();
@@ -833,7 +833,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
             selectLogFile();
         }
         else
-        	return false;
+            return false;
         return true;
     }
 }

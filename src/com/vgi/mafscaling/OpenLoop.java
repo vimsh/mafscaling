@@ -184,12 +184,12 @@ public class OpenLoop extends AMafScaling {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (checkActionPerformed(e))
-    		return;
+        if (checkActionPerformed(e))
+            return;
         if ("mafrpm".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearNotRunDataCheckboxes();
+                clearNotRunDataCheckboxes();
                 if (!plotMafVRpmData())
                     checkBox.setSelected(false);
             }
@@ -200,10 +200,10 @@ public class OpenLoop extends AMafScaling {
         else if ("rdata".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	if (checkBoxMafRpmData.isSelected()) {
-            		checkBoxMafRpmData.setSelected(false);
-            		runData.clear();
-            	}
+                if (checkBoxMafRpmData.isSelected()) {
+                    checkBoxMafRpmData.setSelected(false);
+                    runData.clear();
+                }
                 if (!plotRunData())
                     checkBox.setSelected(false);
             }
@@ -214,10 +214,10 @@ public class OpenLoop extends AMafScaling {
         else if ("current".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	if (checkBoxMafRpmData.isSelected()) {
-            		checkBoxMafRpmData.setSelected(false);
-            		runData.clear();
-            	}
+                if (checkBoxMafRpmData.isSelected()) {
+                    checkBoxMafRpmData.setSelected(false);
+                    runData.clear();
+                }
                 if (!plotCurrentMafData())
                     checkBox.setSelected(false);
             }
@@ -228,10 +228,10 @@ public class OpenLoop extends AMafScaling {
         else if ("corrected".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	if (checkBoxMafRpmData.isSelected()) {
-            		checkBoxMafRpmData.setSelected(false);
-            		runData.clear();
-            	}
+                if (checkBoxMafRpmData.isSelected()) {
+                    checkBoxMafRpmData.setSelected(false);
+                    runData.clear();
+                }
                 if (!setCorrectedMafData())
                     checkBox.setSelected(false);
             }
@@ -242,10 +242,10 @@ public class OpenLoop extends AMafScaling {
         else if ("smoothed".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	if (checkBoxMafRpmData.isSelected()) {
-            		checkBoxMafRpmData.setSelected(false);
-            		runData.clear();
-            	}
+                if (checkBoxMafRpmData.isSelected()) {
+                    checkBoxMafRpmData.setSelected(false);
+                    runData.clear();
+                }
                 if (!setSmoothedMafData())
                     checkBox.setSelected(false);
             }
@@ -266,11 +266,11 @@ public class OpenLoop extends AMafScaling {
     protected void clearRunTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-	        for (int i = 0; i < runTables.length; ++i) {
-	            while (RunRowsCount < runTables[i].getRowCount())
-	                Utils.removeRow(RunRowsCount, runTables[i]);
-	            Utils.clearTable(runTables[i]);
-	        }
+            for (int i = 0; i < runTables.length; ++i) {
+                while (RunRowsCount < runTables[i].getRowCount())
+                    Utils.removeRow(RunRowsCount, runTables[i]);
+                Utils.clearTable(runTables[i]);
+            }
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -278,13 +278,13 @@ public class OpenLoop extends AMafScaling {
     }
     
     protected void clearData() {
-    	super.clearData();
-    	afrArray.clear();
+        super.clearData();
+        afrArray.clear();
     }
     
     protected void clearChartCheckBoxes() {
-    	super.clearChartCheckBoxes();
-    	checkBoxMafRpmData.setSelected(false);
+        super.clearChartCheckBoxes();
+        checkBoxMafRpmData.setSelected(false);
     }
     
     protected void calculateMafScaling() {
@@ -339,8 +339,8 @@ public class OpenLoop extends AMafScaling {
                 if (rpmValue.isEmpty() || mafvValue.isEmpty() || afrValue.isEmpty())
                     continue;
                 if (!Utils.validateDouble(rpmValue, j, 0, tableName) ||
-                	!Utils.validateDouble(mafvValue, j, 1, tableName) ||
-                	!Utils.validateDouble(afrValue, j, 2, tableName))
+                    !Utils.validateDouble(mafvValue, j, 1, tableName) ||
+                    !Utils.validateDouble(afrValue, j, 2, tableName))
                     return false;
                 rpm = Double.parseDouble(rpmValue);
                 voltage = Double.parseDouble(mafvValue);
@@ -383,9 +383,9 @@ public class OpenLoop extends AMafScaling {
         ArrayList<Double> sortedAfrArray = result.get(lastErrIndex);
         Collections.sort(sortedAfrArray, Collections.reverseOrder());
         for (i = 0; i < 10 && i < sortedAfrArray.size(); ++i)
-        	avgError += sortedAfrArray.get(i);
+            avgError += sortedAfrArray.get(i);
         if (i > 0)
-        	avgError /= i;
+            avgError /= i;
         for (i = lastErrIndex + 1; i < gsCorrected.size(); ++i) {
             gs = gsCorrected.get(i);
             gsCorrected.set(i, gs +(gs * 0.01 * avgError));
@@ -393,60 +393,60 @@ public class OpenLoop extends AMafScaling {
     }
 
     private boolean plotMafVRpmData() {
-    	return setXYSeries(runData, rpmArray, mafvArray);
+        return setXYSeries(runData, rpmArray, mafvArray);
     }
 
     private boolean plotRunData() {
-    	return setXYSeries(runData, mafvArray, afrArray);
+        return setXYSeries(runData, mafvArray, afrArray);
     }
     
     private void setRanges() {
-    	double paddingX;
-    	double paddingY;
-    	XYPlot plot = mafChartPanel.getChartPanel().getChart().getXYPlot();
-    	plot.getDomainAxis(0).setLabel(XAxisName);
-    	plot.getRangeAxis(1).setLabel(Y2AxisName);
-    	plot.getRangeAxis(0).setVisible(true);
-    	if (checkBoxMafRpmData.isSelected() && checkBoxMafRpmData.isEnabled()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-        	plot.getRangeAxis(0).setVisible(false);
-        	plot.getRangeAxis(1).setLabel(XAxisName);
-        	plot.getDomainAxis(0).setLabel(rpmAxisName);
+        double paddingX;
+        double paddingY;
+        XYPlot plot = mafChartPanel.getChartPanel().getChart().getXYPlot();
+        plot.getDomainAxis(0).setLabel(XAxisName);
+        plot.getRangeAxis(1).setLabel(Y2AxisName);
+        plot.getRangeAxis(0).setVisible(true);
+        if (checkBoxMafRpmData.isSelected() && checkBoxMafRpmData.isEnabled()) {
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setVisible(false);
+            plot.getRangeAxis(1).setLabel(XAxisName);
+            plot.getDomainAxis(0).setLabel(rpmAxisName);
         }
-    	else if (checkBoxRunData.isSelected() && checkBoxRunData.isEnabled() &&
-       	     !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+        else if (checkBoxRunData.isSelected() && checkBoxRunData.isEnabled() &&
+                !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
         }
         else if (checkBoxSmoothing.isSelected()) {
-        	double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
-        	double minY = Collections.min(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
-        	paddingX = smoothMafData.getMaxX() * 0.05;
-        	paddingY = maxY * 0.05;
-        	plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
-        	plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
+            double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
+            double minY = Collections.min(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
+            paddingX = smoothMafData.getMaxX() * 0.05;
+            paddingY = maxY * 0.05;
+            plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
+            plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
         }
         else if ((checkBoxCurrentMaf.isSelected() && checkBoxCurrentMaf.isEnabled()) ||
-            	 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
-            	 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
-        	paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
-        	paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
-        	plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
-        	plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
-	    	if (checkBoxRunData.isSelected()) {
-	        	paddingX = runData.getMaxX() * 0.05;
-	        	paddingY = runData.getMaxY() * 0.05;
-	        	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	}
+                 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
+                 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
+            paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
+            paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
+            plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
+            plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
+            if (checkBoxRunData.isSelected()) {
+                paddingX = runData.getMaxX() * 0.05;
+                paddingY = runData.getMaxY() * 0.05;
+                plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            }
         }
         else {
-        	plot.getRangeAxis(0).setAutoRange(true);
-        	plot.getDomainAxis(0).setAutoRange(true);
+            plot.getRangeAxis(0).setAutoRange(true);
+            plot.getDomainAxis(0).setAutoRange(true);
         }
     }
     
@@ -454,7 +454,7 @@ public class OpenLoop extends AMafScaling {
         checkBoxMafRpmData.setEnabled(!flag);
         if (flag == false) {
             if (checkBoxMafRpmData.isSelected())
-            	plotMafVRpmData();
+                plotMafVRpmData();
             if (checkBoxRunData.isSelected())
                 plotRunData();
             if (checkBoxCurrentMaf.isSelected())
@@ -468,7 +468,7 @@ public class OpenLoop extends AMafScaling {
     
     protected void onSmoothReset() {
         if (!checkBoxMafRpmData.isEnabled() || !checkBoxMafRpmData.isSelected())
-        	setCorrectedMafData();
+            setCorrectedMafData();
         if (checkBoxSmoothing.isSelected())
             plotSmoothingLineSlopes();
         else if (checkBoxSmoothedMaf.isSelected())
@@ -483,7 +483,7 @@ public class OpenLoop extends AMafScaling {
         int i, j;
         FileWriter out = null;
         try {
-        	out = new FileWriter(file);
+            out = new FileWriter(file);
             // write string identifier
             out.write(SaveDataFileHeader + "\n");
             // write maf data
@@ -507,18 +507,18 @@ public class OpenLoop extends AMafScaling {
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
             if (out != null) {
-	            try {
-	                out.close();
-	            }
-	            catch (IOException e) {
-	                logger.error(e);
-	            }
+                try {
+                    out.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
             }
         }
     }
    
     public void loadData() {
-    	fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();
@@ -526,7 +526,7 @@ public class OpenLoop extends AMafScaling {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         BufferedReader br = null;
         try {
-        	br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             String line = br.readLine();
             if (line == null || !line.equals(SaveDataFileHeader)) {
                 JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -559,7 +559,7 @@ public class OpenLoop extends AMafScaling {
                                 table.setValueAt(elements[j], j, l);
                         l += 1;
                         if (l == 3)
-                        	l = 0;
+                            l = 0;
                     }
                 }
                 i += 1;
@@ -584,7 +584,7 @@ public class OpenLoop extends AMafScaling {
     }
     
     private boolean getColumnsFilters(String[] elements, boolean isPolSet) {
-    	boolean ret = true;
+        boolean ret = true;
         ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
         String logThtlAngleColName = Config.getThrottleAngleColumnName();
         String logAfLearningColName = Config.getAfLearningColumnName();
@@ -624,32 +624,32 @@ public class OpenLoop extends AMafScaling {
         boolean isPolSet = polfTable.isSet();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
-	        BufferedReader br = null;
-	        ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
-	        try {
-	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = null;
-	            String [] elements = null;
-	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
-	            	continue;
+            BufferedReader br = null;
+            ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
+            try {
+                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                String line = null;
+                String [] elements = null;
+                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                    continue;
                 getColumnsFilters(elements, false);
                 boolean resetColumns = false;
                 if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
-                	logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
-                	if (displayDialog) {
-	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
-	                    if (rc == 0)
-	                    	resetColumns = true;
-	                    else if (rc == 2)
-	                    	displayDialog = false;
-                	}
+                    logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
+                    if (displayDialog) {
+                        int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+                        if (rc == 0)
+                            resetColumns = true;
+                        else if (rc == 2)
+                            displayDialog = false;
+                    }
                 }
                 
                 if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
-                    	logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
-                	ColumnsFiltersSelection selectionWindow = new OLColumnsFiltersSelection(isPolSet);
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
-                		return;
+                        logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
+                    ColumnsFiltersSelection selectionWindow = new OLColumnsFiltersSelection(isPolSet);
+                    if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
+                        return;
                 }
                 
                 String[] flds;
@@ -677,84 +677,84 @@ public class OpenLoop extends AMafScaling {
                     return;
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
-                	line = br.readLine();
-                	if (line != null)
-                		buffer.addFirst(line.split("\\s*,\\s*", -1));
+                    line = br.readLine();
+                    if (line != null)
+                        buffer.addFirst(line.split("\\s*,\\s*", -1));
                 }
                 while (line != null && buffer.size() > afrRowOffset) {
                     afrflds = buffer.getFirst();
                     flds = buffer.removeLast();
                     line = br.readLine();
-                	if (line != null)
-                		buffer.addFirst(line.split("\\s*,\\s*", -1));
+                    if (line != null)
+                        buffer.addFirst(line.split("\\s*,\\s*", -1));
 
                     try {
-	                    throttle = Double.valueOf(flds[logThtlAngleColIdx]);
-	                    if (row == 0 && throttle < 99)
-	                        wotFlag = false;
-	                    if (throttle < wotPoint) {
-	                        if (wotFlag == true) {
-	                            wotFlag = false;
-	                            skipRowCount = 0;
-	                            j -= 1;
-	                            while (j > 0 && skipRowCount < skipRowsOnTransition) {
-		                            runTables[i].setValueAt("", j, 0);
-		                            runTables[i].setValueAt("", j, 1);
-		                            runTables[i].setValueAt("", j, 2);
-		                            skipRowCount += 1;
-		                            j -= 1;
-	                            }
-	                            skipRowCount = 0;
-	                        }
-	                    }
-	                    else {
-	                        if (wotFlag == false) {
-	                            wotFlag = true;
-	                            skipRowCount = 0;
-	                            if (foundWot &&
-	                            	!runTables[i].getValueAt(0, 0).equals("") &&
-	                            	!runTables[i].getValueAt(1, 0).equals("") &&
-	                            	!runTables[i].getValueAt(2, 0).equals("")) {
-	                                i += 1;
-	                                if (i == runTables.length)
-	                                    return;
-	                            }
-	                            if (row > 0)
-	                                j = 0;
-	                        }
-	                        if (skipRowCount >= skipRowsOnTransition) {
-		                        mafv = Double.valueOf(flds[logMafvColIdx]);
-		                        if (minMafV <= mafv) {
-		                            foundWot = true;
-		                            stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-		                            ltft = Double.valueOf(flds[logAfLearningColIdx]);
-		                            afr = Double.valueOf(afrflds[logAfrColIdx]);
-		                            rpm = Double.valueOf(flds[logRpmColIdx]);
-		                            load = Double.valueOf(flds[logLoadColIdx]);
-		
-		                            afr = afr / ((100.0 - (ltft + stft)) / 100.0);
-		                            
-		                            if (logCommandedAfrCol >= 0)
-		                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-		                            else if (isPolSet)
-		                            	cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
-		                            else {
-		                            	JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
-		                            	return;
-		                            }
+                        throttle = Double.valueOf(flds[logThtlAngleColIdx]);
+                        if (row == 0 && throttle < 99)
+                            wotFlag = false;
+                        if (throttle < wotPoint) {
+                            if (wotFlag == true) {
+                                wotFlag = false;
+                                skipRowCount = 0;
+                                j -= 1;
+                                while (j > 0 && skipRowCount < skipRowsOnTransition) {
+                                    runTables[i].setValueAt("", j, 0);
+                                    runTables[i].setValueAt("", j, 1);
+                                    runTables[i].setValueAt("", j, 2);
+                                    skipRowCount += 1;
+                                    j -= 1;
+                                }
+                                skipRowCount = 0;
+                            }
+                        }
+                        else {
+                            if (wotFlag == false) {
+                                wotFlag = true;
+                                skipRowCount = 0;
+                                if (foundWot &&
+                                    !runTables[i].getValueAt(0, 0).equals("") &&
+                                    !runTables[i].getValueAt(1, 0).equals("") &&
+                                    !runTables[i].getValueAt(2, 0).equals("")) {
+                                    i += 1;
+                                    if (i == runTables.length)
+                                        return;
+                                }
+                                if (row > 0)
+                                    j = 0;
+                            }
+                            if (skipRowCount >= skipRowsOnTransition) {
+                                mafv = Double.valueOf(flds[logMafvColIdx]);
+                                if (minMafV <= mafv) {
+                                    foundWot = true;
+                                    stft = Double.valueOf(flds[logAfCorrectionColIdx]);
+                                    ltft = Double.valueOf(flds[logAfLearningColIdx]);
+                                    afr = Double.valueOf(afrflds[logAfrColIdx]);
+                                    rpm = Double.valueOf(flds[logRpmColIdx]);
+                                    load = Double.valueOf(flds[logLoadColIdx]);
+        
+                                    afr = afr / ((100.0 - (ltft + stft)) / 100.0);
+                                    
+                                    if (logCommandedAfrCol >= 0)
+                                        cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
+                                    else if (isPolSet)
+                                        cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
+                                    else {
+                                        JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return;
+                                    }
 
-	                            	afrErr = (afr - cmdafr) / cmdafr * 100.0;
-		                            if (Math.abs(afrErr) <= afrErrPrct) {
-		                            	Utils.ensureRowCount(j + 1, runTables[i]);
-			                            runTables[i].setValueAt(rpm, j, 0);
-			                            runTables[i].setValueAt(mafv, j, 1);
-			                            runTables[i].setValueAt(afrErr, j, 2);
-			                            j += 1;
-		                            }
-		                        }
-	                        }
-	                        skipRowCount += 1;
-	                    }
+                                    afrErr = (afr - cmdafr) / cmdafr * 100.0;
+                                    if (Math.abs(afrErr) <= afrErrPrct) {
+                                        Utils.ensureRowCount(j + 1, runTables[i]);
+                                        runTables[i].setValueAt(rpm, j, 0);
+                                        runTables[i].setValueAt(mafv, j, 1);
+                                        runTables[i].setValueAt(afrErr, j, 2);
+                                        j += 1;
+                                    }
+                                }
+                            }
+                            skipRowCount += 1;
+                        }
                     }
                     catch (NumberFormatException e) {
                         logger.error(e);
@@ -768,22 +768,22 @@ public class OpenLoop extends AMafScaling {
                     setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                     JOptionPane.showMessageDialog(null, "Sorry, no WOT pulls were found in the log file", "No WOT data", JOptionPane.INFORMATION_MESSAGE);
                 }
-	        }
-	        catch (Exception e) {
-	            logger.error(e);
-	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-	        }
-	        finally {
+            }
+            catch (Exception e) {
+                logger.error(e);
+                JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+            }
+            finally {
                 setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	        	if (br != null) {
-	                try {
-	                    br.close();
-	                }
-	                catch (IOException e) {
-	                    logger.error(e);
-	                }
-	        	}
-	        }
+                if (br != null) {
+                    try {
+                        br.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
+            }
         }
     }
     

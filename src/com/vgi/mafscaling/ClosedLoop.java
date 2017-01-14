@@ -218,12 +218,12 @@ public class ClosedLoop extends AMafScaling {
         afr2Table = createAfrDataTable(aprRunPanel, Afr2TableName, 2);
     }
     
-	private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
+    private JTable createAfrDataTable(JPanel panel, String tableName, int gridy) {
         final JTable afrTable = new JTable() {
             private static final long serialVersionUID = 6526901361175099297L;
             public boolean isCellEditable(int row, int column) { return false; };
         };
-    	DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
+        DefaultTableColumnModel afrModel = new DefaultTableColumnModel();
         final TableColumn afrColumn = new TableColumn(0, 250);
         afrColumn.setHeaderValue(tableName);
         afrModel.addColumn(afrColumn);
@@ -257,14 +257,14 @@ public class ClosedLoop extends AMafScaling {
         Utils.initializeTable(afrTable, ColumnWidth);
         
         if (tableName.equals(Afr1TableName)) {
-	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
-	        NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
-	        renderer.setFormats(formatMatrix);
+            Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") } };
+            NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
+            renderer.setFormats(formatMatrix);
         }
         else if (tableName.equals(Afr2TableName)) {
-	        Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
-	        NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
-	        renderer.setFormats(formatMatrix);
+            Format[][] formatMatrix = { { new DecimalFormat("#"), new DecimalFormat("0.00") }, { new DecimalFormat("#"), new DecimalFormat("#") } };
+            NumberFormatRenderer renderer = (NumberFormatRenderer)afrTable.getDefaultRenderer(Object.class);
+            renderer.setFormats(formatMatrix);
         }
         
         GridBagConstraints gbc_afrTable = new GridBagConstraints();
@@ -342,13 +342,13 @@ public class ClosedLoop extends AMafScaling {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (checkActionPerformed(e))
-    		return;
-    	if ("dvdt".equals(e.getActionCommand())) {
+        if (checkActionPerformed(e))
+            return;
+        if ("dvdt".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearNotRunDataCheckboxes();
-            	clearRunDataCheckboxes();
+                clearNotRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (plotDvdtData())
                     checkBox.setSelected(true);
             }
@@ -359,8 +359,8 @@ public class ClosedLoop extends AMafScaling {
         else if ("iat".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearNotRunDataCheckboxes();
-            	clearRunDataCheckboxes();
+                clearNotRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (plotIatData())
                     checkBox.setSelected(true);
             }
@@ -371,8 +371,8 @@ public class ClosedLoop extends AMafScaling {
         else if ("trpm".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearNotRunDataCheckboxes();
-            	clearRunDataCheckboxes();
+                clearNotRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (plotTrimRpmData())
                     checkBox.setSelected(true);
             }
@@ -385,8 +385,8 @@ public class ClosedLoop extends AMafScaling {
         else if ("mnmd".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearNotRunDataCheckboxes();
-            	clearRunDataCheckboxes();
+                clearNotRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (plotMeanModeData())
                     checkBox.setSelected(true);
             }
@@ -400,7 +400,7 @@ public class ClosedLoop extends AMafScaling {
         else if ("corrdata".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (!plotCorrectionData())
                     checkBox.setSelected(false);
             }
@@ -411,7 +411,7 @@ public class ClosedLoop extends AMafScaling {
         else if ("current".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (!plotCurrentMafData())
                     checkBox.setSelected(false);
             }
@@ -422,7 +422,7 @@ public class ClosedLoop extends AMafScaling {
         else if ("corrected".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (!setCorrectedMafData())
                     checkBox.setSelected(false);
             }
@@ -433,7 +433,7 @@ public class ClosedLoop extends AMafScaling {
         else if ("smoothed".equals(e.getActionCommand())) {
             JCheckBox checkBox = (JCheckBox)e.getSource();
             if (checkBox.isSelected()) {
-            	clearRunDataCheckboxes();
+                clearRunDataCheckboxes();
                 if (!setSmoothedMafData())
                     checkBox.setSelected(false);
             }
@@ -452,53 +452,53 @@ public class ClosedLoop extends AMafScaling {
     }
     
     private void clearRunDataCheckboxes() {
-    	if (checkBoxDvdtData.isSelected()) {
-    		checkBoxDvdtData.setSelected(false);
-    		runData.clear();
-    	}
-    	if (checkBoxIatData.isSelected()) {
-    		checkBoxIatData.setSelected(false);
-    		runData.clear();
-    	}
-    	if (checkBoxTrpmData.isSelected()) {
-    		checkBoxTrpmData.setSelected(false);
-    		currMafData.clear();
-    		runData.clear();
-    	}
-    	if (checkBoxMnmdData.isSelected()) {
-    		checkBoxMnmdData.setSelected(false);
-    		currMafData.clear();
-    		corrMafData.clear();
-    		runData.clear();
-    	}
+        if (checkBoxDvdtData.isSelected()) {
+            checkBoxDvdtData.setSelected(false);
+            runData.clear();
+        }
+        if (checkBoxIatData.isSelected()) {
+            checkBoxIatData.setSelected(false);
+            runData.clear();
+        }
+        if (checkBoxTrpmData.isSelected()) {
+            checkBoxTrpmData.setSelected(false);
+            currMafData.clear();
+            runData.clear();
+        }
+        if (checkBoxMnmdData.isSelected()) {
+            checkBoxMnmdData.setSelected(false);
+            currMafData.clear();
+            corrMafData.clear();
+            runData.clear();
+        }
     }
     
     protected void clearRunTables() {
-    	clearLogDataTables();
-    	clearAfrDataTables();
+        clearLogDataTables();
+        clearAfrDataTables();
     }
     
     private void clearLogDataTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	try {
-	        while (LogDataRowCount < logDataTable.getRowCount())
-	            Utils.removeRow(LogDataRowCount, logDataTable);
-	        Utils.clearTable(logDataTable);
-    	}
-    	finally {
+        try {
+            while (LogDataRowCount < logDataTable.getRowCount())
+                Utils.removeRow(LogDataRowCount, logDataTable);
+            Utils.clearTable(logDataTable);
+        }
+        finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    	}
+        }
     }
     
     private void clearAfrDataTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
-    	try {
-	        clearAfrDataTable(afr1Table);
-	        clearAfrDataTable(afr2Table);
-    	}
-    	finally {
+        try {
+            clearAfrDataTable(afr1Table);
+            clearAfrDataTable(afr2Table);
+        }
+        finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-    	}
+        }
     }
     
     private void clearAfrDataTable(JTable table) {
@@ -510,19 +510,19 @@ public class ClosedLoop extends AMafScaling {
     }
     
     protected void clearData() {
-    	super.clearData();
-    	trimArray.clear();
-    	timeArray.clear();
-    	iatArray.clear();
-    	dvdtArray.clear();
+        super.clearData();
+        trimArray.clear();
+        timeArray.clear();
+        iatArray.clear();
+        dvdtArray.clear();
         Utils.clearTable(afr1Table);
         Utils.clearTable(afr2Table);
     }
     
     protected void clearChartCheckBoxes() {
-    	super.clearChartCheckBoxes();
-    	checkBoxDvdtData.setSelected(false);
-    	checkBoxIatData.setSelected(false);
+        super.clearChartCheckBoxes();
+        checkBoxDvdtData.setSelected(false);
+        checkBoxIatData.setSelected(false);
     }
     
     protected void calculateMafScaling() {
@@ -623,10 +623,10 @@ public class ClosedLoop extends AMafScaling {
             dvdtStr = logDataTable.getValueAt(i, 7).toString();
             iatStr = logDataTable.getValueAt(i, 8).toString();
             if (timeStr.isEmpty() || loadStr.isEmpty() || rpmStr.isEmpty() || mafvStr.isEmpty() ||
-            	afrStr.isEmpty() || stftStr.isEmpty() || ltftStr.isEmpty() || dvdtStr.isEmpty() || iatStr.isEmpty())
+                afrStr.isEmpty() || stftStr.isEmpty() || ltftStr.isEmpty() || dvdtStr.isEmpty() || iatStr.isEmpty())
                 break;
             if (!Utils.validateDouble(timeStr, i, 0, tableName) ||
-            	!Utils.validateDouble(loadStr, i, 1, tableName) ||
+                !Utils.validateDouble(loadStr, i, 1, tableName) ||
                 !Utils.validateDouble(rpmStr, i, 2, tableName) ||
                 !Utils.validateDouble(mafvStr, i, 3, tableName) ||
                 !Utils.validateDouble(afrStr, i, 4, tableName) ||
@@ -659,9 +659,9 @@ public class ClosedLoop extends AMafScaling {
             double roundedCorr = ((double)Math.round(corr * 10.0)) / 10.0;
             val = modeCountMap.get(roundedCorr);
             if (val == null)
-            	modeCountMap.put(roundedCorr, 1);
+                modeCountMap.put(roundedCorr, 1);
             else
-            	modeCountMap.put(roundedCorr, val + 1);
+                modeCountMap.put(roundedCorr, val + 1);
             
             closestRmpIdx = Utils.closestValueIndex(rpm, afrRpmArray) + 1;
             closestLoadIdx = Utils.closestValueIndex(load, afrLoadArray) + 1;
@@ -672,21 +672,21 @@ public class ClosedLoop extends AMafScaling {
         }
         
         for (i = 0; i < modeCalcArray.size(); ++i) {
-        	modeCountMap = modeCalcArray.get(i);
-        	if (modeCountMap.size() > 0) {
-	            int maxValueInMap=(Collections.max(modeCountMap.values()));
-	            double sum = 0;
-	            int count = 0;
-	            for (Entry<Double, Integer> entry : modeCountMap.entrySet()) {
-	                if (entry.getValue() == maxValueInMap) {
-	                	sum += entry.getKey();
-	                	count += 1;
-	                }
-	            }
-	            correctionModeArray.set(i, sum / count);
-        	}
+            modeCountMap = modeCalcArray.get(i);
+            if (modeCountMap.size() > 0) {
+                int maxValueInMap=(Collections.max(modeCountMap.values()));
+                double sum = 0;
+                int count = 0;
+                for (Entry<Double, Integer> entry : modeCountMap.entrySet()) {
+                    if (entry.getValue() == maxValueInMap) {
+                        sum += entry.getKey();
+                        count += 1;
+                    }
+                }
+                correctionModeArray.set(i, sum / count);
+            }
         }
-        	
+            
         int size = afrRpmArray.size() + 1;
         while (size < afr1Table.getRowCount())
             Utils.removeRow(size, afr1Table);
@@ -701,14 +701,14 @@ public class ClosedLoop extends AMafScaling {
             if (temp.get(i) > minCellHitCount) {
                 corr = 1.0 + (correctionMeanArray.get(i) + correctionModeArray.get(i)) / 200.00;
                 if (firstCorrIndex == 0) {
-                	firstCorrIndex = i;
-                	firstCorr = corr;
+                    firstCorrIndex = i;
+                    firstCorr = corr;
                 }
             }
             gsCorrected.add(i, gsArray.get(i) * corr);
         }
         for (i = firstCorrIndex - 1; i > 0; --i)
-        	gsCorrected.set(i, gsArray.get(i) * firstCorr);
+            gsCorrected.set(i, gsArray.get(i) * firstCorr);
     }
 
     private boolean plotDvdtData() {
@@ -721,12 +721,12 @@ public class ClosedLoop extends AMafScaling {
 
     private boolean plotTrimRpmData() {
         if (setXYSeries(runData, rpmArray, trimArray)) {
-	        double[] ols = Regression.getOLSRegression(mafChartPanel.getChartPanel().getChart().getXYPlot().getDataset(1), 0);
-	        Function2D curve = new LineFunction2D(ols[0], ols[1]);
-	        currMafData.clear();
-	        currMafData.add(runData.getMinX(), curve.getValue(runData.getMinX()));
-	        currMafData.add(runData.getMaxX(), curve.getValue(runData.getMaxX()));
-	        return true;
+            double[] ols = Regression.getOLSRegression(mafChartPanel.getChartPanel().getChart().getXYPlot().getDataset(1), 0);
+            Function2D curve = new LineFunction2D(ols[0], ols[1]);
+            currMafData.clear();
+            currMafData.add(runData.getMinX(), curve.getValue(runData.getMinX()));
+            currMafData.add(runData.getMaxX(), curve.getValue(runData.getMaxX()));
+            return true;
         }
         return false;
     }
@@ -743,103 +743,103 @@ public class ClosedLoop extends AMafScaling {
     }
     
     private void setRanges() {
-    	double paddingX;
-    	double paddingY;
+        double paddingX;
+        double paddingY;
         currMafData.setDescription(currentDataName);
         corrMafData.setDescription(correctedDataName);
         smoothMafData.setDescription(smoothedDataName);
         XYPlot plot = mafChartPanel.getChartPanel().getChart().getXYPlot();
-    	plot.getDomainAxis(0).setLabel(XAxisName);
-    	plot.getRangeAxis(0).setLabel(Y1AxisName);
-    	plot.getRangeAxis(1).setLabel(Y2AxisName);
-    	plot.getRangeAxis(0).setVisible(true);
+        plot.getDomainAxis(0).setLabel(XAxisName);
+        plot.getRangeAxis(0).setLabel(Y1AxisName);
+        plot.getRangeAxis(1).setLabel(Y2AxisName);
+        plot.getRangeAxis(0).setVisible(true);
         plot.getRenderer(0).setSeriesVisible(0, true);
         plot.getRenderer(0).setSeriesVisible(1, true);
         plot.getRenderer(0).setSeriesVisible(2, true);
         if (checkBoxDvdtData.isSelected() && checkBoxDvdtData.isEnabled()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setVisible(false);
-	    	plot.getRangeAxis(1).setLabel(dvdtAxisName);
-	    	plot.getDomainAxis(0).setLabel(timeAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, false);
-	        plot.getRenderer(0).setSeriesVisible(1, false);
-	        plot.getRenderer(0).setSeriesVisible(2, false);
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setVisible(false);
+            plot.getRangeAxis(1).setLabel(dvdtAxisName);
+            plot.getDomainAxis(0).setLabel(timeAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, false);
+            plot.getRenderer(0).setSeriesVisible(1, false);
+            plot.getRenderer(0).setSeriesVisible(2, false);
         }
         else if (checkBoxIatData.isSelected() && checkBoxIatData.isEnabled()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setVisible(false);
-	    	plot.getRangeAxis(1).setLabel(iatAxisName);
-	    	plot.getDomainAxis(0).setLabel(timeAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, false);
-	        plot.getRenderer(0).setSeriesVisible(1, false);
-	        plot.getRenderer(0).setSeriesVisible(2, false);
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setVisible(false);
+            plot.getRangeAxis(1).setLabel(iatAxisName);
+            plot.getDomainAxis(0).setLabel(timeAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, false);
+            plot.getRenderer(0).setSeriesVisible(1, false);
+            plot.getRenderer(0).setSeriesVisible(2, false);
         }
         else if (checkBoxTrpmData.isSelected() && checkBoxTrpmData.isEnabled()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setVisible(false);
-	    	plot.getRangeAxis(1).setLabel(trpmAxisName);
-	    	plot.getDomainAxis(0).setLabel(rpmAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, false);
-	        plot.getRenderer(0).setSeriesVisible(1, false);
-	        currMafData.setDescription("Trend");
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setVisible(false);
+            plot.getRangeAxis(1).setLabel(trpmAxisName);
+            plot.getDomainAxis(0).setLabel(rpmAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, false);
+            plot.getRenderer(0).setSeriesVisible(1, false);
+            currMafData.setDescription("Trend");
         }
         else if (checkBoxMnmdData.isSelected() && checkBoxMnmdData.isEnabled()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	plot.getRangeAxis(0).setLabel(mnmdAxisName);
-	    	plot.getRangeAxis(1).setLabel(mnmd2AxisName);
-	    	plot.getDomainAxis(0).setLabel(XAxisName);
-	        plot.getRenderer(0).setSeriesVisible(0, false);
-	        currMafData.setDescription("Mean");
-	        corrMafData.setDescription("Mode");
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            plot.getRangeAxis(0).setLabel(mnmdAxisName);
+            plot.getRangeAxis(1).setLabel(mnmd2AxisName);
+            plot.getDomainAxis(0).setLabel(XAxisName);
+            plot.getRenderer(0).setSeriesVisible(0, false);
+            currMafData.setDescription("Mean");
+            corrMafData.setDescription("Mode");
         }
         else if (checkBoxRunData.isSelected() && checkBoxRunData.isEnabled() &&
-        	     !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
-        	paddingX = runData.getMaxX() * 0.05;
-        	paddingY = runData.getMaxY() * 0.05;
-        	plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+                 !checkBoxCurrentMaf.isSelected() && !checkBoxCorrectedMaf.isSelected() && !checkBoxSmoothedMaf.isSelected()) {
+            paddingX = runData.getMaxX() * 0.05;
+            paddingY = runData.getMaxY() * 0.05;
+            plot.getDomainAxis(0).setRange(runData.getMinX() - paddingX, runData.getMaxX() + paddingX);
+            plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
         }
         else if (checkBoxSmoothing.isSelected()) {
-        	double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
-        	double minY = Collections.max(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
-        	paddingX = smoothMafData.getMaxX() * 0.05;
-        	paddingY = maxY * 0.05;
-        	plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
-	    	plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
+            double maxY = Collections.max(Arrays.asList(new Double[] { currMafData.getMaxY(), smoothMafData.getMaxY(), corrMafData.getMaxY() }));
+            double minY = Collections.max(Arrays.asList(new Double[] { currMafData.getMinY(), smoothMafData.getMinY(), corrMafData.getMinY() }));
+            paddingX = smoothMafData.getMaxX() * 0.05;
+            paddingY = maxY * 0.05;
+            plot.getDomainAxis(0).setRange(smoothMafData.getMinX() - paddingX, smoothMafData.getMaxX() + paddingX);
+            plot.getRangeAxis(0).setRange(minY - paddingY, maxY + paddingY);
             corrMafData.setDescription(mafCurveDataName);
             currMafData.setDescription(currentSlopeDataName);
             smoothMafData.setDescription(smoothedSlopeDataName);
         }
         else if ((checkBoxCurrentMaf.isSelected() && checkBoxCurrentMaf.isEnabled()) ||
-            	 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
-            	 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
-        	paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
-        	paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
-        	plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
-	    	plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
-	    	if (checkBoxRunData.isSelected()) {
-	        	paddingX = runData.getMaxX() * 0.05;
-	        	paddingY = runData.getMaxY() * 0.05;
-	    		plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
-	    	}
+                 (checkBoxCorrectedMaf.isSelected() && checkBoxCorrectedMaf.isEnabled()) ||
+                 (checkBoxSmoothedMaf.isSelected() && checkBoxSmoothedMaf.isEnabled())) {
+            paddingX = voltArray.get(voltArray.size() - 1) * 0.05;
+            paddingY = gsCorrected.get(gsCorrected.size() - 1) * 0.05;
+            plot.getDomainAxis(0).setRange(voltArray.get(0) - paddingX, voltArray.get(voltArray.size() - 1) + paddingX);
+            plot.getRangeAxis(0).setRange(gsCorrected.get(0) - paddingY, gsCorrected.get(gsCorrected.size() - 1) + paddingY);
+            if (checkBoxRunData.isSelected()) {
+                paddingX = runData.getMaxX() * 0.05;
+                paddingY = runData.getMaxY() * 0.05;
+                plot.getRangeAxis(1).setRange(runData.getMinY() - paddingY, runData.getMaxY() + paddingY);
+            }
         }
         else {
-	    	plot.getRangeAxis(0).setAutoRange(true);
-        	plot.getDomainAxis(0).setAutoRange(true);
+            plot.getRangeAxis(0).setAutoRange(true);
+            plot.getDomainAxis(0).setAutoRange(true);
         }
     }
     
@@ -850,36 +850,36 @@ public class ClosedLoop extends AMafScaling {
         checkBoxMnmdData.setEnabled(!flag);
         if (flag == false) {
             if (checkBoxDvdtData.isSelected())
-            	plotDvdtData();
+                plotDvdtData();
             else if (checkBoxIatData.isSelected())
-            	plotIatData();
+                plotIatData();
             else if (checkBoxTrpmData.isSelected())
-            	plotTrimRpmData();
+                plotTrimRpmData();
             else if (checkBoxMnmdData.isSelected())
-            	plotMeanModeData();
+                plotMeanModeData();
             else {
-	            if (checkBoxRunData.isSelected())
-	                plotCorrectionData();
-	            if (checkBoxCurrentMaf.isSelected())
-	                plotCurrentMafData();
-	            if (checkBoxCorrectedMaf.isSelected())
-	                setCorrectedMafData();
-	            if (checkBoxSmoothedMaf.isSelected())
-	                setSmoothedMafData();
+                if (checkBoxRunData.isSelected())
+                    plotCorrectionData();
+                if (checkBoxCurrentMaf.isSelected())
+                    plotCurrentMafData();
+                if (checkBoxCorrectedMaf.isSelected())
+                    setCorrectedMafData();
+                if (checkBoxSmoothedMaf.isSelected())
+                    setSmoothedMafData();
             }
         }
     }
     
     protected void onSmoothReset() {
-	    if (!checkBoxDvdtData.isEnabled() || !checkBoxDvdtData.isSelected() ||
-	    	!checkBoxTrpmData.isEnabled() || !checkBoxTrpmData.isSelected() || 
-	    	!checkBoxMnmdData.isEnabled() || !checkBoxMnmdData.isSelected() || 
-	    	!checkBoxIatData.isEnabled() || !checkBoxIatData.isSelected())
-	    	setCorrectedMafData();
-	    if (checkBoxSmoothing.isSelected())
-	        plotSmoothingLineSlopes();
-	    else if (checkBoxSmoothedMaf.isSelected())
-	        setSmoothedMafData();
+        if (!checkBoxDvdtData.isEnabled() || !checkBoxDvdtData.isSelected() ||
+            !checkBoxTrpmData.isEnabled() || !checkBoxTrpmData.isSelected() || 
+            !checkBoxMnmdData.isEnabled() || !checkBoxMnmdData.isSelected() || 
+            !checkBoxIatData.isEnabled() || !checkBoxIatData.isSelected())
+            setCorrectedMafData();
+        if (checkBoxSmoothing.isSelected())
+            plotSmoothingLineSlopes();
+        else if (checkBoxSmoothedMaf.isSelected())
+            setSmoothedMafData();
     }
    
     public void saveData() {
@@ -890,7 +890,7 @@ public class ClosedLoop extends AMafScaling {
         int i, j;
         FileWriter out = null;
         try {
-        	out = new FileWriter(file);
+            out = new FileWriter(file);
             // write string identifier
             out.write(SaveDataFileHeader + "\n");
             // write maf data
@@ -912,19 +912,19 @@ public class ClosedLoop extends AMafScaling {
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-        	if (out != null) {
+            if (out != null) {
                 try {
                     out.close();
                 }
                 catch (IOException e) {
                     logger.error(e);
                 }
-        	}
+            }
         }
     }
    
     public void loadData() {
-    	fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.setMultiSelectionEnabled(false);
         if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
             return;
         File file = fileChooser.getSelectedFile();
@@ -932,7 +932,7 @@ public class ClosedLoop extends AMafScaling {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         BufferedReader br = null;
         try {
-        	br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
             String line = br.readLine();
             if (line == null || !line.equals(SaveDataFileHeader)) {
                 JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -958,10 +958,10 @@ public class ClosedLoop extends AMafScaling {
                     break;
                 default:
                     if (elements.length - 1 == logDataTable.getColumnCount()) {
-                    	if (!isLogData) {
-                    		offset = i;
-                    		isLogData = true;
-                    	}
+                        if (!isLogData) {
+                            offset = i;
+                            isLogData = true;
+                        }
                         Utils.ensureRowCount(i - offset + 1, logDataTable);
                         for (j = 0; j < elements.length - 1; ++j)
                             logDataTable.setValueAt(elements[j], i - offset, j);
@@ -989,19 +989,19 @@ public class ClosedLoop extends AMafScaling {
     }
     
     private int getLogTableEmptyRow() {
-    	if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return 0;
-    	if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
-    		return logDataTable.getRowCount();
-    	for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
-    		if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())
-    			return i + 1;
-    	}
-    	return 0;
+        if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
+            return 0;
+        if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
+            return logDataTable.getRowCount();
+        for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
+            if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())
+                return i + 1;
+        }
+        return 0;
     }
     
     private boolean getColumnsFilters(String[] elements) {
-    	boolean ret = true;
+        boolean ret = true;
         ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
         String logClOlStatusColName = Config.getClOlStatusColumnName();
         String logAfLearningColName = Config.getAfLearningColumnName();
@@ -1045,31 +1045,31 @@ public class ClosedLoop extends AMafScaling {
         boolean displayDialog = true;
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
-	        BufferedReader br = null;
-	        try {
-	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = null;
-	            String [] elements = null;
-	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
-	            	continue;
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                String line = null;
+                String [] elements = null;
+                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                    continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
                 if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-                	logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
-                	if (displayDialog) {
-	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
-	                    if (rc == 0)
-	                    	resetColumns = true;
-	                    else if (rc == 2)
-	                    	displayDialog = false;
-                	}
+                    logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 ) {
+                    if (displayDialog) {
+                        int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+                        if (rc == 0)
+                            resetColumns = true;
+                        else if (rc == 2)
+                            displayDialog = false;
+                    }
                 }
 
                 if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-                	logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
-                	ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection();
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
-                		return;
+                    logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 ) {
+                    ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection();
+                    if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
+                        return;
                 }
                 
                 String[] flds;
@@ -1090,24 +1090,24 @@ public class ClosedLoop extends AMafScaling {
                 while (line != null) {
                     flds = line.split("\\s*,\\s*", -1);
                     try {
-                    	// Calculate dV/dt
-                    	prevTime = time;
-                    	if (prevTime == 0)
-                    		Utils.resetBaseTime(flds[logTimeColIdx]);
-                    	time = Utils.parseTime(flds[logTimeColIdx]);
-                    	pmafv = mafv;
-                    	mafv = Double.valueOf(flds[logMafvColIdx]);
-                    	if ((time - prevTime) == 0)
-                    		dVdt = 100.0;
-                    	else
-                    		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+                        // Calculate dV/dt
+                        prevTime = time;
+                        if (prevTime == 0)
+                            Utils.resetBaseTime(flds[logTimeColIdx]);
+                        time = Utils.parseTime(flds[logTimeColIdx]);
+                        pmafv = mafv;
+                        mafv = Double.valueOf(flds[logMafvColIdx]);
+                        if ((time - prevTime) == 0)
+                            dVdt = 100.0;
+                        else
+                            dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
                         clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
                         if (clol == clValue) {
                             // Filters
-                        	afr = Double.valueOf(flds[logAfrColIdx]);
-                        	load = Double.valueOf(flds[logLoadColIdx]);
-                        	iat = Double.valueOf(flds[logIatColIdx]);
-                        	if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
+                            afr = Double.valueOf(flds[logAfrColIdx]);
+                            load = Double.valueOf(flds[logLoadColIdx]);
+                            iat = Double.valueOf(flds[logIatColIdx]);
+                            if (afrMin <= afr && afr <= afrMax && minLoad <= load && dVdt <= maxDvDt && maxMafV >= mafv && maxIat >= iat) {
                                 Utils.ensureRowCount(row + 1, logDataTable);
                                 logDataTable.setValueAt(time, row, 0);
                                 logDataTable.setValueAt(load, row, 1);
@@ -1119,7 +1119,7 @@ public class ClosedLoop extends AMafScaling {
                                 logDataTable.setValueAt(dVdt, row, 7);
                                 logDataTable.setValueAt(iat, row, 8);
                                 row += 1;
-                        	}
+                            }
                         }
                     }
                     catch (NumberFormatException e) {
@@ -1130,22 +1130,22 @@ public class ClosedLoop extends AMafScaling {
                     line = br.readLine();
                     i += 1;
                 }
-	        }
-	        catch (Exception e) {
-	            logger.error(e);
-	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-	        }
-	        finally {
-	        	setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
-	        	if (br != null) {
-	                try {
-	                    br.close();
-	                }
-	                catch (IOException e) {
-	                    logger.error(e);
-	                }
-	        	}
-	        }
+            }
+            catch (Exception e) {
+                logger.error(e);
+                JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+            }
+            finally {
+                setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                if (br != null) {
+                    try {
+                        br.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
+            }
         }
     }
     

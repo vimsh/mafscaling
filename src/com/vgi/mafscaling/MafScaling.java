@@ -55,20 +55,20 @@ public class MafScaling {
      * @throws ClassNotFoundException 
      */
     public static void main(String[] args) throws Exception {
-    	//UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-    	//UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-    	
-    	if (UIManager.getLookAndFeel().getName().equals("Nimbus")) {
-	    	UIManager.put("Table.gridColor", new Color(214, 217, 223));
-	        UIManager.put("Table.disabled", false);
-	        UIManager.put("Table.showGrid", true);
-	    	UIManager.put("Table.intercellSpacing", new Dimension (1, 1));
-	    	UIManager.put("TitledBorder.font", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-	    	UIManager.put("Table.selectionBackground", new Color(115, 164, 209));
-	    	UIManager.put("Table.selectionForeground", Color.WHITE);
-	    	UIManager.put("Table.focusCellBackground", new Color(115, 164, 209));
-	    	UIManager.put("Table.focusCellForeground", Color.WHITE);
-    	}
+        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+        
+        if (UIManager.getLookAndFeel().getName().equals("Nimbus")) {
+            UIManager.put("Table.gridColor", new Color(214, 217, 223));
+            UIManager.put("Table.disabled", false);
+            UIManager.put("Table.showGrid", true);
+            UIManager.put("Table.intercellSpacing", new Dimension (1, 1));
+            UIManager.put("TitledBorder.font", new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+            UIManager.put("Table.selectionBackground", new Color(115, 164, 209));
+            UIManager.put("Table.selectionForeground", Color.WHITE);
+            UIManager.put("Table.focusCellBackground", new Color(115, 164, 209));
+            UIManager.put("Table.focusCellForeground", Color.WHITE);
+        }
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -95,19 +95,19 @@ public class MafScaling {
      * Initialize the contents of the frame.
      */
     private void initialize() {
-    	PrimaryOpenLoopFuelingTable pofFuelingTable = new PrimaryOpenLoopFuelingTable();
+        PrimaryOpenLoopFuelingTable pofFuelingTable = new PrimaryOpenLoopFuelingTable();
         MafCompare mafCompare = new MafCompare();
 
         ImageIcon chartImage = new ImageIcon(getClass().getResource("/chart.jpg"));
-    	
+        
         frame = new JFrame();
         frame.addWindowListener(new WindowAdapter() {
-        	public void windowClosing(WindowEvent e) {
+            public void windowClosing(WindowEvent e) {
                 Config.setWindowSize(frame.getSize());
                 Config.setWindowLocation(frame.getLocation());
                 Config.setLastLogFilesPath(FCTabbedPane.getLogFilesPath());
-        		Config.save();
-        	}
+                Config.save();
+            }
         });
         
         JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
@@ -141,7 +141,7 @@ public class MafScaling {
         JTabbedPane vc = new VVTCalc(JTabbedPane.LEFT);
         vc.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(vc, VCTabName);
-		
+        
         JTabbedPane ls = new LogStats(JTabbedPane.LEFT);
         ls.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(ls, LSTabName);

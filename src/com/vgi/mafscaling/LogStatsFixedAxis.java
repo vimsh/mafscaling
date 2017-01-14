@@ -51,7 +51,7 @@ import org.apache.log4j.Logger;
 
 public class LogStatsFixedAxis implements ActionListener {
     private static final Logger logger = Logger.getLogger(LogStatsFixedAxis.class);
-	private enum Axis {XAXIS, YAXIS};
+    private enum Axis {XAXIS, YAXIS};
     private final static int ColumnWidth = 55;
     private final static int AxisColumnCount = 25;
     private ExcelAdapter excelAdapter = new ExcelAdapter();
@@ -69,15 +69,15 @@ public class LogStatsFixedAxis implements ActionListener {
     private Insets insets3 = new Insets(3, 3, 3, 3);
     
     public LogStatsFixedAxis(ArrayList<Integer> distancePct, ArrayList<Double> xAxis, ArrayList<Double> yAxis) {
-    	xAxisArray = xAxis;
-    	yAxisArray = yAxis;
-    	distance = distancePct;
-    	initialize();
+        xAxisArray = xAxis;
+        yAxisArray = yAxis;
+        distance = distancePct;
+        initialize();
     }
     
     private void initialize() {
-    	String templNames;
-    	
+        String templNames;
+        
         dataPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0, 0};
@@ -102,7 +102,7 @@ public class LogStatsFixedAxis implements ActionListener {
         // add controls for x-axis
         templNames = Config.getXAxisTemplates();
         if (templNames.isEmpty())
-        	templNames = ",";
+            templNames = ",";
         gbc_fullWidth.gridy++;
         addLabel(gbc_fullWidth.gridy, 0, "Saved X-Axis");
         xAxisList = addComboBox(gbc_fullWidth.gridy, 1, templNames, "xaxis");
@@ -120,7 +120,7 @@ public class LogStatsFixedAxis implements ActionListener {
         // add controls for y-axis
         templNames = Config.getYAxisTemplates();
         if (templNames.isEmpty())
-        	templNames = ",";
+            templNames = ",";
         gbc_fullWidth.gridy++;
         addLabel(gbc_fullWidth.gridy, 0, "Saved Y-Axis");
         yAxisList = addComboBox(gbc_fullWidth.gridy, 1, templNames, "yaxis");
@@ -153,7 +153,7 @@ public class LogStatsFixedAxis implements ActionListener {
         addLabel(gbc_fullWidth.gridy, 0, "Distance %");
         distanceSpinner = addSpinnerFilter(gbc_fullWidth.gridy, 1, distance.get(0).intValue(), 1, 50, 1);
 
-    	setAxisTables();
+        setAxisTables();
         
         JComponent[] inputs = new JComponent[] { dataPanel };
         do {
@@ -164,14 +164,14 @@ public class LogStatsFixedAxis implements ActionListener {
     }
 
     private JTable createAxisPanel(int row, String tableName) {
-    	JTable axisTable = new JTable();
-    	axisTable.setColumnSelectionAllowed(true);
-    	axisTable.setCellSelectionEnabled(true);
-    	axisTable.setBorder(new LineBorder(Color.GRAY));
-    	axisTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-    	axisTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-    	axisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
-    	axisTable.setTableHeader(null);
+        JTable axisTable = new JTable();
+        axisTable.setColumnSelectionAllowed(true);
+        axisTable.setCellSelectionEnabled(true);
+        axisTable.setBorder(new LineBorder(Color.GRAY));
+        axisTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+        axisTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        axisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+        axisTable.setTableHeader(null);
         Utils.initializeTable(axisTable, ColumnWidth);
         excelAdapter.addTable(axisTable, false, false, false, false, true, false, true, false, true);
         
@@ -231,7 +231,7 @@ public class LogStatsFixedAxis implements ActionListener {
     }
     
     private JComboBox<String> addComboBox(int row, int column, String names, String action) {
-    	JComboBox<String> combo = new JComboBox<String>(names.split(","));
+        JComboBox<String> combo = new JComboBox<String>(names.split(","));
         combo.setActionCommand(action);
         combo.addActionListener(this);
         combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
@@ -245,7 +245,7 @@ public class LogStatsFixedAxis implements ActionListener {
     }
 
     private JSpinner addSpinnerFilter(int row, int column, int value, int min, int max, int step) {
-    	JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
         GridBagConstraints gbc_spinner = new GridBagConstraints();
         gbc_spinner.anchor = GridBagConstraints.WEST;
         gbc_spinner.insets = new Insets(1, 5, 1, 1);
@@ -271,27 +271,27 @@ public class LogStatsFixedAxis implements ActionListener {
      * Methods sets the axis table from axis array if they have been set before
      */
     private void setAxisTables() {
-    	try {
-    	    if (xAxisArray.size() > 0) {
-		        Utils.ensureColumnCount(xAxisArray.size(), xAxisTable);
-		        Utils.clearTable(xAxisTable);
-		    	for (int i = 0; i < xAxisArray.size(); ++i)
-		    		xAxisTable.setValueAt(xAxisArray.get(i), 0, i);
-		        for (int i = xAxisTable.getColumnCount() - 1; i >= 0 && xAxisTable.getValueAt(0, i).toString().equals(""); --i)
-		            Utils.removeColumn(i, xAxisTable);
-    	    }
-    	    if (yAxisArray.size() > 0) {
-		        Utils.ensureColumnCount(yAxisArray.size(), yAxisTable);
-		        Utils.clearTable(yAxisTable);
-		    	for (int i = 0; i < yAxisArray.size(); ++i)
-		    		yAxisTable.setValueAt(yAxisArray.get(i), 0, i);
-		        for (int i = yAxisTable.getColumnCount() - 1; i >= 0 && yAxisTable.getValueAt(0, i).toString().equals(""); --i)
-		            Utils.removeColumn(i, yAxisTable);
-    	    }
-    	}
-    	catch (Exception e) {
+        try {
+            if (xAxisArray.size() > 0) {
+                Utils.ensureColumnCount(xAxisArray.size(), xAxisTable);
+                Utils.clearTable(xAxisTable);
+                for (int i = 0; i < xAxisArray.size(); ++i)
+                    xAxisTable.setValueAt(xAxisArray.get(i), 0, i);
+                for (int i = xAxisTable.getColumnCount() - 1; i >= 0 && xAxisTable.getValueAt(0, i).toString().equals(""); --i)
+                    Utils.removeColumn(i, xAxisTable);
+            }
+            if (yAxisArray.size() > 0) {
+                Utils.ensureColumnCount(yAxisArray.size(), yAxisTable);
+                Utils.clearTable(yAxisTable);
+                for (int i = 0; i < yAxisArray.size(); ++i)
+                    yAxisTable.setValueAt(yAxisArray.get(i), 0, i);
+                for (int i = yAxisTable.getColumnCount() - 1; i >= 0 && yAxisTable.getValueAt(0, i).toString().equals(""); --i)
+                    Utils.removeColumn(i, yAxisTable);
+            }
+        }
+        catch (Exception e) {
             logger.error(e);
-    	}
+        }
     }
     
     /**
@@ -299,71 +299,71 @@ public class LogStatsFixedAxis implements ActionListener {
      * @return
      */
     private boolean validateTemplateData() {
-    	try {
-	        // check if table is empty
-	        if (Utils.isTableEmpty(templateTable))
-	        	return true;
-	        // check paste format
-	        if (!templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-	            !((templateTable.getValueAt(0, 0).toString().equals("")) &&
-	              Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, 1).toString()) &&
-	              Pattern.matches(Utils.fpRegex, templateTable.getValueAt(1, 0).toString()))) {
-	            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease post valid table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
-	            return false;
-	        }
-	        if (templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-	            // realign if paste is from RomRaider
-	            if (templateTable.getValueAt(0, 1).toString().equals("")) {
-	                Utils.removeRow(0, templateTable);
-	                for (int i = templateTable.getColumnCount() - 2; i >= 0; --i)
-	                	templateTable.setValueAt(templateTable.getValueAt(0, i), 0, i + 1);
-	                templateTable.setValueAt("", 0, 0);
-	            }
-	            // paste is probably from excel, just blank out the first cell
-	            else
-	            	templateTable.setValueAt("", 0, 0);
-	        }
-	        // remove extra rows
-	        for (int i = templateTable.getRowCount() - 1; i >= 0 && templateTable.getValueAt(i, 0).toString().equals(""); --i)
-	            Utils.removeRow(i, templateTable);
-	        // remove extra columns
-	        for (int i = templateTable.getColumnCount() - 1; i >= 0 && templateTable.getValueAt(0, i).toString().equals(""); --i)
-	            Utils.removeColumn(i, templateTable);
-	        // validate row/column headers cells are numeric
-	        for (int i = 1; i < templateTable.getRowCount(); ++i) {
+        try {
+            // check if table is empty
+            if (Utils.isTableEmpty(templateTable))
+                return true;
+            // check paste format
+            if (!templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
+                !((templateTable.getValueAt(0, 0).toString().equals("")) &&
+                  Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, 1).toString()) &&
+                  Pattern.matches(Utils.fpRegex, templateTable.getValueAt(1, 0).toString()))) {
+                JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease post valid table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            if (templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
+                // realign if paste is from RomRaider
+                if (templateTable.getValueAt(0, 1).toString().equals("")) {
+                    Utils.removeRow(0, templateTable);
+                    for (int i = templateTable.getColumnCount() - 2; i >= 0; --i)
+                        templateTable.setValueAt(templateTable.getValueAt(0, i), 0, i + 1);
+                    templateTable.setValueAt("", 0, 0);
+                }
+                // paste is probably from excel, just blank out the first cell
+                else
+                    templateTable.setValueAt("", 0, 0);
+            }
+            // remove extra rows
+            for (int i = templateTable.getRowCount() - 1; i >= 0 && templateTable.getValueAt(i, 0).toString().equals(""); --i)
+                Utils.removeRow(i, templateTable);
+            // remove extra columns
+            for (int i = templateTable.getColumnCount() - 1; i >= 0 && templateTable.getValueAt(0, i).toString().equals(""); --i)
+                Utils.removeColumn(i, templateTable);
+            // validate row/column headers cells are numeric
+            for (int i = 1; i < templateTable.getRowCount(); ++i) {
                 if (!Pattern.matches(Utils.fpRegex, templateTable.getValueAt(i, 0).toString())) {
                     JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column 1", "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
-	        }
+            }
             for (int i = 1; i < templateTable.getColumnCount(); ++i) {
                 if (!Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, i).toString())) {
                     JOptionPane.showMessageDialog(null, "Invalid value at row 1 column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
             }
-	        Utils.colorTableHeaders(templateTable);
-	        // copy axis
-	        Utils.clearTable(xAxisTable);
-	        Utils.clearTable(yAxisTable);
-	        Utils.ensureColumnCount(templateTable.getColumnCount() - 1, xAxisTable);
-	        Utils.ensureColumnCount(templateTable.getRowCount() - 1, yAxisTable);
-	        for (int i = 1; i < templateTable.getColumnCount(); ++i)
-	        	xAxisTable.setValueAt(templateTable.getValueAt(0, i), 0, i - 1);
-	        for (int i = 1; i < templateTable.getRowCount(); ++i)
-	        	yAxisTable.setValueAt(templateTable.getValueAt(i, 0), 0, i - 1);
-	        // remove extra columns
-	        for (int i = xAxisTable.getColumnCount() - 1; i >= 0 && xAxisTable.getValueAt(0, i).toString().equals(""); --i)
-	            Utils.removeColumn(i, xAxisTable);
-	        for (int i = yAxisTable.getColumnCount() - 1; i >= 0 && yAxisTable.getValueAt(0, i).toString().equals(""); --i)
-	            Utils.removeColumn(i, yAxisTable);
-	        return true;
-    	}
-    	catch (Exception e) {
+            Utils.colorTableHeaders(templateTable);
+            // copy axis
+            Utils.clearTable(xAxisTable);
+            Utils.clearTable(yAxisTable);
+            Utils.ensureColumnCount(templateTable.getColumnCount() - 1, xAxisTable);
+            Utils.ensureColumnCount(templateTable.getRowCount() - 1, yAxisTable);
+            for (int i = 1; i < templateTable.getColumnCount(); ++i)
+                xAxisTable.setValueAt(templateTable.getValueAt(0, i), 0, i - 1);
+            for (int i = 1; i < templateTable.getRowCount(); ++i)
+                yAxisTable.setValueAt(templateTable.getValueAt(i, 0), 0, i - 1);
+            // remove extra columns
+            for (int i = xAxisTable.getColumnCount() - 1; i >= 0 && xAxisTable.getValueAt(0, i).toString().equals(""); --i)
+                Utils.removeColumn(i, xAxisTable);
+            for (int i = yAxisTable.getColumnCount() - 1; i >= 0 && yAxisTable.getValueAt(0, i).toString().equals(""); --i)
+                Utils.removeColumn(i, yAxisTable);
+            return true;
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, e, "Error validation table data", JOptionPane.ERROR_MESSAGE);
-    	}
-    	return false;
+        }
+        return false;
     }
     
     /**
@@ -371,87 +371,87 @@ public class LogStatsFixedAxis implements ActionListener {
      * @param type
      */
     private void save(Axis type) {
-    	try {
-	    	JTable axisTable = xAxisTable;
-	    	JComboBox<String> axisList = xAxisList;
-	    	if (type == Axis.YAXIS) {
-	    		axisTable = yAxisTable;
-	    		axisList = yAxisList;
-	    	}
-	        if (Utils.isTableEmpty(axisTable)) {
-	        	JOptionPane.showMessageDialog(null, "Table is empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
-	        	return;
-	        }
-	        String axisName = "";
-	        JTextField nameTextField = new JTextField();
-	        JComponent[] inputs = new JComponent[] { new JLabel("Set unique name"), nameTextField };
-	        do {
-	        	if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Axis template name", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
-	        		return;
-	        	axisName = nameTextField.getText().trim();
-	        	boolean found = false;
-	        	for (int i = 0; i < xAxisList.getItemCount() && !found; ++i) {
-	        		if (xAxisList.getItemAt(i).toString().equals(axisName))
-	        			found = true;
-	        	}
-	        	if (found) {
-	        		JOptionPane.showMessageDialog(null, "This name is being used for X-Axis template", "Error", JOptionPane.ERROR_MESSAGE);
-	        		axisName = "";
-	        	}
-	        	else {
-		        	for (int i = 0; i < yAxisList.getItemCount() && !found; ++i) {
-		        		if (yAxisList.getItemAt(i).toString().equals(axisName))
-		        			found = true;
-		        	}
-		        	if (found) {
-		        		JOptionPane.showMessageDialog(null, "This name is being used for Y-Axis template", "Error", JOptionPane.ERROR_MESSAGE);
-		        		axisName = "";
-		        	}
-	        	}
-	        }
-	        while (axisName.isEmpty());
-	        
-	        String axisValues = "";
-	        String val;
-	        int i = 0;
-	    	for (; i < axisTable.getColumnCount(); ++i) {
-	    		val = axisTable.getValueAt(0, i).toString();
-	    		if (val.isEmpty())
-	    			break;
-	    		else if (!Pattern.matches(Utils.fpRegex, val)) {
-		        	JOptionPane.showMessageDialog(null, "Invalid data in table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
-		            return;
-		        }
-		        if (i > 0)
-		        	axisValues += ",";
-		        axisValues += val;
-	    	}
-	    	for (; i < axisTable.getColumnCount(); ++i)
-	    		axisTable.setValueAt("", 0, i);
-        	if (type == Axis.XAXIS) {
-        		String s = Config.getXAxisTemplates();
-        		if (s.endsWith(","))
-            		Config.setXAxisTemplates(s + axisName);
-        		else
-        			Config.setXAxisTemplates(s + "," + axisName);
-        	}
-        	else {
-        		String s = Config.getYAxisTemplates();
-        		if (s.endsWith(","))
-        			Config.setYAxisTemplates(s + axisName);
-        		else
-        			Config.setYAxisTemplates(s + "," + axisName);
-        	}
-        	Config.setProperty(axisName, axisValues);
-        	if (axisList.getItemCount() == 0)
-        		axisList.addItem("");
-    		axisList.addItem(axisName);
-    		axisList.setSelectedItem(axisName);
-    	}
-    	catch (Exception e) {
+        try {
+            JTable axisTable = xAxisTable;
+            JComboBox<String> axisList = xAxisList;
+            if (type == Axis.YAXIS) {
+                axisTable = yAxisTable;
+                axisList = yAxisList;
+            }
+            if (Utils.isTableEmpty(axisTable)) {
+                JOptionPane.showMessageDialog(null, "Table is empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            String axisName = "";
+            JTextField nameTextField = new JTextField();
+            JComponent[] inputs = new JComponent[] { new JLabel("Set unique name"), nameTextField };
+            do {
+                if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Axis template name", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    return;
+                axisName = nameTextField.getText().trim();
+                boolean found = false;
+                for (int i = 0; i < xAxisList.getItemCount() && !found; ++i) {
+                    if (xAxisList.getItemAt(i).toString().equals(axisName))
+                        found = true;
+                }
+                if (found) {
+                    JOptionPane.showMessageDialog(null, "This name is being used for X-Axis template", "Error", JOptionPane.ERROR_MESSAGE);
+                    axisName = "";
+                }
+                else {
+                    for (int i = 0; i < yAxisList.getItemCount() && !found; ++i) {
+                        if (yAxisList.getItemAt(i).toString().equals(axisName))
+                            found = true;
+                    }
+                    if (found) {
+                        JOptionPane.showMessageDialog(null, "This name is being used for Y-Axis template", "Error", JOptionPane.ERROR_MESSAGE);
+                        axisName = "";
+                    }
+                }
+            }
+            while (axisName.isEmpty());
+            
+            String axisValues = "";
+            String val;
+            int i = 0;
+            for (; i < axisTable.getColumnCount(); ++i) {
+                val = axisTable.getValueAt(0, i).toString();
+                if (val.isEmpty())
+                    break;
+                else if (!Pattern.matches(Utils.fpRegex, val)) {
+                    JOptionPane.showMessageDialog(null, "Invalid data in table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (i > 0)
+                    axisValues += ",";
+                axisValues += val;
+            }
+            for (; i < axisTable.getColumnCount(); ++i)
+                axisTable.setValueAt("", 0, i);
+            if (type == Axis.XAXIS) {
+                String s = Config.getXAxisTemplates();
+                if (s.endsWith(","))
+                    Config.setXAxisTemplates(s + axisName);
+                else
+                    Config.setXAxisTemplates(s + "," + axisName);
+            }
+            else {
+                String s = Config.getYAxisTemplates();
+                if (s.endsWith(","))
+                    Config.setYAxisTemplates(s + axisName);
+                else
+                    Config.setYAxisTemplates(s + "," + axisName);
+            }
+            Config.setProperty(axisName, axisValues);
+            if (axisList.getItemCount() == 0)
+                axisList.addItem("");
+            axisList.addItem(axisName);
+            axisList.setSelectedItem(axisName);
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, e, "Error saving axis", JOptionPane.ERROR_MESSAGE);
-    	}
+        }
     }
     
     /**
@@ -459,40 +459,40 @@ public class LogStatsFixedAxis implements ActionListener {
      * @param type
      */
     private void remove(Axis type) {
-    	try {
-    		String newNames = "";
-    		String[] axisNames = Config.getXAxisTemplates().split(",");
-	    	JComboBox<String> axisList = xAxisList;
-	    	if (type == Axis.YAXIS) {
-	    		axisList = yAxisList;
-	    		axisNames = Config.getYAxisTemplates().split(",");
-	    	}
-	    	if (axisList.getSelectedItem() == null)
-	    		return;
-	    	String axisName = axisList.getSelectedItem().toString();
-	    	if (axisName.isEmpty())
-	    		return;
-        	if (axisList.getItemCount() == 0)
-        		axisList.addItem("");
-	    	axisList.setSelectedItem("");
-	    	axisList.removeItem(axisName);
-	    	Config.removeProperty(axisName);
-    		for (String s : axisNames) {
-    			if (s.isEmpty() || s.equals(axisName))
-    				continue;
-    			newNames += ("," + s);
-    		}
-    		if (newNames.isEmpty())
-    			newNames = ",";
-	    	if (type == Axis.XAXIS)
-	    		Config.setXAxisTemplates(newNames);
-	    	else
-	    		Config.setYAxisTemplates(newNames);
-    	}
-    	catch (Exception e) {
+        try {
+            String newNames = "";
+            String[] axisNames = Config.getXAxisTemplates().split(",");
+            JComboBox<String> axisList = xAxisList;
+            if (type == Axis.YAXIS) {
+                axisList = yAxisList;
+                axisNames = Config.getYAxisTemplates().split(",");
+            }
+            if (axisList.getSelectedItem() == null)
+                return;
+            String axisName = axisList.getSelectedItem().toString();
+            if (axisName.isEmpty())
+                return;
+            if (axisList.getItemCount() == 0)
+                axisList.addItem("");
+            axisList.setSelectedItem("");
+            axisList.removeItem(axisName);
+            Config.removeProperty(axisName);
+            for (String s : axisNames) {
+                if (s.isEmpty() || s.equals(axisName))
+                    continue;
+                newNames += ("," + s);
+            }
+            if (newNames.isEmpty())
+                newNames = ",";
+            if (type == Axis.XAXIS)
+                Config.setXAxisTemplates(newNames);
+            else
+                Config.setYAxisTemplates(newNames);
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, e, "Error removing axis template", JOptionPane.ERROR_MESSAGE);
-    	}
+        }
     }
     
     /**
@@ -500,30 +500,30 @@ public class LogStatsFixedAxis implements ActionListener {
      * @param type
      */
     private void load(Axis type) {
-    	try {
-	    	JTable axisTable = xAxisTable;
-	    	JComboBox<String> axisList = xAxisList;
-	    	if (type == Axis.YAXIS) {
-	    		axisTable = yAxisTable;
-	    		axisList = yAxisList;
-	    	}
-	    	if (axisList.getSelectedItem() == null)
-	    		return;
-	    	String axisName = axisList.getSelectedItem().toString();
-	    	if (axisName.isEmpty())
-	    		return;
-	    	String[] values = Config.getProperty(axisName).split(",");
-	        Utils.ensureColumnCount(values.length, axisTable);
-	        Utils.clearTable(axisTable);
-	    	for (int i = 0; i < values.length; ++i)
-	    		axisTable.setValueAt(values[i], 0, i);
-	        for (int i = axisTable.getColumnCount() - 1; i >= 0 && axisTable.getValueAt(0, i).toString().equals(""); --i)
-	            Utils.removeColumn(i, axisTable);
-    	}
-    	catch (Exception e) {
+        try {
+            JTable axisTable = xAxisTable;
+            JComboBox<String> axisList = xAxisList;
+            if (type == Axis.YAXIS) {
+                axisTable = yAxisTable;
+                axisList = yAxisList;
+            }
+            if (axisList.getSelectedItem() == null)
+                return;
+            String axisName = axisList.getSelectedItem().toString();
+            if (axisName.isEmpty())
+                return;
+            String[] values = Config.getProperty(axisName).split(",");
+            Utils.ensureColumnCount(values.length, axisTable);
+            Utils.clearTable(axisTable);
+            for (int i = 0; i < values.length; ++i)
+                axisTable.setValueAt(values[i], 0, i);
+            for (int i = axisTable.getColumnCount() - 1; i >= 0 && axisTable.getValueAt(0, i).toString().equals(""); --i)
+                Utils.removeColumn(i, axisTable);
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, e, "Error load axis template", JOptionPane.ERROR_MESSAGE);
-    	}
+        }
     }
     
     /**
@@ -531,88 +531,88 @@ public class LogStatsFixedAxis implements ActionListener {
      * @return
      */
     private boolean validateAxisData() {
-    	try {
-	        if (Utils.isTableEmpty(xAxisTable) && Utils.isTableEmpty(yAxisTable)) {
-	        	JOptionPane.showMessageDialog(null, "Both axis tables are either empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
-	        	return false;
-	        }
-	        String val;
-	        int i = 0;
-	        ArrayList<Double> tempArray = new ArrayList<Double>();
-	        if (!Utils.isTableEmpty(xAxisTable)) {
-		    	for (i = 0; i < xAxisTable.getColumnCount(); ++i) {
-		    		val = xAxisTable.getValueAt(0, i).toString();
-		    		if (val.isEmpty())
-		    			break;
-		    		else if (!Pattern.matches(Utils.fpRegex, val)) {
-			        	JOptionPane.showMessageDialog(null, "Invalid data in X-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
-			            return false;
-			        }
-			        tempArray.add(Double.valueOf(val));
-		    	}
-		    	for (; i < xAxisTable.getColumnCount(); ++i)
-		    		xAxisTable.setValueAt("", 0, i);
-		    	xAxisArray.clear();
-		    	for (Double d : tempArray)
-		    		xAxisArray.add(d);
-		    	Collections.sort(xAxisArray);
-	        }
-	        tempArray.clear();
-	        if (!Utils.isTableEmpty(yAxisTable)) {
-		    	for (i = 0; i < yAxisTable.getColumnCount(); ++i) {
-		    		val = yAxisTable.getValueAt(0, i).toString();
-		    		if (val.isEmpty())
-		    			break;
-			        if (!Pattern.matches(Utils.fpRegex, val)) {
-			        	JOptionPane.showMessageDialog(null, "Invalid data in Y-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
-			            return false;
-			        }
-			        tempArray.add(Double.valueOf(val));
-		    	}
-		    	for (; i < yAxisTable.getColumnCount(); ++i)
-		    		yAxisTable.setValueAt("", 0, i);
-		    	yAxisArray.clear();
-		    	for (Double d : tempArray)
-		    		yAxisArray.add(d);
-		    	Collections.sort(yAxisArray);
-	        }
-	        distance.set(0, (Integer)distanceSpinner.getValue());
-	        return true;
-    	}
-    	catch (Exception e) {
+        try {
+            if (Utils.isTableEmpty(xAxisTable) && Utils.isTableEmpty(yAxisTable)) {
+                JOptionPane.showMessageDialog(null, "Both axis tables are either empty or not properly populated", "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            String val;
+            int i = 0;
+            ArrayList<Double> tempArray = new ArrayList<Double>();
+            if (!Utils.isTableEmpty(xAxisTable)) {
+                for (i = 0; i < xAxisTable.getColumnCount(); ++i) {
+                    val = xAxisTable.getValueAt(0, i).toString();
+                    if (val.isEmpty())
+                        break;
+                    else if (!Pattern.matches(Utils.fpRegex, val)) {
+                        JOptionPane.showMessageDialog(null, "Invalid data in X-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                    tempArray.add(Double.valueOf(val));
+                }
+                for (; i < xAxisTable.getColumnCount(); ++i)
+                    xAxisTable.setValueAt("", 0, i);
+                xAxisArray.clear();
+                for (Double d : tempArray)
+                    xAxisArray.add(d);
+                Collections.sort(xAxisArray);
+            }
+            tempArray.clear();
+            if (!Utils.isTableEmpty(yAxisTable)) {
+                for (i = 0; i < yAxisTable.getColumnCount(); ++i) {
+                    val = yAxisTable.getValueAt(0, i).toString();
+                    if (val.isEmpty())
+                        break;
+                    if (!Pattern.matches(Utils.fpRegex, val)) {
+                        JOptionPane.showMessageDialog(null, "Invalid data in Y-Axis table, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                    tempArray.add(Double.valueOf(val));
+                }
+                for (; i < yAxisTable.getColumnCount(); ++i)
+                    yAxisTable.setValueAt("", 0, i);
+                yAxisArray.clear();
+                for (Double d : tempArray)
+                    yAxisArray.add(d);
+                Collections.sort(yAxisArray);
+            }
+            distance.set(0, (Integer)distanceSpinner.getValue());
+            return true;
+        }
+        catch (Exception e) {
             logger.error(e);
             JOptionPane.showMessageDialog(null, e, "Error setting axis", JOptionPane.ERROR_MESSAGE);
-    	}
-    	return false;
+        }
+        return false;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
         if ("clearxaxis".equals(e.getActionCommand())) {
-        	xAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+            xAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
             Utils.initializeTable(xAxisTable, ColumnWidth);
             xAxisList.setSelectedIndex(-1);
         }
         else if ("clearyaxis".equals(e.getActionCommand())) {
-        	yAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
+            yAxisTable.setModel(new DefaultTableModel(1, AxisColumnCount));
             Utils.initializeTable(yAxisTable, ColumnWidth);
             yAxisList.setSelectedIndex(-1);
         }
         else if ("cleartempl".equals(e.getActionCommand()))
-        	Utils.clearTable(templateTable);
+            Utils.clearTable(templateTable);
         else if ("validate".equals(e.getActionCommand()))
             validateTemplateData();
         else if ("savexaxis".equals(e.getActionCommand()))
-        	save(Axis.XAXIS);
+            save(Axis.XAXIS);
         else if ("saveyaxis".equals(e.getActionCommand()))
-        	save(Axis.YAXIS);
+            save(Axis.YAXIS);
         else if ("remxtempl".equals(e.getActionCommand()))
-        	remove(Axis.XAXIS);
+            remove(Axis.XAXIS);
         else if ("remytempl".equals(e.getActionCommand()))
-        	remove(Axis.YAXIS);
+            remove(Axis.YAXIS);
         else if ("xaxis".equals(e.getActionCommand()))
-        	load(Axis.XAXIS);
+            load(Axis.XAXIS);
         else if ("yaxis".equals(e.getActionCommand()))
-        	load(Axis.YAXIS);
+            load(Axis.YAXIS);
     }
 }

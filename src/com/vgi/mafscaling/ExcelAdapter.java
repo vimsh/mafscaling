@@ -109,7 +109,7 @@ public class ExcelAdapter implements ActionListener {
      * @param extendCols, if true will automatically add columns to the table to be able to paste all data
      */
     public void addTable(JTable table, boolean disableCopy, boolean disableCut, boolean disablePaste, boolean disableClear, boolean extendRows, boolean extendCols) {
-    	addTable(table, disableCopy, disableCut, disablePaste, disableClear, true, true, true, extendRows, extendCols);
+        addTable(table, disableCopy, disableCut, disablePaste, disableClear, true, true, true, extendRows, extendCols);
     }
 
     /**
@@ -203,7 +203,7 @@ public class ExcelAdapter implements ActionListener {
             menuItems.remove(mi);
         table.setComponentPopupMenu(null);
         for (KeyStroke ks : table.getRegisteredKeyStrokes())
-        	table.unregisterKeyboardAction(ks);
+            table.unregisterKeyboardAction(ks);
     }
     
     /**
@@ -275,12 +275,12 @@ public class ExcelAdapter implements ActionListener {
         TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
         BgColorFormatRenderer bgRenderer = null;
         if (renderer != null && renderer instanceof BgColorFormatRenderer)
-        	bgRenderer = (BgColorFormatRenderer)renderer;
+            bgRenderer = (BgColorFormatRenderer)renderer;
         for (int i = 0; i < numrows; ++i) {
             for (int j = 0; j < numcols; ++j) {
                 table.setValueAt("", rowsselected[i], colsselected[j]);
                 if (bgRenderer != null)
-                	bgRenderer.setColorAt(Color.WHITE, rowsselected[i], colsselected[j]);
+                    bgRenderer.setColorAt(Color.WHITE, rowsselected[i], colsselected[j]);
             }
         }
     }
@@ -335,10 +335,10 @@ public class ExcelAdapter implements ActionListener {
             return;
         }
         for (int i = 0; i < numcols; ++i) {
-        	for (int j = 0; j < numrows; ++j) {
+            for (int j = 0; j < numrows; ++j) {
                 sbf.append(table.getValueAt(rowsselected[j], colsselected[i]));
                 if (j < numrows - 1)
-                	sbf.append("\t");
+                    sbf.append("\t");
             }
             sbf.append(eol);
         }
@@ -355,9 +355,9 @@ public class ExcelAdapter implements ActionListener {
         if (numcols == 0 || numrows == 0)
             return;
         if (numcols > 2 && numrows > 2)
-        	sbf.append("[Table3D]" + eol);
+            sbf.append("[Table3D]" + eol);
         else
-        	sbf.append("[Table2D]" + eol);
+            sbf.append("[Table2D]" + eol);
         int[] rowsselected = table.getSelectedRows();
         int[] colsselected = table.getSelectedColumns();
         if (!((numrows - 1 == rowsselected[rowsselected.length - 1] - rowsselected[0] &&
@@ -393,37 +393,37 @@ public class ExcelAdapter implements ActionListener {
             if (rowCount > 0) {
                 // add extra rows to the table to accommodate for paste data
                 if (extendRows && startRow + rowCount > table.getRowCount())
-                	Utils.ensureRowCount(startRow + rowCount, table);
+                    Utils.ensureRowCount(startRow + rowCount, table);
                 // add extra columns to the table to accommodate for paste data
                 rowstring = lines[0];
                 String[] entries = rowstring.split("[\t,]", -1);
                 int colCount = entries.length;
                 if (extendCols && startCol + colCount > table.getColumnCount())
-                	Utils.ensureColumnCount(startCol + colCount, table);
+                    Utils.ensureColumnCount(startCol + colCount, table);
                 if (rowCount == 1 && colCount == 1) {
-                	int[] rows = table.getSelectedRows();
-                	int[] cols = table.getSelectedColumns();
-	                // populate cells with the data
-	                for (int i = 0; i < rows.length; ++i) {
-	                    for (int j = 0; j < cols.length; ++j)
-	                    	table.setValueAt(entries[0], rows[i], cols[j]);
-	                }
+                    int[] rows = table.getSelectedRows();
+                    int[] cols = table.getSelectedColumns();
+                    // populate cells with the data
+                    for (int i = 0; i < rows.length; ++i) {
+                        for (int j = 0; j < cols.length; ++j)
+                            table.setValueAt(entries[0], rows[i], cols[j]);
+                    }
                 }
                 else {
-	                for (int i = 0; i < rowCount; ++i) {
-	                    if (i > 0)
-	                        rowstring = lines[i];
-	                    entries = rowstring.split("[\t,]", -1);
-	                    if (entries.length > colCount && extendCols && startCol + entries.length > table.getColumnCount()) {
-	                    	colCount = entries.length;
-	                    	Utils.ensureColumnCount(startCol + colCount, table);
-	                    }
-	                    for (int j = 0; j < entries.length; ++j) {
-	                        value = entries[j];
-	                        if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
-	                            table.setValueAt(value, startRow + i, startCol + j);
-	                    }
-	                }
+                    for (int i = 0; i < rowCount; ++i) {
+                        if (i > 0)
+                            rowstring = lines[i];
+                        entries = rowstring.split("[\t,]", -1);
+                        if (entries.length > colCount && extendCols && startCol + entries.length > table.getColumnCount()) {
+                            colCount = entries.length;
+                            Utils.ensureColumnCount(startCol + colCount, table);
+                        }
+                        for (int j = 0; j < entries.length; ++j) {
+                            value = entries[j];
+                            if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
+                                table.setValueAt(value, startRow + i, startCol + j);
+                        }
+                    }
                 }
             }
         }
@@ -444,21 +444,21 @@ public class ExcelAdapter implements ActionListener {
             String[] lines = trstring.split("\\r?\\n");
             ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
             for (String colsArr : lines) {
-            	String[] rowsArr = colsArr.split("[\t,]", -1);
-            	ArrayList<String> rows = new ArrayList<String>();
-            	for (String row : rowsArr)
-            		rows.add(row);
-            	data.add(rows);
+                String[] rowsArr = colsArr.split("[\t,]", -1);
+                ArrayList<String> rows = new ArrayList<String>();
+                for (String row : rowsArr)
+                    rows.add(row);
+                data.add(rows);
             }
             int rowCount = (data.size() > 0 ? data.get(0).size() : 0);
             if (rowCount > 0) {
                 // add extra rows to the table to accommodate for paste data
                 if (extendRows && startRow + rowCount > table.getRowCount())
-                	Utils.ensureRowCount(startRow + rowCount, table);
+                    Utils.ensureRowCount(startRow + rowCount, table);
                 // add extra columns to the table to accommodate for paste data
                 int colCount = data.size();
                 if (extendCols && startCol + colCount > table.getColumnCount())
-                	Utils.ensureColumnCount(startCol + colCount, table);
+                    Utils.ensureColumnCount(startCol + colCount, table);
                 // populate cells with the data
                 for (int i = 0; i < rowCount; ++i) {
                     for (int j = 0; j < colCount; ++j) {

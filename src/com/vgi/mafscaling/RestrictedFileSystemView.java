@@ -10,19 +10,19 @@ public class RestrictedFileSystemView  extends FileSystemView {
     }
     @Override
     public File createNewFolder(File dir) {
-		return null;
-	}
+        return null;
+    }
     @Override
     public File getDefaultDirectory() {
-    	return rootDirectory;
+        return rootDirectory;
     }
     @Override
     public File getHomeDirectory() {
-    	return rootDirectory;
+        return rootDirectory;
     }
     @Override
     public File getParentDirectory(File dir) {
-    	return rootDirectory;
+        return rootDirectory;
     }
     @Override
     public File[] getRoots() {
@@ -30,12 +30,12 @@ public class RestrictedFileSystemView  extends FileSystemView {
     }
     @Override
     public boolean isRoot(File file) {
-    	if (file.equals(rootDirectory))
-    		return true;
+        if (file.equals(rootDirectory))
+            return true;
         return false;
     }
     @Override
     public boolean isFileSystemRoot(File file) {
-    	return isRoot(file);
+        return isRoot(file);
     }
 }

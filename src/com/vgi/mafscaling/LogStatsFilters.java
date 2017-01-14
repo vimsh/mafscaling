@@ -39,7 +39,7 @@ import javax.swing.JScrollPane;
 import javax.swing.UIDefaults;
 
 public class LogStatsFilters implements ActionListener {
-	private String[] colNames = null;
+    private String[] colNames = null;
     private ArrayList<JButton> filterButtonList = null;
     private ArrayList<JComboBox<String>> filterComboBoxList = null;
     private ArrayList<JComboBox<String>> filterColumnList = null;
@@ -56,7 +56,7 @@ public class LogStatsFilters implements ActionListener {
     private UIDefaults andButtonInsets = new UIDefaults();
     
     public LogStatsFilters(String[] names, ArrayList<JButton> buttons, ArrayList<JComboBox<String>> columns, ArrayList<JComboBox<String>> conditions, ArrayList<JFormattedTextField> values) {
-    	colNames = names;
+        colNames = names;
         filterButtonList = buttons;
         filterColumnList = columns;
         filterComboBoxList = conditions;
@@ -167,13 +167,13 @@ public class LogStatsFilters implements ActionListener {
     }
 
     private void addExistingFilters() {
-    	for (int row = 0; row < tmpFilterButtonList.size(); ++row) {
-    		addAndButton(row, 0, tmpFilterButtonList.get(row));
-    		addComboBox(row, 1, tmpFilterColumnList.get(row));
-    		addComboBox(row, 2, tmpFilterComboBoxList.get(row));
-    		addTextFilter(row, 3, tmpFilterTextBoxList.get(row));
-    		addCheckBox(row);
-    	}
+        for (int row = 0; row < tmpFilterButtonList.size(); ++row) {
+            addAndButton(row, 0, tmpFilterButtonList.get(row));
+            addComboBox(row, 1, tmpFilterColumnList.get(row));
+            addComboBox(row, 2, tmpFilterComboBoxList.get(row));
+            addTextFilter(row, 3, tmpFilterTextBoxList.get(row));
+            addCheckBox(row);
+        }
     }
 
     private void addFilter() {
@@ -199,7 +199,7 @@ public class LogStatsFilters implements ActionListener {
     private JComboBox<String> addComboBox(int row, int column, String[] values, boolean setProtoVal) {
         JComboBox<String> combo = new JComboBox<String>(values);
         if (setProtoVal)
-        	combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            combo.setPrototypeDisplayValue("XXXXXXXXXXXXXXXXXXXXXXXXXXX");
         addComboBox(row, column, combo);
         return combo;
     }
@@ -264,14 +264,14 @@ public class LogStatsFilters implements ActionListener {
     }
     
     private void add() {
-    	addFilter();
+        addFilter();
     }
     
     
     private void remove() {
-    	boolean removed = false;
+        boolean removed = false;
         for (int k = tmpFilterButtonList.size() - 1; k >= 0; --k) {
-        	JCheckBox checkBox = (JCheckBox) filtersPanel.getComponent(k * 5 + 4);
+            JCheckBox checkBox = (JCheckBox) filtersPanel.getComponent(k * 5 + 4);
             if (checkBox.isSelected()) {
                 tmpFilterButtonList.remove(k);
                 tmpFilterColumnList.remove(k);
@@ -281,19 +281,19 @@ public class LogStatsFilters implements ActionListener {
             }
         }
         if (removed) {
-        	tmpFilterButtonList.set(0, null);
+            tmpFilterButtonList.set(0, null);
             filtersPanel.removeAll();
-        	addExistingFilters();
-	        filtersPanel.revalidate();
-	        filtersPanel.repaint();
+            addExistingFilters();
+            filtersPanel.revalidate();
+            filtersPanel.repaint();
         }
     }
     
     private boolean validateFilters() {
         for (int k = 0; k < tmpFilterButtonList.size(); ++k) {
             if (tmpFilterComboBoxList.get(k).getSelectedItem() == null ||
-            	tmpFilterComboBoxList.get(k).getSelectedItem().equals("") ||
-            	tmpFilterColumnList.get(k).getSelectedItem() == null ||
+                tmpFilterComboBoxList.get(k).getSelectedItem().equals("") ||
+                tmpFilterColumnList.get(k).getSelectedItem() == null ||
                 tmpFilterColumnList.get(k).getSelectedItem().equals("") ||
                 tmpFilterTextBoxList.get(k).getValue() == null ||
                 tmpFilterTextBoxList.get(k).getValue().equals("")) {

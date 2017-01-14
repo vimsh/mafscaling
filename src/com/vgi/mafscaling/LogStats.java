@@ -246,16 +246,16 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 
             addButton(0, 11, 2, "GO", "go");
 
-	        labelFileName = new JLabel("");
-	        labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
-	        GridBagConstraints gbc_label = new GridBagConstraints();
-	        gbc_label.anchor = GridBagConstraints.WEST;
-	        gbc_label.fill = GridBagConstraints.HORIZONTAL;
-	        gbc_label.insets = insets3;
-	        gbc_label.gridx = 0;
-	        gbc_label.gridy = 2;
-	        gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length;
-	        cntlPanel.add(labelFileName, gbc_label);
+            labelFileName = new JLabel("");
+            labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
+            GridBagConstraints gbc_label = new GridBagConstraints();
+            gbc_label.anchor = GridBagConstraints.WEST;
+            gbc_label.fill = GridBagConstraints.HORIZONTAL;
+            gbc_label.insets = insets3;
+            gbc_label.gridx = 0;
+            gbc_label.gridy = 2;
+            gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length;
+            cntlPanel.add(labelFileName, gbc_label);
         }
         catch (Exception e) {
             logger.error(e);
@@ -482,14 +482,14 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     }
     
     private void setFilters() {
-    	String[] colNames = new String[xAxisColumn.getItemCount()];
-    	for (int i = 0; i < xAxisColumn.getItemCount(); ++i)
-    		colNames[i] = xAxisColumn.getItemAt(i);
+        String[] colNames = new String[xAxisColumn.getItemCount()];
+        for (int i = 0; i < xAxisColumn.getItemCount(); ++i)
+            colNames[i] = xAxisColumn.getItemAt(i);
         new LogStatsFilters(colNames, filterButtonList, filterColumnList, filterComboBoxList, filterTextBoxList);
         if (filterButtonList.size() > 0)
-        	btnSetFiltersButton.setText(ViewFilters);
+            btnSetFiltersButton.setText(ViewFilters);
         else
-        	btnSetFiltersButton.setText(SetFilters);
+            btnSetFiltersButton.setText(SetFilters);
     }
     
     private void clearFilters() {
@@ -590,25 +590,25 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             if (filterArr[k] != null) {
                 filterColumnList.get(k).setSelectedItem(filterArr[k]);
                 if (filterColumnList.get(k).getSelectedIndex() == -1 || filterColumnList.get(k).getSelectedItem().equals("")) {
-                	filterButtonList.remove(k);
-                	filterComboBoxList.remove(k);
-                	filterColumnList.remove(k);
-                	filterTextBoxList.remove(k);
+                    filterButtonList.remove(k);
+                    filterComboBoxList.remove(k);
+                    filterColumnList.remove(k);
+                    filterTextBoxList.remove(k);
                 }
             }
         }
         if (filterButtonList.size() > 0) {
-        	filterButtonList.set(0, null);
-        	btnSetFiltersButton.setText(ViewFilters);
+            filterButtonList.set(0, null);
+            btnSetFiltersButton.setText(ViewFilters);
         }
         else
-        	btnSetFiltersButton.setText(SetFilters);
-        	
+            btnSetFiltersButton.setText(SetFilters);
+            
         StringBuffer sb = new StringBuffer("");
         for (File logFile : logFilesTodo)
             sb.append(logFile.getName()).append(", ");
         if (sb.length() >= 2)
-        	sb.delete(sb.length() - 2, sb.length());
+            sb.delete(sb.length() - 2, sb.length());
         labelFileName.setText("[" + sb.toString() + "]");
     }
     
@@ -706,7 +706,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         int xAxisArraySize = xAxisArray.size();
         int yAxisArraySize = yAxisArray.size();
         if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItems() == null) {
-        	JOptionPane.showMessageDialog(null, "lease select X-Axis, Y-Axis, and Data columns.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "lease select X-Axis, Y-Axis, and Data columns.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (xAxisRoundTextBox.getValue() == null && xAxisArraySize == 0) {
@@ -1178,10 +1178,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     
     protected void onDroppedFiles(List<File> files) {
         if (files.size() > 0 && getSelectedIndex() == 0) {
-	    	fileChooser.setMultiSelectionEnabled(true);
+            fileChooser.setMultiSelectionEnabled(true);
             fileChooser.setCurrentDirectory(files.get(0));
-			fileChooser.setSelectedFiles((File[])files.toArray());
-			fileChooser.approveSelection();
+            fileChooser.setSelectedFiles((File[])files.toArray());
+            fileChooser.approveSelection();
             getLogColumns();
         }
     }

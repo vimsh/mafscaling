@@ -44,8 +44,8 @@ import javax.swing.JTable;
 import org.apache.log4j.Logger;
 
 public class MafIatComp extends ACompCalc {
-	private static final long serialVersionUID = 42535949864314233L;
-	private static final Logger logger = Logger.getLogger(MafIatComp.class);
+    private static final long serialVersionUID = 42535949864314233L;
+    private static final Logger logger = Logger.getLogger(MafIatComp.class);
 
     private static final String iatAxisName = "IAT";
     private static final String timeAxisName = "Time";
@@ -88,7 +88,7 @@ public class MafIatComp extends ACompCalc {
 
     public MafIatComp(int tabPlacement, PrimaryOpenLoopFuelingTable table) {
         super(tabPlacement);
-    	polfTable = table;
+        polfTable = table;
         origTableName = "Current MAF IAT compensation table";
         newTableName = "New MAF IAT compensation table";
         corrTableName = "MAF IAT Correction (ratio) table";
@@ -122,26 +122,26 @@ public class MafIatComp extends ACompCalc {
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
-	    addButton(cntlPanel, 0, "POL Fueling", "fueling", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 1, "Load Log", "loadlog", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 2, "Clear IAT Data", "clearorig", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 3, "Clear Run Data", "clearlog", GridBagConstraints.WEST);
-	    addButton(cntlPanel, 4, "Clear All", "clearall", GridBagConstraints.WEST);
-	    addCheckBox(cntlPanel, 5, "Hide Log Table", "hidelogtable");
-	    compareTableCheckBox = addCheckBox(cntlPanel, 6, "Compare Tables", "comparetables");
-	    addButton(cntlPanel, 7, "GO", "go", GridBagConstraints.EAST);
+        addButton(cntlPanel, 0, "POL Fueling", "fueling", GridBagConstraints.WEST);
+        addButton(cntlPanel, 1, "Load Log", "loadlog", GridBagConstraints.WEST);
+        addButton(cntlPanel, 2, "Clear IAT Data", "clearorig", GridBagConstraints.WEST);
+        addButton(cntlPanel, 3, "Clear Run Data", "clearlog", GridBagConstraints.WEST);
+        addButton(cntlPanel, 4, "Clear All", "clearall", GridBagConstraints.WEST);
+        addCheckBox(cntlPanel, 5, "Hide Log Table", "hidelogtable");
+        compareTableCheckBox = addCheckBox(cntlPanel, 6, "Compare Tables", "comparetables");
+        addButton(cntlPanel, 7, "GO", "go", GridBagConstraints.EAST);
     }
     
     protected void formatTable(JTable table) {
         if (table == corrCountTable) {
-	        Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") }, { new DecimalFormat("0.0"), new DecimalFormat("#") } };
-	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
-	        renderer.setFormats(formatMatrix);
+            Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") }, { new DecimalFormat("0.0"), new DecimalFormat("#") } };
+            NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
+            renderer.setFormats(formatMatrix);
         }
         else {
-	        Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") } };
-	        NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
-	        renderer.setFormats(formatMatrix);
+            Format[][] formatMatrix = { { new DecimalFormat("0.0"), new DecimalFormat("0.00") } };
+            NumberFormatRenderer renderer = (NumberFormatRenderer)table.getDefaultRenderer(Object.class);
+            renderer.setFormats(formatMatrix);
         }
     }
 
@@ -150,7 +150,7 @@ public class MafIatComp extends ACompCalc {
     //////////////////////////////////////////////////////////////////////////////////////
     
     protected void createGraghTab() {
-    	rbGroup = new ButtonGroup();
+        rbGroup = new ButtonGroup();
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
 
@@ -202,7 +202,7 @@ public class MafIatComp extends ACompCalc {
     //////////////////////////////////////////////////////////////////////////////////////
     
     private boolean getColumnsFilters(String[] elements, boolean isPolSet) {
-    	boolean ret = true;
+        boolean ret = true;
         ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
         String logClOlStatusColName = Config.getClOlStatusColumnName();
         String logThrottleAngleColName = Config.getThrottleAngleColumnName();
@@ -261,36 +261,36 @@ public class MafIatComp extends ACompCalc {
         boolean isPolSet = polfTable.isSet();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
-	        BufferedReader br = null;
-	        ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
-	        try {
-	            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-	            String line = null;
-	            String [] elements = null;
-	            while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
-	            	continue;
+            BufferedReader br = null;
+            ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
+            try {
+                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                String line = null;
+                String [] elements = null;
+                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                    continue;
                 getColumnsFilters(elements, false);
                 boolean resetColumns = false;
                 if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 ||
-                	logWBAfrColIdx >= 0 || logAfrColIdx >= 0 || logCommandedAfrCol >= 0 || logTimeColIdx >=0 ||
-                	logMafvColIdx >= 0 || logIatColIdx >= 0 || logMafColIdx >= 0 || logClOlStatusColIdx >= 0 ||
-                	logRpmColIdx >= 0 || logLoadColIdx >= 0) {
-                	if (displayDialog) {
-	                    int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
-	                    if (rc == 0)
-	                    	resetColumns = true;
-	                    else if (rc == 2)
-	                    	displayDialog = false;
-                	}
+                    logWBAfrColIdx >= 0 || logAfrColIdx >= 0 || logCommandedAfrCol >= 0 || logTimeColIdx >=0 ||
+                    logMafvColIdx >= 0 || logIatColIdx >= 0 || logMafColIdx >= 0 || logClOlStatusColIdx >= 0 ||
+                    logRpmColIdx >= 0 || logLoadColIdx >= 0) {
+                    if (displayDialog) {
+                        int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
+                        if (rc == 0)
+                            resetColumns = true;
+                        else if (rc == 2)
+                            displayDialog = false;
+                    }
                 }
 
                 if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 ||
-                	logAfCorrectionColIdx < 0 || logWBAfrColIdx < 0 || logAfrColIdx < 0 || logTimeColIdx < 0 || 
-                	logMafvColIdx < 0 || logIatColIdx < 0 || logMafColIdx < 0 || logClOlStatusColIdx < 0 ||
-                	logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
-                	ColumnsFiltersSelection selectionWindow = new MafIatColumnsFiltersSelection(isPolSet);
-                	if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
-                		return;
+                    logAfCorrectionColIdx < 0 || logWBAfrColIdx < 0 || logAfrColIdx < 0 || logTimeColIdx < 0 || 
+                    logMafvColIdx < 0 || logIatColIdx < 0 || logMafColIdx < 0 || logClOlStatusColIdx < 0 ||
+                    logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
+                    ColumnsFiltersSelection selectionWindow = new MafIatColumnsFiltersSelection(isPolSet);
+                    if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
+                        return;
                 }
                 
                 String[] flds;
@@ -318,112 +318,112 @@ public class MafIatComp extends ACompCalc {
                 clearRunTables();
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
-                	line = br.readLine();
-                	if (line != null)
-                		buffer.addFirst(line.split("\\s*,\\s*", -1));
+                    line = br.readLine();
+                    if (line != null)
+                        buffer.addFirst(line.split("\\s*,\\s*", -1));
                 }
                 try {
-	                while (line != null && buffer.size() > afrRowOffset) {
-	                    afrflds = buffer.getFirst();
-	                    flds = buffer.removeLast();
-	                    line = br.readLine();
-	                	if (line != null)
-	                		buffer.addFirst(line.split("\\s*,\\s*", -1));
-	                	
-	                    ppThrottle = pThrottle;
-	                    pThrottle = throttle;
-	                    try {
-	                    	throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
-                        	// Calculate dV/dt
-                        	prevTime = time;
-                        	if (prevTime == 0)
-                        		Utils.resetBaseTime(flds[logTimeColIdx]);
-                        	time = Utils.parseTime(flds[logTimeColIdx]);
-                        	pmafv = mafv;
-                        	mafv = Double.valueOf(flds[logMafvColIdx]);
-                        	if ((time - prevTime) == 0.0)
-                        		dVdt = 100.0;
-                        	else
-                        		dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
-	                    	if (row > 1 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
-	                    		if (!removed)
-	                    			Utils.removeRow(row--, logDataTable);
-	                    		removed = true;
-	                    	}
-	                    	else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
-	                            // Filters
-	                    		trims = Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]);
-                            	if (clValue == (int)Utils.parseValue(flds[logClOlStatusColIdx])) {
-                            		afr = Double.valueOf(flds[logAfrColIdx]);
-                            		corr = (100.0 + trims) / 100.0;
-                            	}
-                            	else {
-                            		afr = Double.valueOf(afrflds[logWBAfrColIdx]);
-		                            rpm = Double.valueOf(flds[logRpmColIdx]);
-		                            load = Double.valueOf(flds[logLoadColIdx]);
-		                            if (logCommandedAfrCol >= 0)
-		                            	cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-		                            else if (isPolSet)
-		                            	cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
-		                            else {
-		                            	JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
-		                            	return;
-		                            }
-                            		corr = (afr / ((100.0 - trims) / 100.0)) / cmdafr;
-                            	}
-	                        	iat = Double.valueOf(flds[logIatColIdx]);
-	                        	maf = Double.valueOf(flds[logMafColIdx]);
-	                        	if (afrMin <= afr && afr <= afrMax && dVdt <= dvDtMax) {
-		                    		removed = false;
-	                                Utils.ensureRowCount(row + 1, logDataTable);
-	                                logDataTable.setValueAt(time, row, 0);
-	                                logDataTable.setValueAt(maf, row, 1);
-	                                logDataTable.setValueAt(iat, row, 2);
-	                                logDataTable.setValueAt(corr, row, 3);
-	                                logDataTable.setValueAt(dVdt, row, 4);
-	                                mafArray.add(maf);
-	                                errCorrArray.add(corr);
-	                                mafvArray.add(mafv);
-	                                timeArray.add((double)time);
-	                                iatArray.add(iat);
-	                                dvdtArray.add(dVdt);
-	                                row += 1;
-	                        	}
-	                        	else
-		                    		removed = true;
-	                    	}
-	                    	else
-	                    		removed = true;
-	                    }
-	                    catch (NumberFormatException e) {
-	                        logger.error(e);
-	                        JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
-	                        return;
-	                    }
-	                    i += 1;
-	                }
-	    	        JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
-	    	        button.setSelected(true);
-	    	        plotDvdtData();
+                    while (line != null && buffer.size() > afrRowOffset) {
+                        afrflds = buffer.getFirst();
+                        flds = buffer.removeLast();
+                        line = br.readLine();
+                        if (line != null)
+                            buffer.addFirst(line.split("\\s*,\\s*", -1));
+                        
+                        ppThrottle = pThrottle;
+                        pThrottle = throttle;
+                        try {
+                            throttle = Double.valueOf(flds[logThrottleAngleColIdx]);
+                            // Calculate dV/dt
+                            prevTime = time;
+                            if (prevTime == 0)
+                                Utils.resetBaseTime(flds[logTimeColIdx]);
+                            time = Utils.parseTime(flds[logTimeColIdx]);
+                            pmafv = mafv;
+                            mafv = Double.valueOf(flds[logMafvColIdx]);
+                            if ((time - prevTime) == 0.0)
+                                dVdt = 100.0;
+                            else
+                                dVdt = Math.abs(((mafv - pmafv) / (time - prevTime)) * 1000.0);
+                            if (row > 1 && Math.abs(pThrottle - throttle) > thrtlMaxChange) {
+                                if (!removed)
+                                    Utils.removeRow(row--, logDataTable);
+                                removed = true;
+                            }
+                            else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
+                                // Filters
+                                trims = Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]);
+                                if (clValue == (int)Utils.parseValue(flds[logClOlStatusColIdx])) {
+                                    afr = Double.valueOf(flds[logAfrColIdx]);
+                                    corr = (100.0 + trims) / 100.0;
+                                }
+                                else {
+                                    afr = Double.valueOf(afrflds[logWBAfrColIdx]);
+                                    rpm = Double.valueOf(flds[logRpmColIdx]);
+                                    load = Double.valueOf(flds[logLoadColIdx]);
+                                    if (logCommandedAfrCol >= 0)
+                                        cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
+                                    else if (isPolSet)
+                                        cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
+                                    else {
+                                        JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
+                                        return;
+                                    }
+                                    corr = (afr / ((100.0 - trims) / 100.0)) / cmdafr;
+                                }
+                                iat = Double.valueOf(flds[logIatColIdx]);
+                                maf = Double.valueOf(flds[logMafColIdx]);
+                                if (afrMin <= afr && afr <= afrMax && dVdt <= dvDtMax) {
+                                    removed = false;
+                                    Utils.ensureRowCount(row + 1, logDataTable);
+                                    logDataTable.setValueAt(time, row, 0);
+                                    logDataTable.setValueAt(maf, row, 1);
+                                    logDataTable.setValueAt(iat, row, 2);
+                                    logDataTable.setValueAt(corr, row, 3);
+                                    logDataTable.setValueAt(dVdt, row, 4);
+                                    mafArray.add(maf);
+                                    errCorrArray.add(corr);
+                                    mafvArray.add(mafv);
+                                    timeArray.add((double)time);
+                                    iatArray.add(iat);
+                                    dvdtArray.add(dVdt);
+                                    row += 1;
+                                }
+                                else
+                                    removed = true;
+                            }
+                            else
+                                removed = true;
+                        }
+                        catch (NumberFormatException e) {
+                            logger.error(e);
+                            JOptionPane.showMessageDialog(null, "Error parsing number at " + file.getName() + " line " + i + ": " + e, "Error processing file", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        i += 1;
+                    }
+                    JRadioButton button = (JRadioButton) rbGroup.getElements().nextElement();
+                    button.setSelected(true);
+                    plotDvdtData();
                 }
                 finally {
                     setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
                 }
-	        }
-	        catch (Exception e) {
-	            logger.error(e);
-	            JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
-	        }
-	        finally {
-	        	if (br != null) {
-	                try {
-	                    br.close();
-	                }
-	                catch (IOException e) {
-	                    logger.error(e);
-	                }
-	        	}
-	        }
+            }
+            catch (Exception e) {
+                logger.error(e);
+                JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
+            }
+            finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    }
+                    catch (IOException e) {
+                        logger.error(e);
+                    }
+                }
+            }
         }
     }
 
@@ -435,9 +435,9 @@ public class MafIatComp extends ACompCalc {
             HashMap<Double, ArrayList<Double>> yData;
             ArrayList<Double> data;
             for (int i = 0; i < logDataTable.getRowCount(); ++i) {
-            	xStr = logDataTable.getValueAt(i, 2).toString();
-            	yStr = logDataTable.getValueAt(i, 1).toString();
-            	valStr = logDataTable.getValueAt(i, 3).toString();
+                xStr = logDataTable.getValueAt(i, 2).toString();
+                yStr = logDataTable.getValueAt(i, 1).toString();
+                valStr = logDataTable.getValueAt(i, 3).toString();
                 if (!Pattern.matches(Utils.fpRegex, xStr)) {
                     JOptionPane.showMessageDialog(null, "Invalid value for IAT, row " + i + 1, "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
@@ -456,17 +456,17 @@ public class MafIatComp extends ACompCalc {
 
                 yData = xData.get(x);
                 if (yData == null) {
-                	yData = new HashMap<Double, ArrayList<Double>>();
-                	xData.put(x, yData);
+                    yData = new HashMap<Double, ArrayList<Double>>();
+                    xData.put(x, yData);
                 }
                 data = yData.get(y);
                 if (data == null) {
-                	data = new ArrayList<Double>();
-                	yData.put(y, data);
+                    data = new ArrayList<Double>();
+                    yData.put(y, data);
                 }
                 data.add(val);
             }
-	        return true;
+            return true;
         }
         catch (Exception e) {
             logger.error(e);
@@ -476,52 +476,52 @@ public class MafIatComp extends ACompCalc {
     }
 
     protected boolean displayData() {
-    	try {
+        try {
             int cnt;
             double x, y, val;
             HashMap<Double, ArrayList<Double>> yData;
             ArrayList<Double> data;
             Color[][] colorMatrix = new Color[corrTable.getRowCount()][corrTable.getColumnCount()];
-	        for (int i = 1; i < xAxisArray.size() + 1; ++i) {
-	        	newTable.setValueAt(origTable.getValueAt(0, i), 0, i);
-	        	corrTable.setValueAt(origTable.getValueAt(0, i), 0, i);
-	        	corrCountTable.setValueAt(origTable.getValueAt(0, i), 0, i);
-	        	for (int j = 1; j < yAxisArray.size() + 1; ++j) {
-	        		if (i == 1) {
-	        			newTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
-	        			corrTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
-	        			corrCountTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
-	        		}
-        			x = xAxisArray.get(i - 1);
-        			y = yAxisArray.get(j - 1);
+            for (int i = 1; i < xAxisArray.size() + 1; ++i) {
+                newTable.setValueAt(origTable.getValueAt(0, i), 0, i);
+                corrTable.setValueAt(origTable.getValueAt(0, i), 0, i);
+                corrCountTable.setValueAt(origTable.getValueAt(0, i), 0, i);
+                for (int j = 1; j < yAxisArray.size() + 1; ++j) {
+                    if (i == 1) {
+                        newTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
+                        corrTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
+                        corrCountTable.setValueAt(origTable.getValueAt(j, 0), j, 0);
+                    }
+                    x = xAxisArray.get(i - 1);
+                    y = yAxisArray.get(j - 1);
                     yData = xData.get(x);
                     if (yData == null)
-                    	newTable.setValueAt(origTable.getValueAt(j, i), j, i);
+                        newTable.setValueAt(origTable.getValueAt(j, i), j, i);
                     else {
-                    	data = yData.get(y);
-	                    if (data == null)
-	                    	newTable.setValueAt(origTable.getValueAt(j, i), j, i);
-	                    else {
-	    	        		cnt = data.size();
-    		        		val = (Utils.mean(data) + Utils.mode(data)) / 2.0;
-	    	        		corrTable.setValueAt(val, j, i);
-	    	        		corrCountTable.setValueAt(cnt, j, i);
-	    	        		if (cnt > minCellHitCount) {
-	    		        		val = val / 100.0 * corrApplied;
-	    		        		if (isMafIatInRatio)
-	    		        			newTable.setValueAt(val * Double.valueOf(origTable.getValueAt(j, i).toString()), j, i);
-	    		        		else
-	    		        			newTable.setValueAt(val * (100.0 + Double.valueOf(origTable.getValueAt(j, i).toString())) - 100.0, j, i);
-	    		            	colorMatrix[j][i] = Color.PINK;
-	    	        		}
-	    	        		else
-	    	        			newTable.setValueAt(origTable.getValueAt(j, i), j, i);
-	                    }
+                        data = yData.get(y);
+                        if (data == null)
+                            newTable.setValueAt(origTable.getValueAt(j, i), j, i);
+                        else {
+                            cnt = data.size();
+                            val = (Utils.mean(data) + Utils.mode(data)) / 2.0;
+                            corrTable.setValueAt(val, j, i);
+                            corrCountTable.setValueAt(cnt, j, i);
+                            if (cnt > minCellHitCount) {
+                                val = val / 100.0 * corrApplied;
+                                if (isMafIatInRatio)
+                                    newTable.setValueAt(val * Double.valueOf(origTable.getValueAt(j, i).toString()), j, i);
+                                else
+                                    newTable.setValueAt(val * (100.0 + Double.valueOf(origTable.getValueAt(j, i).toString())) - 100.0, j, i);
+                                colorMatrix[j][i] = Color.PINK;
+                            }
+                            else
+                                newTable.setValueAt(origTable.getValueAt(j, i), j, i);
+                        }
                     }
-	        	}
-	        }
-	        Utils.colorTable(newTable);
-	        
+                }
+            }
+            Utils.colorTable(newTable);
+            
             for (int i = 0; i < colorMatrix.length; ++i)
                 colorMatrix[i][0] = Color.LIGHT_GRAY;
             for (int i = 0; i < colorMatrix[0].length; ++i)
@@ -529,15 +529,15 @@ public class MafIatComp extends ACompCalc {
             ((BgColorFormatRenderer)corrTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
             ((BgColorFormatRenderer)corrCountTable.getDefaultRenderer(Object.class)).setColors(colorMatrix);
 
-	        plot3dCorrection();
-	        return true;
-	    }
-	    catch (Exception e) {
-	        logger.error(e);
-	        JOptionPane.showMessageDialog(null, e, "Error processing data", JOptionPane.ERROR_MESSAGE);
-	    }
-	    return false;    	
-	}
+            plot3dCorrection();
+            return true;
+        }
+        catch (Exception e) {
+            logger.error(e);
+            JOptionPane.showMessageDialog(null, e, "Error processing data", JOptionPane.ERROR_MESSAGE);
+        }
+        return false;        
+    }
     
     private void clearChartData() {
         mafArray.clear();
@@ -551,8 +551,8 @@ public class MafIatComp extends ACompCalc {
     }
     
     protected void clearLogDataTables() {
-    	super.clearLogDataTables();
-    	clearChartData();
+        super.clearLogDataTables();
+        clearChartData();
     }
     
     private boolean plotDvdtData() {
@@ -578,33 +578,33 @@ public class MafIatComp extends ACompCalc {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (checkActionPerformed(e))
-        	return;
+            return;
         if ("fueling".equals(e.getActionCommand())) {
             polfTable.getSetUserFueling();
         }
         else if ("dvdt".equals(e.getActionCommand())) {
-        	JRadioButton radioButton = (JRadioButton)e.getSource();
+            JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
                 if (!plotDvdtData())
-                	radioButton.setSelected(false);
+                    radioButton.setSelected(false);
             }
             else
                 runData.clear();
         }
         else if ("iat".equals(e.getActionCommand())) {
-        	JRadioButton radioButton = (JRadioButton)e.getSource();
+            JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
                 if (!plotIatData())
-                	radioButton.setSelected(false);
+                    radioButton.setSelected(false);
             }
             else
                 runData.clear();
         }
         else if ("mafcorr".equals(e.getActionCommand())) {
-        	JRadioButton radioButton = (JRadioButton)e.getSource();
+            JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
                 if (!plotMafErrCorrData())
-                	radioButton.setSelected(false);
+                    radioButton.setSelected(false);
             }
             else {
                 runData.clear();
@@ -612,10 +612,10 @@ public class MafIatComp extends ACompCalc {
             }
         }
         else if ("iatcorr".equals(e.getActionCommand())) {
-        	JRadioButton radioButton = (JRadioButton)e.getSource();
+            JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
                 if (!plotIatErrCorrData())
-                	radioButton.setSelected(false);
+                    radioButton.setSelected(false);
             }
             else {
                 runData.clear();
@@ -623,10 +623,10 @@ public class MafIatComp extends ACompCalc {
             }
         }
         else if ("corr".equals(e.getActionCommand())) {
-        	JRadioButton radioButton = (JRadioButton)e.getSource();
+            JRadioButton radioButton = (JRadioButton)e.getSource();
             if (radioButton.isSelected()) {
                 if (!plotCorrectionData())
-                	radioButton.setSelected(false);
+                    radioButton.setSelected(false);
             }
             else
                 clear2dChartData();

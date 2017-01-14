@@ -102,86 +102,86 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String minWOTEnrichmentLabelText = "Min WOT Enrichment";
     public static final String wbo2RowOffsetLabelText = "Wideband AFR Row Offset";
     public static final String olClTransitionSkipRowsLabelText = "OL/CL Transition - #Rows to Skip";
-	protected JTable columnsTable = null;
-	protected JTextField thrtlAngleName = null;
-	protected JTextField afLearningName = null;
-	protected JTextField afCorrectionName = null;
-	protected JTextField mafVName = null;
-	protected JTextField mafName = null;
-	protected JTextField wbAfrName = null;
-	protected JTextField stockAfrName = null;
-	protected JTextField rpmName = null;
-	protected JTextField loadName = null;
-	protected JTextField mpName = null;
-	protected JTextField mapName = null;
-	protected JTextField vvt1Name = null;
-	protected JTextField vvt2Name = null;
-	protected JTextField commAfrName = null;
-	protected JTextField clolStatusName = null;
-	protected JTextField cruiseStatusName = null;
-	protected JTextField timeName = null;
-	protected JTextField iatName = null;
-	protected JTextField ffbName = null;
-	protected JTextField veFlowName = null;
-	protected JFormattedTextField minMafVFilter = null;
-	protected JFormattedTextField maxMafVFilter = null;
-	protected JFormattedTextField maxRPMFilter = null;
-	protected JFormattedTextField minRPMFilter = null;
-	protected JFormattedTextField maxFFBFilter = null;
-	protected JFormattedTextField minFFBFilter = null;
-	protected JFormattedTextField minEngineLoadFilter = null;
-	protected JFormattedTextField maxMPFilter = null;
-	protected JFormattedTextField minMPFilter = null;
-	protected JFormattedTextField afrErrorFilter = null;
-	protected JFormattedTextField wotEnrichmentField = null;
-	protected JFormattedTextField wbo2RowOffsetField = null;
-	protected JFormattedTextField olClTransitionSkipRowsField = null;
-	protected JFormattedTextField maxAfrFilter = null;
-	protected JFormattedTextField minAfrFilter = null;
-	protected JFormattedTextField atmPressureFilter = null;
-	protected JFormattedTextField maxIatFilter = null;
-	protected JFormattedTextField maxDvdtFilter = null;
-	protected JFormattedTextField thrtlMinimumFilter = null;
-	protected JFormattedTextField minCellHitCountFilter = null;
-	protected JSpinner wotStationaryPointFilter = null;
-	protected JSpinner clolStatusFilter = null;
-	protected JSpinner cruiseStatusFilter = null;
-	protected JSpinner correctionAppliedValue = null;
-	protected JSpinner thrtlChangeMaxFilter = null;
-	protected JComboBox<String> temperatureScaleField = null;
-	protected JComboBox<String> mapUnitField = null;
-	protected JCheckBox isLoadCompInRatioBool = null;
-	protected JCheckBox isMafIatInRatioBool = null;
-	protected JPanel columnsPanel = null;
-	protected JPanel filtersPanel = null;
-	protected Color background = null;
-	protected Border border = BorderFactory.createEtchedBorder();
-	protected Insets insets0 = new Insets(0, 0, 0, 0);
-	protected Insets insets2 = new Insets(2, 20, 2, 5);
-	protected Insets insets3 = new Insets(1, 0, 0, 1);
-	protected Insets insets4 = new Insets(0, 3, 0, 3);
-	protected Insets insets5 = new Insets(5, 5, 5, 5);
-	
-	protected NumberFormat doubleFmt = NumberFormat.getNumberInstance();
-	protected NumberFormat intFmt = NumberFormat.getNumberInstance();
-	protected ImageIcon arrowImage = new ImageIcon(getClass().getResource("/arrow.jpg"));
-	protected UIDefaults zeroInsets = new UIDefaults();
+    protected JTable columnsTable = null;
+    protected JTextField thrtlAngleName = null;
+    protected JTextField afLearningName = null;
+    protected JTextField afCorrectionName = null;
+    protected JTextField mafVName = null;
+    protected JTextField mafName = null;
+    protected JTextField wbAfrName = null;
+    protected JTextField stockAfrName = null;
+    protected JTextField rpmName = null;
+    protected JTextField loadName = null;
+    protected JTextField mpName = null;
+    protected JTextField mapName = null;
+    protected JTextField vvt1Name = null;
+    protected JTextField vvt2Name = null;
+    protected JTextField commAfrName = null;
+    protected JTextField clolStatusName = null;
+    protected JTextField cruiseStatusName = null;
+    protected JTextField timeName = null;
+    protected JTextField iatName = null;
+    protected JTextField ffbName = null;
+    protected JTextField veFlowName = null;
+    protected JFormattedTextField minMafVFilter = null;
+    protected JFormattedTextField maxMafVFilter = null;
+    protected JFormattedTextField maxRPMFilter = null;
+    protected JFormattedTextField minRPMFilter = null;
+    protected JFormattedTextField maxFFBFilter = null;
+    protected JFormattedTextField minFFBFilter = null;
+    protected JFormattedTextField minEngineLoadFilter = null;
+    protected JFormattedTextField maxMPFilter = null;
+    protected JFormattedTextField minMPFilter = null;
+    protected JFormattedTextField afrErrorFilter = null;
+    protected JFormattedTextField wotEnrichmentField = null;
+    protected JFormattedTextField wbo2RowOffsetField = null;
+    protected JFormattedTextField olClTransitionSkipRowsField = null;
+    protected JFormattedTextField maxAfrFilter = null;
+    protected JFormattedTextField minAfrFilter = null;
+    protected JFormattedTextField atmPressureFilter = null;
+    protected JFormattedTextField maxIatFilter = null;
+    protected JFormattedTextField maxDvdtFilter = null;
+    protected JFormattedTextField thrtlMinimumFilter = null;
+    protected JFormattedTextField minCellHitCountFilter = null;
+    protected JSpinner wotStationaryPointFilter = null;
+    protected JSpinner clolStatusFilter = null;
+    protected JSpinner cruiseStatusFilter = null;
+    protected JSpinner correctionAppliedValue = null;
+    protected JSpinner thrtlChangeMaxFilter = null;
+    protected JComboBox<String> temperatureScaleField = null;
+    protected JComboBox<String> mapUnitField = null;
+    protected JCheckBox isLoadCompInRatioBool = null;
+    protected JCheckBox isMafIatInRatioBool = null;
+    protected JPanel columnsPanel = null;
+    protected JPanel filtersPanel = null;
+    protected Color background = null;
+    protected Border border = BorderFactory.createEtchedBorder();
+    protected Insets insets0 = new Insets(0, 0, 0, 0);
+    protected Insets insets2 = new Insets(2, 20, 2, 5);
+    protected Insets insets3 = new Insets(1, 0, 0, 1);
+    protected Insets insets4 = new Insets(0, 3, 0, 3);
+    protected Insets insets5 = new Insets(5, 5, 5, 5);
+    
+    protected NumberFormat doubleFmt = NumberFormat.getNumberInstance();
+    protected NumberFormat intFmt = NumberFormat.getNumberInstance();
+    protected ImageIcon arrowImage = new ImageIcon(getClass().getResource("/arrow.jpg"));
+    protected UIDefaults zeroInsets = new UIDefaults();
     protected final int windowHeight = 540;
     protected final int windowWidth = 670;
-	protected int colrow;
-	protected int filtrow;
-	
-	public ColumnsFiltersSelection() {
+    protected int colrow;
+    protected int filtrow;
+    
+    public ColumnsFiltersSelection() {
         doubleFmt.setMaximumFractionDigits(2);
         intFmt.setMaximumFractionDigits(0);
         intFmt.setGroupingUsed(false);
         zeroInsets.put("Button.contentMargins", insets0);
-	}
+    }
     
     public boolean getUserSettings(String[] columns) {
-    	createColumnsPanel(columns);
-    	createFiltersPanel();
-    	
+        createColumnsPanel(columns);
+        createFiltersPanel();
+        
         JPanel selectionPanel = new JPanel();
         selectionPanel.setLayout(new BoxLayout(selectionPanel, BoxLayout.Y_AXIS));
         selectionPanel.add(columnsPanel);
@@ -211,9 +211,9 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     abstract boolean processDefaultButton(ActionEvent e);
     
     protected void createColumnsPanel(String[] elements) {
-    	String[] columns = elements.clone();
-    	colrow = 0;
-    	columnsPanel = new JPanel();
+        String[] columns = elements.clone();
+        colrow = 0;
+        columnsPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0};
         gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -243,7 +243,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         columnsTable.setValueAt("", 0, 0);
         Arrays.sort(columns);
         for (int i = 0; i < columns.length; ++i)
-        	columnsTable.setValueAt(columns[i], i + 1, 0);        
+            columnsTable.setValueAt(columns[i], i + 1, 0);        
         JScrollPane scrollPane = new JScrollPane(columnsTable);
         GridBagConstraints gbc_scrollPane = new GridBagConstraints();
         gbc_scrollPane.insets = insets3;
@@ -397,21 +397,21 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addCopyButton(colrow, "veflow");
     }
 
-	protected void createFiltersPanel() {
-		filtrow = 0;
-	    filtersPanel = new JPanel();
-	    GridBagLayout gbl_dataPanel = new GridBagLayout();
-	    gbl_dataPanel.columnWidths = new int[]{0, 0, 0};
+    protected void createFiltersPanel() {
+        filtrow = 0;
+        filtersPanel = new JPanel();
+        GridBagLayout gbl_dataPanel = new GridBagLayout();
+        gbl_dataPanel.columnWidths = new int[]{0, 0, 0};
         gbl_dataPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-	    gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 1.0};
+        gbl_dataPanel.columnWeights = new double[]{0.0, 0.0, 1.0};
         gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         filtersPanel.setLayout(gbl_dataPanel);
-	    
-	    // Filters note
+        
+        // Filters note
         addCommentLabel(filtersPanel, filtrow, 3, "<html><b>Filters Selection - use large/small values out of range to disable a filter</b></html>");
         // Add filters for specific implementation 
-	    addFilterSelection();
-	}
+        addFilterSelection();
+    }
     
     
     protected void addMAFVoltageMaximumFilter() {
@@ -645,18 +645,18 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
     
     protected boolean validate() {
-    	boolean ret = true;
-    	StringBuffer error = new StringBuffer("");
-    	ret = validate(error);    	
-    	if (!ret)
-    		JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
-    	return ret;
+        boolean ret = true;
+        StringBuffer error = new StringBuffer("");
+        ret = validate(error);        
+        if (!ret)
+            JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
+        return ret;
     }
     
     private String isEmpty(String current) {
-    	if (current.equals(Config.NO_NAME))
-    		return "";
-    	return current;
+        if (current.equals(Config.NO_NAME))
+            return "";
+        return current;
     }
 
     private void addCommentLabel(JPanel panel, int row, int colspan, String text) {
@@ -705,11 +705,11 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
     
     private JTextField addColumn(int row, String value) {
-    	JTextField textField = new JTextField(isEmpty(value));
-    	textField.setColumns(17);
-    	textField.setEditable(false);
-    	textField.setBackground(Color.WHITE);
-    	textField.setMargin(insets4);
+        JTextField textField = new JTextField(isEmpty(value));
+        textField.setColumns(17);
+        textField.setEditable(false);
+        textField.setBackground(Color.WHITE);
+        textField.setMargin(insets4);
         GridBagConstraints gbc_textField = new GridBagConstraints();
         gbc_textField.anchor = GridBagConstraints.WEST;
         gbc_textField.fill = GridBagConstraints.HORIZONTAL;
@@ -721,26 +721,26 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
     
     private void addCopyButton(int row, String action) {
-	    JButton button = new JButton("", arrowImage);
-	    button.putClientProperty("Nimbus.Overrides", zeroInsets);
-	    button.setMargin(insets0);
-	    button.setBorderPainted(false);
-	    button.setContentAreaFilled(false);
-	    GridBagConstraints gbc_button = new GridBagConstraints();
-	    gbc_button.anchor = GridBagConstraints.CENTER;
-	    gbc_button.insets = insets0;
-	    gbc_button.gridx = 2;
-	    gbc_button.gridy = row;
-	    button.setActionCommand(action);
-	    button.addActionListener(this);
-	    columnsPanel.add(button, gbc_button);
+        JButton button = new JButton("", arrowImage);
+        button.putClientProperty("Nimbus.Overrides", zeroInsets);
+        button.setMargin(insets0);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        GridBagConstraints gbc_button = new GridBagConstraints();
+        gbc_button.anchor = GridBagConstraints.CENTER;
+        gbc_button.insets = insets0;
+        gbc_button.gridx = 2;
+        gbc_button.gridy = row;
+        button.setActionCommand(action);
+        button.addActionListener(this);
+        columnsPanel.add(button, gbc_button);
     }
 
     private JFormattedTextField addTextFilter(int row, NumberFormat format) {
-    	JFormattedTextField textField = new JFormattedTextField(format);
-    	textField.setColumns(6);
-    	textField.setBackground(Color.WHITE);
-    	textField.setMargin(insets4);
+        JFormattedTextField textField = new JFormattedTextField(format);
+        textField.setColumns(6);
+        textField.setBackground(Color.WHITE);
+        textField.setMargin(insets4);
         GridBagConstraints gbc_textField = new GridBagConstraints();
         gbc_textField.anchor = GridBagConstraints.WEST;
         gbc_textField.fill = GridBagConstraints.HORIZONTAL;
@@ -752,7 +752,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
     
     private JSpinner addSpinnerFilter(int row, int value, int min, int max, int step) {
-    	JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(value, min, max, step));
         GridBagConstraints gbc_spinner = new GridBagConstraints();
         gbc_spinner.anchor = GridBagConstraints.WEST;
         gbc_spinner.fill = GridBagConstraints.HORIZONTAL;
@@ -763,7 +763,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         return spinner;
     }
 
-	protected JComboBox<String> addComboBoxFilter(int row, String[] values) {
+    protected JComboBox<String> addComboBoxFilter(int row, String[] values) {
         JComboBox<String> combo = new JComboBox<String>(values);
         combo.setSelectedIndex(0);
         GridBagConstraints gbc_combo = new GridBagConstraints();
@@ -788,70 +788,70 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     }
     
     private void addDefaultButton(int row, String action) {
-	    JButton button = new JButton("default");
-	    GridBagConstraints gbc_button = new GridBagConstraints();
-	    gbc_button.anchor = GridBagConstraints.WEST;
-	    gbc_button.insets = insets2;
-	    gbc_button.gridx = 2;
-	    gbc_button.gridy = filtrow;
-	    button.setActionCommand(action);
-	    button.addActionListener(this);
-	    filtersPanel.add(button, gbc_button);
+        JButton button = new JButton("default");
+        GridBagConstraints gbc_button = new GridBagConstraints();
+        gbc_button.anchor = GridBagConstraints.WEST;
+        gbc_button.insets = insets2;
+        gbc_button.gridx = 2;
+        gbc_button.gridy = filtrow;
+        button.setActionCommand(action);
+        button.addActionListener(this);
+        filtersPanel.add(button, gbc_button);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-    	if (processDefaultButton(e))
-    		return;
-    	int row = columnsTable.getSelectedRow();
-    	if (row < 0) {
-    		JOptionPane.showMessageDialog(null, "Please select column name from the list", "Error", JOptionPane.ERROR_MESSAGE);
-    		return;
-    	}
-    	String value = columnsTable.getValueAt(row, 0).toString();
-    	JTextField textField = null;
+        if (processDefaultButton(e))
+            return;
+        int row = columnsTable.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(null, "Please select column name from the list", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        String value = columnsTable.getValueAt(row, 0).toString();
+        JTextField textField = null;
         if ("thrtlAngle".equals(e.getActionCommand()))
-        	textField = thrtlAngleName;
+            textField = thrtlAngleName;
         else if ("afrlearn".equals(e.getActionCommand()))
-        	textField = afLearningName;
+            textField = afLearningName;
         else if ("afrcorr".equals(e.getActionCommand()))
-        	textField = afCorrectionName;
+            textField = afCorrectionName;
         else if ("mafv".equals(e.getActionCommand()))
-        	textField = mafVName;
+            textField = mafVName;
         else if ("maf".equals(e.getActionCommand()))
-        	textField = mafName;
+            textField = mafName;
         else if ("wbafr".equals(e.getActionCommand()))
-        	textField = wbAfrName;
+            textField = wbAfrName;
         else if ("rpm".equals(e.getActionCommand()))
-        	textField = rpmName;
+            textField = rpmName;
         else if ("load".equals(e.getActionCommand()))
-        	textField = loadName;
+            textField = loadName;
         else if ("mp".equals(e.getActionCommand()))
-        	textField = mpName;
+            textField = mpName;
         else if ("cmdafr".equals(e.getActionCommand()))
-        	textField = commAfrName;
+            textField = commAfrName;
         else if ("afr".equals(e.getActionCommand()))
-        	textField = stockAfrName;
+            textField = stockAfrName;
         else if ("clolstat".equals(e.getActionCommand()))
-        	textField = clolStatusName;
+            textField = clolStatusName;
         else if ("cruisestat".equals(e.getActionCommand()))
-        	textField = cruiseStatusName;
+            textField = cruiseStatusName;
         else if ("time".equals(e.getActionCommand()))
-        	textField = timeName;
+            textField = timeName;
         else if ("iat".equals(e.getActionCommand()))
-        	textField = iatName;
+            textField = iatName;
         else if ("ffb".equals(e.getActionCommand()))
-        	textField = ffbName;
+            textField = ffbName;
         else if ("veflow".equals(e.getActionCommand()))
-        	textField = veFlowName;
+            textField = veFlowName;
         else if ("vvt1".equals(e.getActionCommand()))
-        	textField = vvt1Name;
+            textField = vvt1Name;
         else if ("vvt2".equals(e.getActionCommand()))
-        	textField = vvt2Name;
+            textField = vvt2Name;
         else if ("map".equals(e.getActionCommand()))
-        	textField = mapName;
+            textField = mapName;
         else
-        	return;
+            return;
         textField.setText(value);
         textField.setCaretPosition(0);
     }

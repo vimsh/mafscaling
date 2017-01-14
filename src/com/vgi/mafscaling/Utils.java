@@ -41,7 +41,7 @@ public final class Utils {
      * Shortened numeric validation regex
      */
     public final static String fpRegex = "[\\x00-\\x20]*[+-]?(NaN|Infinity|((((\\p{Digit}+)(\\.)?((\\p{Digit}+)?)([eE][+-]?(\\p{Digit}+))?)|(\\.((\\p{Digit}+))([eE][+-]?(\\p{Digit}+))?)|(((0[xX](\\p{XDigit}+)(\\.)?)|(0[xX](\\p{XDigit}+)?(\\.)(\\p{XDigit}+)))[pP][+-]?(\\p{Digit}+)))[fFdD]?))[\\x00-\\x20]*";
-    //		("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
+    //        ("[\\x00-\\x20]*[+-]?(((\\p{Digit}+)(\\.)?((\\p{Digit}+)?))|(\\.((\\p{Digit}+))))[\\x00-\\x20]*");
     public final static String tmRegex = ".*\\d{1,2}:\\d{2}:\\d{2}\\.\\d{3}.*";
     public final static String onOffRegex = "(?i)^\\s*(ON|OFF|OPENED|OPEN|CLOSED|CLOSE)\\s*$";
     public final static Pattern offPattern = Pattern.compile("^\\s*(OFF|CLOSED|CLOSE)\\s*$", Pattern.CASE_INSENSITIVE);
@@ -71,11 +71,11 @@ public final class Utils {
      * @return array of unique gradient colors
      */
     public static Color[] getColorArray(Color begin, Color end, int numColors) {
-    	Color[] gradient;
-    	if (numColors == 1)
-    		gradient = new Color[3];
-    	else
-    		gradient = new Color[numColors];
+        Color[] gradient;
+        if (numColors == 1)
+            gradient = new Color[3];
+        else
+            gradient = new Color[numColors];
         float[] hsv1 = Color.RGBtoHSB(begin.getRed(), begin.getGreen(), begin.getBlue(), null);  
         float[] hsv2 = Color.RGBtoHSB(end.getRed(), end.getGreen(), end.getBlue(), null);  
         int a1 = begin.getAlpha();
@@ -92,8 +92,8 @@ public final class Utils {
             rgb +=(((int)(a1 + da * rel)) << 24);
             gradient[i] = new Color(rgb);
         }
-    	if (numColors == 1)
-    		gradient = new Color[] { gradient[1] };
+        if (numColors == 1)
+            gradient = new Color[] { gradient[1] };
         return gradient;
     }
 
@@ -108,7 +108,7 @@ public final class Utils {
      * @param startColumn, column to begin coloring from
      */
     public static Color[][] generateTableColorMatrix(JTable table, int startRow, int startColumn) {
-    	return generateTableColorMatrix(table, startRow, startColumn, table.getRowCount(), table.getColumnCount());
+        return generateTableColorMatrix(table, startRow, startColumn, table.getRowCount(), table.getColumnCount());
     }
     
     /**
@@ -127,7 +127,7 @@ public final class Utils {
         String value;
         for (i = startRow; i < endRow; ++i) {
             for (j = startColumn; j < endColumn; ++j) {
-            	value = table.getValueAt(i, j).toString();
+                value = table.getValueAt(i, j).toString();
                 if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
                     uniqueValues.add(Double.valueOf(value));
             }
@@ -138,11 +138,11 @@ public final class Utils {
             colorMatrix = new Color[endRow][endColumn];
             for (i = startRow; i < endRow; ++i) {
                 for (j = startColumn; j < endColumn; ++j) {
-                	value = table.getValueAt(i, j).toString();
+                    value = table.getValueAt(i, j).toString();
                     if (!value.isEmpty() && Pattern.matches(Utils.fpRegex, value))
                         colorMatrix[i][j] = colors.get(uniqueValues.headSet(Double.valueOf(value)).size());
-        			else
-        				colorMatrix[i][j] = ZeroColor;
+                    else
+                        colorMatrix[i][j] = ZeroColor;
                 }
             }
         }
@@ -157,7 +157,7 @@ public final class Utils {
     public static void colorTable(JTable table) {
         Color[][] colorMatrix = Utils.generateTableColorMatrix(table, 1, 1);
         if (colorMatrix == null)
-        	colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
+            colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
         for (int i = 0; i < colorMatrix.length; ++i)
             colorMatrix[i][0] = Color.LIGHT_GRAY;
         for (int i = 0; i < colorMatrix[0].length; ++i)
@@ -175,7 +175,7 @@ public final class Utils {
     public static void clearTableColors(JTable table) {
         TableCellRenderer renderer = table.getDefaultRenderer(Object.class);
         if (renderer != null && renderer instanceof BgColorFormatRenderer)
-        	((BgColorFormatRenderer)renderer).setColors(null);
+            ((BgColorFormatRenderer)renderer).setColors(null);
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
     
@@ -205,22 +205,22 @@ public final class Utils {
      * @param margin
      */
     public static void adjustColumnSizes(JTable table, int column, int margin) {
-    	DefaultTableColumnModel colModel = (DefaultTableColumnModel) table.getColumnModel();
-    	TableColumn col = colModel.getColumn(column);
-    	int width;
-    	TableCellRenderer renderer = col.getHeaderRenderer();
-    	if (renderer == null)
-    		renderer = table.getTableHeader().getDefaultRenderer();
-    	Component comp = renderer.getTableCellRendererComponent(table, col.getHeaderValue(), false, false, 0, 0);
-    	width = comp.getPreferredSize().width;
-    	for (int r = 0; r < table.getRowCount(); ++r) {
-    		renderer = table.getCellRenderer(r, column);
-    		comp = renderer.getTableCellRendererComponent(table, table.getValueAt(r, column), false, false, r, column);
-    		int currentWidth = comp.getPreferredSize().width;
-    		width = Math.max(width, currentWidth);
-    	}
-    	width += 2 * margin;
-    	col.setPreferredWidth(width);
+        DefaultTableColumnModel colModel = (DefaultTableColumnModel) table.getColumnModel();
+        TableColumn col = colModel.getColumn(column);
+        int width;
+        TableCellRenderer renderer = col.getHeaderRenderer();
+        if (renderer == null)
+            renderer = table.getTableHeader().getDefaultRenderer();
+        Component comp = renderer.getTableCellRendererComponent(table, col.getHeaderValue(), false, false, 0, 0);
+        width = comp.getPreferredSize().width;
+        for (int r = 0; r < table.getRowCount(); ++r) {
+            renderer = table.getCellRenderer(r, column);
+            comp = renderer.getTableCellRendererComponent(table, table.getValueAt(r, column), false, false, r, column);
+            int currentWidth = comp.getPreferredSize().width;
+            width = Math.max(width, currentWidth);
+        }
+        width += 2 * margin;
+        col.setPreferredWidth(width);
     }
     
     /**
@@ -257,16 +257,16 @@ public final class Utils {
      * @param table
      */
     public static void ensureColumnCount(int count, JTable table) {
-    	if (count <= table.getColumnCount())
-    		return;
+        if (count <= table.getColumnCount())
+            return;
         int[] minwidth = new int[count];
         int[] maxwidth = new int[count];
         int[] prefwidth = new int[count];
         int i, j;
         for (i = 0; i < table.getColumnCount(); ++i) {
-	        minwidth[i] = table.getColumnModel().getColumn(i).getMinWidth();
-	        maxwidth[i] = table.getColumnModel().getColumn(i).getMaxWidth();
-	        prefwidth[i] = table.getColumnModel().getColumn(i).getPreferredWidth();
+            minwidth[i] = table.getColumnModel().getColumn(i).getMinWidth();
+            maxwidth[i] = table.getColumnModel().getColumn(i).getMaxWidth();
+            prefwidth[i] = table.getColumnModel().getColumn(i).getPreferredWidth();
         }
         DefaultTableModel model = (DefaultTableModel)table.getModel();
         for (i = table.getColumnCount(); i < count; ++i) {
@@ -275,7 +275,7 @@ public final class Utils {
             maxwidth[i] = maxwidth[i - 1];
             prefwidth[i] = prefwidth[i - 1];
             for (j = 0; j < table.getRowCount(); ++j)
-            	table.setValueAt("", j, i);
+                table.setValueAt("", j, i);
         }
         for (i = 0; i < count; ++i) {
             table.getColumnModel().getColumn(i).setMinWidth(minwidth[i]);
@@ -295,7 +295,7 @@ public final class Utils {
         for (i = table.getRowCount(); i < count; ++i) {
             model.addRow(new Object[table.getColumnCount()]);
             for (j = 0; j < table.getColumnCount(); ++j)
-            	table.setValueAt("", i, j);
+                table.setValueAt("", i, j);
         }
     }
     
@@ -379,7 +379,7 @@ public final class Utils {
         for (int i = 0; i < table.getRowCount() && isEmpty; ++i) {
             for (int j = 0; j < table.getColumnCount() && isEmpty; ++j) {
                 if (!table.getValueAt(i, j).toString().isEmpty())
-                	isEmpty = false;
+                    isEmpty = false;
             }
         }
         return isEmpty;
@@ -391,11 +391,11 @@ public final class Utils {
      * @param toTable
      */
     public static void copyTable(JTable fromTable, JTable toTable) {
-    	ensureColumnCount(fromTable.getColumnCount(), toTable);
-    	ensureRowCount(fromTable.getRowCount(), toTable);
+        ensureColumnCount(fromTable.getColumnCount(), toTable);
+        ensureRowCount(fromTable.getRowCount(), toTable);
         for (int i = 0; i < fromTable.getRowCount(); ++i) {
             for (int j = 0; j < fromTable.getColumnCount(); ++j)
-            	toTable.setValueAt(fromTable.getValueAt(i, j), i, j);
+                toTable.setValueAt(fromTable.getValueAt(i, j), i, j);
         }
     }
 
@@ -406,14 +406,14 @@ public final class Utils {
      * @return double array
      */
     public static double[][] doubleZArray(JTable dataTable, double[] x, double[] y) {
-    	double[][] z = new double[y.length][x.length];
-    	for (int i = 0; i < x.length; ++i) {
-    		for (int j = 0; j < y.length; ++j) {
-    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
-    				z[j][i] = Double.valueOf(dataTable.getValueAt(j + 1, i + 1).toString());
-    		}
-    	}
-    	return z;
+        double[][] z = new double[y.length][x.length];
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < y.length; ++j) {
+                if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
+                    z[j][i] = Double.valueOf(dataTable.getValueAt(j + 1, i + 1).toString());
+            }
+        }
+        return z;
     }
 
     /**
@@ -424,16 +424,16 @@ public final class Utils {
      */
     public static Color[][] doubleColorArray(JTable dataTable, double[] x, double[] y) {
         BgColorFormatRenderer renderer = (BgColorFormatRenderer)dataTable.getDefaultRenderer(Object.class);
-    	Color[][] z = new Color[y.length][x.length];
-    	for (int i = 0; i < x.length; ++i) {
-    		for (int j = 0; j < y.length; ++j) {
-    			if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
-    				z[j][i] = renderer.getColorAt(j + 1, i + 1);
-    			else
-    				z[j][i] = ZeroColor;
-    		}
-    	}
-    	return z;
+        Color[][] z = new Color[y.length][x.length];
+        for (int i = 0; i < x.length; ++i) {
+            for (int j = 0; j < y.length; ++j) {
+                if (!dataTable.getValueAt(j + 1, i + 1).toString().isEmpty())
+                    z[j][i] = renderer.getColorAt(j + 1, i + 1);
+                else
+                    z[j][i] = ZeroColor;
+            }
+        }
+        return z;
     }
 
     //////////////////////////////////////////////////////////////////////////////
@@ -485,7 +485,7 @@ public final class Utils {
      * @return
      */
     public static double table3DInterpolation(double x, double y, double x0, double x1, double y0, double y1, double x0y0, double x0y1, double x1y0, double x1y1) {
-    	double t1, t2;
+        double t1, t2;
         if (y1 == y0) {
             t1 = x0y0;
             t2 = x1y0;
@@ -495,9 +495,9 @@ public final class Utils {
             t2 = (y - y0) * (x1y1 - x1y0) / (y1 - y0) + x1y0;
         }
         if (x1 == x0)
-        	return t1;
+            return t1;
         else
-        	return (x - x0) * (t2 - t1) / (x1 - x0) + t1;
+            return (x - x0) * (t2 - t1) / (x1 - x0) + t1;
     }
     
     /**
@@ -507,7 +507,7 @@ public final class Utils {
      * @return
      */
     public static double round(double input, double step) {
-    	return ((Math.round(input / step)) * step);
+        return ((Math.round(input / step)) * step);
     }
 
     /**
@@ -516,10 +516,10 @@ public final class Utils {
      * @return
      */
     public static double mean(List<Double> data) {
-    	double val = 0;
-    	for (int i = 0; i < data.size(); ++i)
-			val += data.get(i);
-		return val / data.size();
+        double val = 0;
+        for (int i = 0; i < data.size(); ++i)
+            val += data.get(i);
+        return val / data.size();
     }
 
     /**
@@ -528,14 +528,14 @@ public final class Utils {
      * @return
      */
     public static double median(List<Double> data) {
-    	double val = 0;
-		Collections.sort(data);
-		int mid = data.size() / 2;
-		if (data.size() % 2 == 1)
-			val = data.get(mid);
-		else
-			val = (data.get(mid - 1) + data.get(mid)) / 2;
-		return val;
+        double val = 0;
+        Collections.sort(data);
+        int mid = data.size() / 2;
+        if (data.size() % 2 == 1)
+            val = data.get(mid);
+        else
+            val = (data.get(mid - 1) + data.get(mid)) / 2;
+        return val;
     }
 
     /**
@@ -544,25 +544,25 @@ public final class Utils {
      * @return
      */
     public static double mode(List<Double> data) {
-    	ArrayList<Double> modes = new ArrayList<Double>();
-    	HashMap<Double, Integer> countMap = new HashMap<Double, Integer>();
-	    int max = -1;
-	    Integer count;
-	    for (Double n : data) {
-	    	count = countMap.get(n);
-	    	if (count == null)
-	    		count = 0;
-	    	count += 1;
-	    	countMap.put(n, count);
-	        if (count > max)
-	            max = count;
-	    }
-	    for (Map.Entry<Double, Integer> entry : countMap.entrySet()) {
-	        if (entry.getValue() == max)
-	            modes.add(entry.getKey());
-	    }
-	    Collections.sort(modes);
-	    return modes.get(modes.size() / 2);
+        ArrayList<Double> modes = new ArrayList<Double>();
+        HashMap<Double, Integer> countMap = new HashMap<Double, Integer>();
+        int max = -1;
+        Integer count;
+        for (Double n : data) {
+            count = countMap.get(n);
+            if (count == null)
+                count = 0;
+            count += 1;
+            countMap.put(n, count);
+            if (count > max)
+                max = count;
+        }
+        for (Map.Entry<Double, Integer> entry : countMap.entrySet()) {
+            if (entry.getValue() == max)
+                modes.add(entry.getKey());
+        }
+        Collections.sort(modes);
+        return modes.get(modes.size() / 2);
     }
 
     /**
@@ -571,7 +571,7 @@ public final class Utils {
      * @return
      */
     public static double range(List<Double> data) {
-		return Collections.max(data) - Collections.min(data);
+        return Collections.max(data) - Collections.min(data);
     }
 
     /**
@@ -580,14 +580,14 @@ public final class Utils {
      * @return
      */
     public static double variance(List<Double> data) {
-    	double mean = mean(data);
-    	double sum = 0;
-    	double diff = 0;
-    	for (Double d : data) {
-    		diff = d - mean;
-    		sum += (diff * diff);
-    	}
-		return sum / data.size();
+        double mean = mean(data);
+        double sum = 0;
+        double diff = 0;
+        for (Double d : data) {
+            diff = d - mean;
+            sum += (diff * diff);
+        }
+        return sum / data.size();
     }
 
     /**
@@ -596,7 +596,7 @@ public final class Utils {
      * @return
      */
     public static double standardDeviation(List<Double> data) {
-		return Math.sqrt(variance(data));
+        return Math.sqrt(variance(data));
     }
 
     /**
@@ -606,7 +606,7 @@ public final class Utils {
      * @return
      */
     public static int getRandomInRange(int min, int max) {
-    	return (min + (int)(Math.random() * ((max - min) + 1)));
+        return (min + (int)(Math.random() * ((max - min) + 1)));
     }
     
     /**
@@ -689,16 +689,16 @@ public final class Utils {
         }
         timingLowLow = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColLow).toString());
         if (timingLowLow > minWotEnrichment)
-        	timingLowLow = minWotEnrichment;
+            timingLowLow = minWotEnrichment;
         timingLowHigh = Double.valueOf(polfTable.getValueAt(rpmRowLow, loadColHigh).toString());
         if (timingLowHigh > minWotEnrichment)
-        	timingLowHigh = minWotEnrichment;
+            timingLowHigh = minWotEnrichment;
         timingHighLow = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColLow).toString());
         if (timingHighLow > minWotEnrichment)
-        	timingHighLow = minWotEnrichment;
+            timingHighLow = minWotEnrichment;
         timingHighHigh = Double.valueOf(polfTable.getValueAt(rpmRowHigh, loadColHigh).toString());
         if (timingHighHigh > minWotEnrichment)
-        	timingHighHigh = minWotEnrichment;
+            timingHighHigh = minWotEnrichment;
 
         return Utils.table3DInterpolation(load, rpm, loadLow, loadHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
@@ -708,12 +708,12 @@ public final class Utils {
      * @param s
      */
     public static void resetBaseTime(String s) {
-    	if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
-    		int tmZero = '0' * 11;
-    		baseTime = ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 + (s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 + s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000;
+        if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
+            int tmZero = '0' * 11;
+            baseTime = ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 + (s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 + s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000;
         }
-    	else
-    		baseTime = 0;
+        else
+            baseTime = 0;
     }
 
     /**
@@ -722,17 +722,17 @@ public final class Utils {
      * @return time in msec as long
      */
     public static long parseTime(String s) {
-    	if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
-    		int tmZero = '0' * 11;
-    		int msZero = '0' * 111;
-    		return ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 +
-    				(s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 +
-    				 s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000 +
-    				 (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - baseTime;
+        if (s.indexOf(':') > 0 && s.indexOf('.') > 0) {
+            int tmZero = '0' * 11;
+            int msZero = '0' * 111;
+            return ((s.charAt(0) * 10 + s.charAt(1) - tmZero) * 3600 +
+                    (s.charAt(3) * 10 + s.charAt(4) - tmZero) * 60 +
+                     s.charAt(6) * 10 + s.charAt(7) - tmZero) * 1000 +
+                     (s.charAt(9) * 100 + s.charAt(10) * 10 + s.charAt(11) - msZero) - baseTime;
         }
-    	if (s.indexOf('.') > 0)
-    		return (long)(Double.valueOf(s) * 1000);
-    	return Long.valueOf(s);
+        if (s.indexOf('.') > 0)
+            return (long)(Double.valueOf(s) * 1000);
+        return Long.valueOf(s);
     }
 
     /**
@@ -742,10 +742,10 @@ public final class Utils {
      * @return value as double
      */
     public static double parseValue(String s) {
-    	if (Utils.onPattern.matcher(s).find())
-			return 1.0;
-    	if (Utils.offPattern.matcher(s).find())
-			return 0.0;
-    	return Double.valueOf(s);
+        if (Utils.onPattern.matcher(s).find())
+            return 1.0;
+        if (Utils.offPattern.matcher(s).find())
+            return 0.0;
+        return Double.valueOf(s);
     }
 }

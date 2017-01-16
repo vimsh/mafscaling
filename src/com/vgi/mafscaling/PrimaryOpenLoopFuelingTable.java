@@ -36,6 +36,7 @@ import java.text.Format;
 import java.util.regex.Pattern;
 
 import javax.swing.Box;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -60,32 +61,25 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private JTable tempFuelingTable = null;
     private JButton btnSetDefault = null;
     private JComboBox<String> loadList = null;
-    private String fileName = Config.getDefaultPOLFueling();
+    private String fileName = "";
     private String tempFileName = "";
     
     public PrimaryOpenLoopFuelingTable() {
-        btnSetDefault = new JButton("Set Default");
         File appdir = new File(".");
         FileSystemView fsv = new RestrictedFileSystemView(appdir);
         fileChooser = new JFileChooser(fsv);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileName = Config.getDefaultPOLFueling();
+        btnSetDefault = new JButton("Set Default");
         if (!fileName.isEmpty()) {
             fuelingTable = loadPolFueling(fuelingTable, fileName);
-            if (fuelingTable == null) {
-                Config.setDefaultPOLFueling("");
-                String[] files = Config.getPOLFuelingFiles().split(",");
-                String fs = "";
-                for (String fn : files) {
-                    if (fn.equals(fileName) || fn.isEmpty())
-                        continue;
-                    fs += ("," + fn);
-                }
-                Config.setPOLFuelingFiles(fs);
-                fileName = "";
-            }
-            else {
+            if (fuelingTable != null) {
                 if (Config.getDefaultPOLFueling().equals(fileName))
                     btnSetDefault.setText("Unset Default");
+            }
+            else {
+                Config.setDefaultPOLFueling("");
+                resetPOLFuelingFiles(fileName, "");
             }
         }
     }
@@ -160,6 +154,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
 
         tempFuelingTable = createFuelingTable();
         tempFileName = fileName;
+        if (btnSetDefault.getText().equals("Unset Default") && !Config.getDefaultPOLFueling().equals(tempFileName))
+            btnSetDefault.setText("Set Default");
 
         GridBagConstraints gbc_fuelingTable = new GridBagConstraints();
         gbc_fuelingTable.insets = new Insets(5, 0, 0, 0);
@@ -201,6 +197,22 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             }
         }
         return true;
+    }
+    
+    /**
+     * Method resets POL Fueling files list to encounter for removed files
+     */
+    public void resetPOLFuelingFiles(String remFileName, String addFileName) {
+        String[] files = Config.getPOLFuelingFiles().split(",");
+        String fs = "";
+        for (String fn : files) {
+            if (fn.equals(remFileName) || fn.isEmpty())
+                continue;
+            fs += ("," + fn);
+        }
+        if (!addFileName.isEmpty())
+            fs += ("," + addFileName);
+        Config.setPOLFuelingFiles(fs);
     }
     
     /**
@@ -445,12 +457,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             Config.setDefaultPOLFueling("");
             btnSetDefault.setText("Set Default");
         }
-        else {
-            save(fuelingTable);
-            if (!tempFileName.isEmpty()) {
-                Config.setDefaultPOLFueling(tempFileName);
-                btnSetDefault.setText("Unset Default");
-            }
+        else if (!save(fuelingTable).isEmpty()) {
+            Config.setDefaultPOLFueling(tempFileName);
+            btnSetDefault.setText("Unset Default");
         }
     }
     
@@ -459,45 +468,44 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param fuelingTable
      * @return
      */
-    private void save(JTable fuelingTable) {
-        if (!validateFuelingData(fuelingTable))
-            return;
+    private String save(JTable fuelingTable) {
+        if (Utils.isTableEmpty(fuelingTable) || !validateFuelingData(fuelingTable))
+            return "";
+        File file = null;
         if (tempFileName.isEmpty()) {
             if (JFileChooser.APPROVE_OPTION != fileChooser.showSaveDialog(null))
-                return;
-            File file = fileChooser.getSelectedFile();
+                return "";
+            file = fileChooser.getSelectedFile();
             tempFileName = file.getName();
-            FileWriter out = null;
-            try {
-                out = new FileWriter(file);
-                write(fuelingTable, out);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-                logger.error(e);
-            }
-            finally {
-                if (out != null) {
-                    try {
-                        out.close();
-                    }
-                    catch (IOException e) {
-                        logger.error(e);
-                    }
+        }
+        else
+            file = new File(tempFileName);
+        FileWriter out = null;
+        try {
+            out = new FileWriter(file);
+            write(fuelingTable, out);
+        }
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(null, "Failed to save file " + tempFileName + ": " + e.toString(), "Error", JOptionPane.ERROR_MESSAGE);
+            tempFileName = "";
+        }
+        finally {
+            if (out != null) {
+                try {
+                    out.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
                 }
             }
-            String[] files = Config.getPOLFuelingFiles().split(",");
-            String fs = "";
-            for (String fn : files) {
-                if (fn.equals(fileName) || fn.isEmpty())
-                    continue;
-                fs += ("," + fn);
-            }
-            fs += ("," + tempFileName);
-            Config.setPOLFuelingFiles(fs);
-            loadList.addItem(tempFileName);
+        }
+        if (!tempFileName.isEmpty()) {
+            resetPOLFuelingFiles(tempFileName, tempFileName);
+            if (((DefaultComboBoxModel<String>)loadList.getModel()).getIndexOf(tempFileName) == -1)
+                loadList.addItem(tempFileName);
             loadList.setSelectedItem(tempFileName);
         }
+        return tempFileName;
     }
     
     /**
@@ -505,33 +513,21 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param fuelingTable
      */
     private void load() {
-        String fileName = (String)loadList.getSelectedItem();
-        clear();
+        Utils.clearTable(tempFuelingTable);
+        tempFileName = (String)loadList.getSelectedItem();
         btnSetDefault.setText("Set Default");
-        if (!fileName.isEmpty()) {
-            if (loadPolFueling(tempFuelingTable, fileName) != null) {
-                tempFileName = fileName;
-                loadList.setSelectedItem(fileName);
-                if (Config.getDefaultPOLFueling().equals(fileName))
+        if (!tempFileName.isEmpty()) {
+            if (loadPolFueling(tempFuelingTable, tempFileName) != null) {
+                loadList.setSelectedItem(tempFileName);
+                if (Config.getDefaultPOLFueling().equals(tempFileName))
                     btnSetDefault.setText("Unset Default");
             }
             else {
-                loadList.removeItem(fileName);
+                loadList.removeItem(tempFileName);
                 loadList.setSelectedItem("");
-                if (!fileName.isEmpty()) {
-                    String[] files = Config.getPOLFuelingFiles().split(",");
-                    String fs = "";
-                    for (String fn : files) {
-                        if (fn.equals(fileName) || fn.isEmpty())
-                            continue;
-                        fs += ("," + fn);
-                    }
-                    Config.setPOLFuelingFiles(fs);
-                }
+                resetPOLFuelingFiles(tempFileName, "");
             }
         }
-        else if (Config.getDefaultPOLFueling().equals(fileName))
-            btnSetDefault.setText("Unset Default");
     }
 
     @Override

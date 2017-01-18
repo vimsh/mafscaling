@@ -26,8 +26,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
@@ -255,10 +256,10 @@ public class LoadComp extends ACompCalc {
         for (File file : files) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -308,7 +309,7 @@ public class LoadComp extends ACompCalc {
                     if (-1 == logCruiseStatusColIdx)
                         cruiseValue = -1;
                     while (line != null) {
-                        flds = line.split("\\s*,\\s*", -1);
+                        flds = line.split(Utils.fileFieldSplitter, -1);
                         ppThrottle = pThrottle;
                         pThrottle = throttle;
                         try {

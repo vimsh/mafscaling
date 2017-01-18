@@ -27,10 +27,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
@@ -888,9 +892,9 @@ public class ClosedLoop extends AMafScaling {
         File file = fileChooser.getSelectedFile();
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         int i, j;
-        FileWriter out = null;
+        Writer out = null;
         try {
-            out = new FileWriter(file);
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Config.getEncoding()));
             // write string identifier
             out.write(SaveDataFileHeader + "\n");
             // write maf data
@@ -932,7 +936,7 @@ public class ClosedLoop extends AMafScaling {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
             String line = br.readLine();
             if (line == null || !line.equals(SaveDataFileHeader)) {
                 JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -944,7 +948,7 @@ public class ClosedLoop extends AMafScaling {
             int offset = 0;
             boolean isLogData = false;
             while (line != null) {
-                elements = line.split("\\s*,\\s*", -1);
+                elements = line.split(Utils.fileFieldSplitter, -1);
                 switch (i) {
                 case 0:
                     Utils.ensureColumnCount(elements.length - 1, mafTable);
@@ -1047,10 +1051,10 @@ public class ClosedLoop extends AMafScaling {
         for (File file : files) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -1088,7 +1092,7 @@ public class ClosedLoop extends AMafScaling {
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
                 while (line != null) {
-                    flds = line.split("\\s*,\\s*", -1);
+                    flds = line.split(Utils.fileFieldSplitter, -1);
                     try {
                         // Calculate dV/dt
                         prevTime = time;

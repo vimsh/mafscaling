@@ -25,10 +25,14 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -481,9 +485,9 @@ public class OpenLoop extends AMafScaling {
         File file = fileChooser.getSelectedFile();
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         int i, j;
-        FileWriter out = null;
+        Writer out = null;
         try {
-            out = new FileWriter(file);
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Config.getEncoding()));
             // write string identifier
             out.write(SaveDataFileHeader + "\n");
             // write maf data
@@ -526,7 +530,7 @@ public class OpenLoop extends AMafScaling {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
             String line = br.readLine();
             if (line == null || !line.equals(SaveDataFileHeader)) {
                 JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -537,7 +541,7 @@ public class OpenLoop extends AMafScaling {
             JTable table = null;
             i = k = l = 0;
             while (line != null) {
-                elements = line.split("\\s*,\\s*", -1);
+                elements = line.split(Utils.fileFieldSplitter, -1);
                 switch (i) {
                 case 0:
                     Utils.ensureColumnCount(elements.length - 1, mafTable);
@@ -556,7 +560,7 @@ public class OpenLoop extends AMafScaling {
                             table = runTables[k++];
                         Utils.ensureRowCount(elements.length - 1, table);
                         for (j = 0; j < elements.length - 1; ++j)
-                                table.setValueAt(elements[j], j, l);
+                            table.setValueAt(elements[j], j, l);
                         l += 1;
                         if (l == 3)
                             l = 0;
@@ -627,10 +631,10 @@ public class OpenLoop extends AMafScaling {
             BufferedReader br = null;
             ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements, false);
                 boolean resetColumns = false;
@@ -679,14 +683,14 @@ public class OpenLoop extends AMafScaling {
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split("\\s*,\\s*", -1));
+                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
                 }
                 while (line != null && buffer.size() > afrRowOffset) {
                     afrflds = buffer.getFirst();
                     flds = buffer.removeLast();
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split("\\s*,\\s*", -1));
+                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
 
                     try {
                         throttle = Double.valueOf(flds[logThtlAngleColIdx]);

@@ -29,8 +29,9 @@ import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayDeque;
@@ -356,10 +357,10 @@ public class VECalc extends ACompCalc {
             BufferedReader br = null;
             ArrayDeque<String[]> buffer = new ArrayDeque<String[]>();
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -405,7 +406,7 @@ public class VECalc extends ACompCalc {
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split("\\s*,\\s*", -1));
+                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
                 }
                 try {
                     while (line != null && buffer.size() > afrRowOffset) {
@@ -413,7 +414,7 @@ public class VECalc extends ACompCalc {
                         flds = buffer.removeLast();
                         line = br.readLine();
                         if (line != null)
-                            buffer.addFirst(line.split("\\s*,\\s*", -1));
+                            buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
                         ppThrottle = pThrottle;
                         pThrottle = throttle;
                         throttle = Double.valueOf(flds[logThrottleAngleColIdx]);

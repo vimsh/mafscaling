@@ -71,7 +71,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     private static final Logger logger = Logger.getLogger(ACompCalc.class);
     protected static final String dvdtAxisName = "dV / dt";
     protected static final String trendDataName = "Trend";
-    protected static final int ColumnWidth = 60;
+    protected static final int ColumnWidth = 70;
     protected static final int TableWidth = 250;
     protected static final int TableRowCount = 20;
     protected static final int LogDataRowCount = 200;

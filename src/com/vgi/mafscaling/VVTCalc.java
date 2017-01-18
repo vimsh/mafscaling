@@ -30,8 +30,9 @@ import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
@@ -58,7 +59,6 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -792,10 +792,10 @@ public class VVTCalc extends ACompCalc {
         for (File file : files) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);                
                 int origLogVvt2ColIdx = logVvt2ColIdx;
@@ -850,7 +850,7 @@ public class VVTCalc extends ACompCalc {
                     return;
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 while ((line = br.readLine()) != null) {
-                    flds = line.split("\\s*,\\s*", -1);
+                    flds = line.split(Utils.fileFieldSplitter, -1);
                     try {
                         throttle = Double.valueOf(flds[logThtlAngleColIdx]);
                         if (row == 0 && throttle < 99)
@@ -1166,7 +1166,7 @@ public class VVTCalc extends ACompCalc {
     }
     
     private void loadConfig() {
-        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().split("\\s*,\\s*", -1);
+        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().split(Utils.fileFieldSplitter, -1);
         if (vvt1RpmColumn != null) {
             for (int i = 0; i < vvt1RpmColumn.length; ++i) {
                 Utils.ensureRowCount(i + 1, origTable);
@@ -1175,7 +1175,7 @@ public class VVTCalc extends ACompCalc {
             }
             validateTable(origTable);
         }
-        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().split("\\s*,\\s*", -1);
+        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().split(Utils.fileFieldSplitter, -1);
         if (vvt2RpmColumn != null) {
             for (int i = 0; i < vvt2RpmColumn.length; ++i) {
                 Utils.ensureRowCount(i + 1, newTable);

@@ -26,15 +26,18 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.regex.Pattern;
-
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -71,6 +74,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         fileName = Config.getDefaultPOLFueling();
         btnSetDefault = new JButton("Set Default");
+        btnSetDefault.addActionListener(this);
         if (!fileName.isEmpty()) {
             fuelingTable = loadPolFueling(fuelingTable, fileName);
             if (fuelingTable != null) {
@@ -93,7 +97,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         gbl_dataPanel.rowWeights = new double[]{0.0, 0.0};
         fuelingPanel.setLayout(gbl_dataPanel);
         
-        loadList = new JComboBox<String>(Config.getPOLFuelingFiles().split(","));
+        loadList = new JComboBox<String>(Config.getPOLFuelingFiles().split(Utils.fileFieldSplitter));
         GridBagConstraints gbc_loadList = new GridBagConstraints();
         gbc_loadList.anchor = GridBagConstraints.EAST;
         gbc_loadList.insets = new Insets(1, 5, 1, 1);
@@ -129,7 +133,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         gbc_btnSetDefault.gridx = 3;
         gbc_btnSetDefault.gridy = 0;
         btnSetDefault.setActionCommand("setdefault");
-        btnSetDefault.addActionListener(this);
         fuelingPanel.add(btnSetDefault, gbc_btnSetDefault);
         
         JButton btnClearData = new JButton("Clear");
@@ -203,7 +206,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * Method resets POL Fueling files list to encounter for removed files
      */
     public void resetPOLFuelingFiles(String remFileName, String addFileName) {
-        String[] files = Config.getPOLFuelingFiles().split(",");
+        String[] files = Config.getPOLFuelingFiles().split(Utils.fileFieldSplitter);
         String fs = "";
         for (String fn : files) {
             if (fn.equals(remFileName) || fn.isEmpty())
@@ -301,7 +304,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param out, file handler
      * @throws IOException 
      */
-    public void write(FileWriter out) throws IOException {
+    public void write(Writer out) throws IOException {
         write(fuelingTable, out);
     }
 
@@ -312,7 +315,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param out, file handler
      * @throws IOException 
      */
-    private void write(JTable fuelingTable, FileWriter out) throws IOException {
+    private void write(JTable fuelingTable, Writer out) throws IOException {
         if (fuelingTable != null) {
             int i, j;
             for (i = 0; i < fuelingTable.getRowCount(); ++i) {
@@ -417,11 +420,11 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         File file = new File("./" + fileName);
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
             int i = 0;
             String line = br.readLine();
             while (line != null) {
-                fuelingTable = setValueAtRow(fuelingTable, i++, line.split(",", -1));
+                fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
                 line = br.readLine();
             }
             if (i > 0 && validateFuelingData(fuelingTable))
@@ -480,9 +483,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         }
         else
             file = new File(tempFileName);
-        FileWriter out = null;
+        Writer out = null;
         try {
-            out = new FileWriter(file);
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Config.getEncoding()));
             write(fuelingTable, out);
         }
         catch (Exception e) {

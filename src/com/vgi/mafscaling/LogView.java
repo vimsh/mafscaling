@@ -41,8 +41,9 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,7 +58,6 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -97,7 +97,6 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartMouseEvent;
@@ -124,7 +123,6 @@ import org.scijava.swing.checkboxtree.CheckBoxNodeData;
 import org.scijava.swing.checkboxtree.CheckBoxNodeEditor;
 import org.scijava.swing.checkboxtree.CheckBoxNodePanel;
 import org.scijava.swing.checkboxtree.CheckBoxNodeRenderer;
-
 import quick.dbtable.Column;
 import quick.dbtable.DBTable;
 import quick.dbtable.PrintProperties;
@@ -1439,7 +1437,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
             }
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 br.mark(1024);
                 while ((line = br.readLine()) != null && !line.contains(",")) {
@@ -1753,10 +1751,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
         for (File file : files) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(file.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 if (line.charAt(line.length() - 1) == ',')
                     Arrays.copyOf(elements, elements.length - 1);
@@ -1774,7 +1772,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 while ((line = br.readLine()) != null) {
                     if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
                         line = line.substring(0, line.length() - 1);
-                    flds = line.split("\\s*,\\s*", -1);
+                    flds = line.split(Utils.fileFieldSplitter, -1);
                     val = Double.valueOf(flds[logThtlAngleColIdx]);
                     if (row == 0 && val < 99)
                         wotFlag = false;

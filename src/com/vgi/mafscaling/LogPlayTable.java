@@ -30,11 +30,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Ellipse2D;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import javax.swing.ImageIcon;
@@ -534,7 +538,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
         BufferedReader br = null;
         try {
             clearTable();
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
             String line = br.readLine();
             if (line == null || !line.equals(SaveDataFileHeader)) {
                 JOptionPane.showMessageDialog(null, "Invalid Log Play Table file!", "Error", JOptionPane.ERROR_MESSAGE);
@@ -544,7 +548,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
             int row = 0;
             String[] elements;
             while (line != null) {
-                elements = line.split(",", -1);
+                elements = line.split(Utils.fileFieldSplitter, -1);
                 Utils.ensureRowCount(row + 1, playTable);
                 Utils.ensureColumnCount(elements.length - 1, playTable);
                 for (int i = 0; i < elements.length - 1; ++i)
@@ -580,10 +584,10 @@ public class LogPlayTable extends JFrame implements ActionListener {
         File file = fileChooser.getSelectedFile();
         if (!file.getPath().endsWith(".play"))
             file = new File(file.getPath() + ".play");
-        FileWriter out = null;
+        Writer out = null;
         try {
             int i, j;
-            out = new FileWriter(file);
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Config.getEncoding()));
             out.write(SaveDataFileHeader + "\n");
             for (i = 0; i < playTable.getRowCount(); ++i) {
                 for (j = 0; j < playTable.getColumnCount(); ++j)

@@ -28,8 +28,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.Format;
@@ -530,10 +531,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         
         for (File logFile : logFiles) {
             try {
-                br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(logFile.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 if (logFilesTodo.size() == 0) {
                     logFilesTodo.add(logFile);
@@ -768,10 +769,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         for (File logFile : logFilesTodo) {
             BufferedReader br = null;
             try {
-                br = new BufferedReader(new FileReader(logFile.getAbsoluteFile()));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(logFile.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split("\\s*,\\s*", -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
                 int xColIdx = columns.indexOf(xAxisColName);
@@ -796,7 +797,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 try {
                     line = br.readLine();
                     while (line != null) {
-                        elements = line.split("\\s*,\\s*", -1);
+                        elements = line.split(Utils.fileFieldSplitter, -1);
                         if (i == 2) {
                             boolean found = false;
                             for (int k = 0; !found && k < filterButtonList.size(); ++k) {

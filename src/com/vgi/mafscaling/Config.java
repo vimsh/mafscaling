@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 public class Config {
     private static final Logger logger = Logger.getLogger(Config.class);
+    public static final String DefaultEncoding = "utf8";
     public static final String DefaultWindowWidth = "300";
     public static final String DefaultWindowHeight = "200";
     public static final String DefaultWindowPositionX = "50";
@@ -804,6 +805,14 @@ public class Config {
         veOpenLoop = f;
     }
     
+    public static String getEncoding() {
+        return props.getProperty("Encoding", DefaultEncoding);
+    }
+    
+    public static void setEncoding(String encoding) {
+        props.setProperty("Encoding", encoding);
+    }
+    
     public static void load() {
         InputStream is = null;
         try {
@@ -828,6 +837,7 @@ public class Config {
     public static void save() {
         OutputStream os = null;
         try {
+            setEncoding(getEncoding());
             os = new FileOutputStream(new File(CFG_FILE));
             props.storeToXML(os, "settings");
         }

@@ -40,10 +40,14 @@ import java.awt.event.MouseListener;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -474,6 +478,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private int logThtlAngleColIdx = -1;
     private String logRpmColName = null;
     private String logTimeColName = null;
+    private File lastPullExportDir = null;
     private ValueMarker startMarker = null;
     private ValueMarker endMarker = null;
     private XYDomainMutilineAnnotation xMarker = null;
@@ -995,9 +1000,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plotPanel.add(cntlPanel, gbc_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
@@ -1042,6 +1047,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
         checkBox.setActionCommand("showpts");
         checkBox.addActionListener(this);
         cntlPanel.add(checkBox, gbc);
+
+        gbc.gridx += 1;
+        JButton exportButton = new JButton("Export Selected Pulls");
+        exportButton.setActionCommand("export");
+        exportButton.addActionListener(this);
+        cntlPanel.add(exportButton, gbc);
 
         gbc.gridx += 1;
         gbc.anchor = GridBagConstraints.EAST;
@@ -2091,6 +2102,94 @@ public class LogView extends FCTabbedPane implements ActionListener {
         return (series != null);
     }
     
+    private void exportSelectedWotPulls() {
+        ArrayList<HashMap<String, ArrayList<Double>>> filePulls;
+        HashMap<String, ArrayList<Double>> pullData;
+        DefaultMutableTreeNode fileNode;
+        CheckBoxNodeData pullNode;
+        String fileName = null;
+        String nodeName = null;
+        String dirName = null;
+        int pullIdx;
+        int cnt;
+        int i, j;
+
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        try {
+            DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
+            for (int idx = 0; idx < root.getChildCount(); ++idx) {
+                fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
+                fileName = fileNode.getUserObject().toString().replaceAll(fileNameReplaceString, "");
+                for (cnt = 0; cnt < fileNode.getChildCount(); ++cnt) {
+                    pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(cnt)).getUserObject();
+                    if (!pullNode.isChecked())
+                        continue;
+                    filePulls = filesData.get(fileName);
+                    nodeName = pullNode.getText();
+                    pullIdx = Integer.parseInt(nodeName.replaceAll(pullIndexReplaceString, "")) - 1;
+                    pullData = filePulls.get(pullIdx);
+                    if (pullData.size() == 0)
+                        continue;
+                    if (dirName == null) {
+                        JFileChooser fc = new JFileChooser();
+                        fc.setCurrentDirectory((lastPullExportDir == null ? fileChooser.getCurrentDirectory() : lastPullExportDir));
+                        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                        fc.setAcceptAllFileFilterUsed(false);
+                        if (JFileChooser.APPROVE_OPTION != fc.showSaveDialog(null))
+                            return;
+                        File dir = fc.getSelectedFile();
+                        if (!dir.exists() || !dir.isDirectory()) {
+                            JOptionPane.showMessageDialog(null, "Directory doesn't exist: " + dir.getAbsolutePath(), "Invalid directory", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        lastPullExportDir = dir;
+                        dirName = dir.getAbsolutePath();
+                    }
+                    ArrayList<String> columns = new ArrayList<String>();
+                    ArrayList<ArrayList<Double>> data = new ArrayList<ArrayList<Double>>();
+                    for (Map.Entry<String, ArrayList<Double>> entry : pullData.entrySet()) {
+                        columns.add(entry.getKey());
+                        data.add(entry.getValue());
+                    }
+                    Writer out = null;
+                    try {
+                        File file = new File(dirName + File.separator + fileName + "_" + nodeName + ".csv");
+                        out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, false), Config.getEncoding()));
+                        int lidx = columns.size() - 1;
+                        int rows = data.get(0).size();
+                        for (i = 0; i <= lidx; ++i)
+                            out.write(columns.get(i) + (i < lidx ? "," : ""));
+                        out.write("\n");
+                        for (j = 0; j < rows; ++j) {
+                            for (i = 0; i <= lidx; ++i)
+                                out.write(data.get(i).get(j) + (i < lidx ? "," : ""));
+                            out.write("\n");
+                        }
+                    }
+                    catch (Exception e) {
+                        logger.error(e);
+                    }
+                    finally {
+                        if (out != null) {
+                            try {
+                                out.close();
+                            }
+                            catch (IOException e) {
+                                logger.error(e);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e) {
+            logger.error(e);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+        }
+    }
+    
     public void disposeLogView() {
         logPlayButton.setEnabled(true);
         logPlayWindow.dispose();
@@ -2196,6 +2295,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
                     lineRenderer.setSeriesShapesVisible(j, showWotCurvePoints);
             }
         }
+        else if ("export".equals(e.getActionCommand()))
+            exportSelectedWotPulls();
         else if ("view".equals(e.getActionCommand()))
             view3dPlots();
         else if ("viewWot".equals(e.getActionCommand())) {

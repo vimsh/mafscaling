@@ -606,14 +606,14 @@ public class OpenLoop extends AMafScaling {
         logRpmColIdx = columns.indexOf(logRpmColName);
         logLoadColIdx = columns.indexOf(logLoadColName);
         logCommandedAfrCol = columns.indexOf(logCommandedAfrColName);
-        if (logThtlAngleColIdx == -1)    { Config.setThrottleAngleColumnName(Config.NO_NAME); ret = false; }
-        if (logAfLearningColIdx == -1)   { Config.setAfLearningColumnName(Config.NO_NAME);    ret = false; }
-        if (logAfCorrectionColIdx == -1) { Config.setAfCorrectionColumnName(Config.NO_NAME);  ret = false; }
-        if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);    ret = false; }
-        if (logAfrColIdx == -1)          { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
-        if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
-        if (logLoadColIdx == -1)         { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
-        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME);  if (!isPolSet) ret = false; }
+        if (logThtlAngleColIdx == -1)             { Config.setThrottleAngleColumnName(Config.NO_NAME); ret = false; }
+        if (logAfLearningColIdx == -1)            { Config.setAfLearningColumnName(Config.NO_NAME);    ret = false; }
+        if (logAfCorrectionColIdx == -1)          { Config.setAfCorrectionColumnName(Config.NO_NAME);  ret = false; }
+        if (logMafvColIdx == -1)                  { Config.setMafVoltageColumnName(Config.NO_NAME);    ret = false; }
+        if (logAfrColIdx == -1)                   { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
+        if (logRpmColIdx == -1)                   { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
+        if (logLoadColIdx == -1)                  { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
+        if (logCommandedAfrCol == -1 && !isPolSet){ Config.setCommandedAfrColumnName(Config.NO_NAME);  ret = false; }
         wotPoint = Config.getWOTStationaryPointValue();
         minMafV = Config.getMafVMinimumValue();
         afrErrPrct = Config.getWidebandAfrErrorPercentValue();

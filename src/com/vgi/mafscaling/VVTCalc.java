@@ -767,7 +767,7 @@ public class VVTCalc extends ACompCalc {
         if (logThtlAngleColIdx == -1)    { Config.setThrottleAngleColumnName(Config.NO_NAME); ret = false; }
         if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
         if (logVvt1ColIdx == -1)         { Config.setVvt1ColumnName(Config.NO_NAME);          ret = false; }
-        if (logVvt2ColIdx == -1)         { Config.setVvt2ColumnName(Config.NO_NAME);          }
+        if (logVvt2ColIdx == -1)         { Config.setVvt2ColumnName(Config.NO_NAME);                       }
         if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);           ret = false; }
         if (logMapColIdx == -1)          { Config.setMapColumnName(Config.NO_NAME);           ret = false; }
         if (logMafColIdx == -1)          { Config.setMassAirflowColumnName(Config.NO_NAME);   ret = false; }

@@ -231,19 +231,19 @@ public class MafIatComp extends ACompCalc {
         logMafColIdx = columns.indexOf(logMafColName);
         logRpmColIdx = columns.indexOf(logRpmColName);
         logLoadColIdx = columns.indexOf(logLoadColName);
-        if (logClOlStatusColIdx == -1)   { Config.setClOlStatusColumnName(Config.NO_NAME);   ret = false; }
-        if (logThrottleAngleColIdx == -1){ Config.setThrottleAngleColumnName(Config.NO_NAME);ret = false; }
-        if (logAfLearningColIdx == -1)   { Config.setAfLearningColumnName(Config.NO_NAME);   ret = false; }
-        if (logAfCorrectionColIdx == -1) { Config.setAfCorrectionColumnName(Config.NO_NAME); ret = false; }
-        if (logWBAfrColIdx == -1)        { Config.setWidebandAfrColumnName(Config.NO_NAME);  ret = false; }
-        if (logAfrColIdx == -1)          { Config.setAfrColumnName(Config.NO_NAME);          ret = false; }
-        if (logTimeColIdx == -1)         { Config.setTimeColumnName(Config.NO_NAME);         ret = false; }
-        if (logMafvColIdx == -1)         { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
-        if (logIatColIdx == -1)          { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
-        if (logMafColIdx == -1)          { Config.setMassAirflowColumnName(Config.NO_NAME);  ret = false; }
-        if (logRpmColIdx == -1)          { Config.setRpmColumnName(Config.NO_NAME);          ret = false; }
-        if (logLoadColIdx == -1)         { Config.setLoadColumnName(Config.NO_NAME);         ret = false; }
-        if (logCommandedAfrCol == -1)    { Config.setCommandedAfrColumnName(Config.NO_NAME); if (!isPolSet) ret = false; }
+        if (logClOlStatusColIdx == -1)            { Config.setClOlStatusColumnName(Config.NO_NAME);   ret = false; }
+        if (logThrottleAngleColIdx == -1)         { Config.setThrottleAngleColumnName(Config.NO_NAME);ret = false; }
+        if (logAfLearningColIdx == -1)            { Config.setAfLearningColumnName(Config.NO_NAME);   ret = false; }
+        if (logAfCorrectionColIdx == -1)          { Config.setAfCorrectionColumnName(Config.NO_NAME); ret = false; }
+        if (logWBAfrColIdx == -1)                 { Config.setWidebandAfrColumnName(Config.NO_NAME);  ret = false; }
+        if (logAfrColIdx == -1)                   { Config.setAfrColumnName(Config.NO_NAME);          ret = false; }
+        if (logTimeColIdx == -1)                  { Config.setTimeColumnName(Config.NO_NAME);         ret = false; }
+        if (logMafvColIdx == -1)                  { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
+        if (logIatColIdx == -1)                   { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
+        if (logMafColIdx == -1)                   { Config.setMassAirflowColumnName(Config.NO_NAME);  ret = false; }
+        if (logRpmColIdx == -1)                   { Config.setRpmColumnName(Config.NO_NAME);          ret = false; }
+        if (logLoadColIdx == -1)                  { Config.setLoadColumnName(Config.NO_NAME);         ret = false; }
+        if (logCommandedAfrCol == -1 && !isPolSet){ Config.setCommandedAfrColumnName(Config.NO_NAME); ret = false; }
         isMafIatInRatio = Config.getIsMafIatInRatio();
         afrRowOffset = Config.getWBO2RowOffset();
         corrApplied = Config.getMICorrectionAppliedValue();

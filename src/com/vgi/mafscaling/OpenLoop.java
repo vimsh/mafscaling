@@ -612,8 +612,19 @@ public class OpenLoop extends AMafScaling {
         if (logMafvColIdx == -1)                  { Config.setMafVoltageColumnName(Config.NO_NAME);    ret = false; }
         if (logAfrColIdx == -1)                   { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
         if (logRpmColIdx == -1)                   { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
-        if (logLoadColIdx == -1)                  { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
-        if (logCommandedAfrCol == -1 && !isPolSet){ Config.setCommandedAfrColumnName(Config.NO_NAME);  ret = false; }
+        if (logLoadColIdx == -1 && isPolSet)      { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
+        if (logCommandedAfrCol == -1) {
+            if (isPolSet) {
+                if (!logCommandedAfrColName.equals(Config.NO_NAME)) {
+                    JOptionPane.showMessageDialog(null, "'Commanded AFR' column is specified but was not found in the log file.\nResetting 'Commanded AFR' column to blank", "Invalid column", JOptionPane.WARNING_MESSAGE);
+                    Config.setCommandedAfrColumnName(Config.NO_NAME);
+                }
+            }
+            else {
+                Config.setCommandedAfrColumnName(Config.NO_NAME);
+                ret = false;
+            }
+        }
         wotPoint = Config.getWOTStationaryPointValue();
         minMafV = Config.getMafVMinimumValue();
         afrErrPrct = Config.getWidebandAfrErrorPercentValue();
@@ -636,7 +647,7 @@ public class OpenLoop extends AMafScaling {
                 String [] elements = null;
                 while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
-                getColumnsFilters(elements, false);
+                getColumnsFilters(elements, isPolSet);
                 boolean resetColumns = false;
                 if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
                     logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrCol >= 0) {
@@ -650,7 +661,7 @@ public class OpenLoop extends AMafScaling {
                 }
                 
                 if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 ||
-                        logAfrColIdx < 0 || logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
+                        logAfrColIdx < 0 || logRpmColIdx < 0 || (logLoadColIdx < 0 && isPolSet) || (logCommandedAfrCol < 0 && !isPolSet)) {
                     ColumnsFiltersSelection selectionWindow = new OLColumnsFiltersSelection(isPolSet);
                     if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
                         return;
@@ -661,11 +672,8 @@ public class OpenLoop extends AMafScaling {
                 boolean wotFlag = true;
                 boolean foundWot = false;
                 double throttle;
-                double stft;
-                double ltft;
                 double afr;
                 double rpm;
-                double load;
                 double mafv;
                 double cmdafr = 0;
                 double afrErr = 0;
@@ -730,23 +738,10 @@ public class OpenLoop extends AMafScaling {
                                 mafv = Double.valueOf(flds[logMafvColIdx]);
                                 if (minMafV <= mafv) {
                                     foundWot = true;
-                                    stft = Double.valueOf(flds[logAfCorrectionColIdx]);
-                                    ltft = Double.valueOf(flds[logAfLearningColIdx]);
                                     afr = Double.valueOf(afrflds[logAfrColIdx]);
                                     rpm = Double.valueOf(flds[logRpmColIdx]);
-                                    load = Double.valueOf(flds[logLoadColIdx]);
-        
-                                    afr = afr / ((100.0 - (ltft + stft)) / 100.0);
-                                    
-                                    if (logCommandedAfrCol >= 0)
-                                        cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-                                    else if (isPolSet)
-                                        cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
-                                    else {
-                                        JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
-                                        return;
-                                    }
-
+                                    afr = afr / ((100.0 - (Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]))) / 100.0);
+                                    cmdafr = (logCommandedAfrCol >= 0 ? Double.valueOf(flds[logCommandedAfrCol]) : Utils.calculateCommandedAfr(rpm, Double.valueOf(flds[logLoadColIdx]), minWotEnrichment, polfTable));
                                     afrErr = (afr - cmdafr) / cmdafr * 100.0;
                                     if (Math.abs(afrErr) <= afrErrPrct) {
                                         Utils.ensureRowCount(j + 1, runTables[i]);

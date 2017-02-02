@@ -231,19 +231,30 @@ public class MafIatComp extends ACompCalc {
         logMafColIdx = columns.indexOf(logMafColName);
         logRpmColIdx = columns.indexOf(logRpmColName);
         logLoadColIdx = columns.indexOf(logLoadColName);
-        if (logClOlStatusColIdx == -1)            { Config.setClOlStatusColumnName(Config.NO_NAME);   ret = false; }
-        if (logThrottleAngleColIdx == -1)         { Config.setThrottleAngleColumnName(Config.NO_NAME);ret = false; }
-        if (logAfLearningColIdx == -1)            { Config.setAfLearningColumnName(Config.NO_NAME);   ret = false; }
-        if (logAfCorrectionColIdx == -1)          { Config.setAfCorrectionColumnName(Config.NO_NAME); ret = false; }
-        if (logWBAfrColIdx == -1)                 { Config.setWidebandAfrColumnName(Config.NO_NAME);  ret = false; }
-        if (logAfrColIdx == -1)                   { Config.setAfrColumnName(Config.NO_NAME);          ret = false; }
-        if (logTimeColIdx == -1)                  { Config.setTimeColumnName(Config.NO_NAME);         ret = false; }
-        if (logMafvColIdx == -1)                  { Config.setMafVoltageColumnName(Config.NO_NAME);   ret = false; }
-        if (logIatColIdx == -1)                   { Config.setIatColumnName(Config.NO_NAME);          ret = false; }
-        if (logMafColIdx == -1)                   { Config.setMassAirflowColumnName(Config.NO_NAME);  ret = false; }
-        if (logRpmColIdx == -1)                   { Config.setRpmColumnName(Config.NO_NAME);          ret = false; }
-        if (logLoadColIdx == -1)                  { Config.setLoadColumnName(Config.NO_NAME);         ret = false; }
-        if (logCommandedAfrCol == -1 && !isPolSet){ Config.setCommandedAfrColumnName(Config.NO_NAME); ret = false; }
+        if (logClOlStatusColIdx == -1)            { Config.setClOlStatusColumnName(Config.NO_NAME);    ret = false; }
+        if (logThrottleAngleColIdx == -1)         { Config.setThrottleAngleColumnName(Config.NO_NAME); ret = false; }
+        if (logAfLearningColIdx == -1)            { Config.setAfLearningColumnName(Config.NO_NAME);    ret = false; }
+        if (logAfCorrectionColIdx == -1)          { Config.setAfCorrectionColumnName(Config.NO_NAME);  ret = false; }
+        if (logWBAfrColIdx == -1)                 { Config.setWidebandAfrColumnName(Config.NO_NAME);   ret = false; }
+        if (logAfrColIdx == -1)                   { Config.setAfrColumnName(Config.NO_NAME);           ret = false; }
+        if (logTimeColIdx == -1)                  { Config.setTimeColumnName(Config.NO_NAME);          ret = false; }
+        if (logMafvColIdx == -1)                  { Config.setMafVoltageColumnName(Config.NO_NAME);    ret = false; }
+        if (logIatColIdx == -1)                   { Config.setIatColumnName(Config.NO_NAME);           ret = false; }
+        if (logMafColIdx == -1)                   { Config.setMassAirflowColumnName(Config.NO_NAME);   ret = false; }
+        if (logRpmColIdx == -1)                   { Config.setRpmColumnName(Config.NO_NAME);           ret = false; }
+        if (logLoadColIdx == -1 && isPolSet)      { Config.setLoadColumnName(Config.NO_NAME);          ret = false; }
+        if (logCommandedAfrCol == -1) {
+            if (isPolSet) {
+                if (!logCommandedAfrColName.equals(Config.NO_NAME)) {
+                    JOptionPane.showMessageDialog(null, "'Commanded AFR' column is specified but was not found in the log file.\nResetting 'Commanded AFR' column to blank", "Invalid column", JOptionPane.WARNING_MESSAGE);
+                    Config.setCommandedAfrColumnName(Config.NO_NAME);
+                }
+            }
+            else {
+                Config.setCommandedAfrColumnName(Config.NO_NAME);
+                ret = false;
+            }
+        }
         isMafIatInRatio = Config.getIsMafIatInRatio();
         afrRowOffset = Config.getWBO2RowOffset();
         corrApplied = Config.getMICorrectionAppliedValue();
@@ -270,7 +281,7 @@ public class MafIatComp extends ACompCalc {
                 String [] elements = null;
                 while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
-                getColumnsFilters(elements, false);
+                getColumnsFilters(elements, isPolSet);
                 boolean resetColumns = false;
                 if (logThrottleAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 ||
                     logWBAfrColIdx >= 0 || logAfrColIdx >= 0 || logCommandedAfrCol >= 0 || logTimeColIdx >=0 ||
@@ -288,7 +299,7 @@ public class MafIatComp extends ACompCalc {
                 if (resetColumns || logThrottleAngleColIdx < 0 || logAfLearningColIdx < 0 ||
                     logAfCorrectionColIdx < 0 || logWBAfrColIdx < 0 || logAfrColIdx < 0 || logTimeColIdx < 0 || 
                     logMafvColIdx < 0 || logIatColIdx < 0 || logMafColIdx < 0 || logClOlStatusColIdx < 0 ||
-                    logRpmColIdx < 0 || logLoadColIdx < 0 || (logCommandedAfrCol < 0 && !isPolSet)) {
+                    logRpmColIdx < 0 || (logLoadColIdx < 0 && isPolSet) || (logCommandedAfrCol < 0 && !isPolSet)) {
                     ColumnsFiltersSelection selectionWindow = new MafIatColumnsFiltersSelection(isPolSet);
                     if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolSet))
                         return;
@@ -306,8 +317,6 @@ public class MafIatComp extends ACompCalc {
                 double pThrottle = 0;
                 double ppThrottle = 0;
                 double afr = 0;
-                double rpm = 0;
-                double load = 0;
                 double corr = 0;
                 double cmdafr = 0;
                 double trims = 0;
@@ -360,16 +369,7 @@ public class MafIatComp extends ACompCalc {
                                 }
                                 else {
                                     afr = Double.valueOf(afrflds[logWBAfrColIdx]);
-                                    rpm = Double.valueOf(flds[logRpmColIdx]);
-                                    load = Double.valueOf(flds[logLoadColIdx]);
-                                    if (logCommandedAfrCol >= 0)
-                                        cmdafr = Double.valueOf(flds[logCommandedAfrCol]);
-                                    else if (isPolSet)
-                                        cmdafr = Utils.calculateCommandedAfr(rpm, load, minWotEnrichment, polfTable);
-                                    else {
-                                        JOptionPane.showMessageDialog(null, "Please set either \"Commanded AFR\" column or \"Primary Open Loop Fueling\" table", "Error", JOptionPane.ERROR_MESSAGE);
-                                        return;
-                                    }
+                                    cmdafr = (logCommandedAfrCol >= 0 ? Double.valueOf(flds[logCommandedAfrCol]) : Utils.calculateCommandedAfr(Double.valueOf(flds[logRpmColIdx]), Double.valueOf(flds[logLoadColIdx]), minWotEnrichment, polfTable));
                                     corr = (afr / ((100.0 - trims) / 100.0)) / cmdafr;
                                 }
                                 iat = Double.valueOf(flds[logIatColIdx]);

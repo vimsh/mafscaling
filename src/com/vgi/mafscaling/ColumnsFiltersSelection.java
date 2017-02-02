@@ -204,11 +204,12 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         
         return true;
     }
-    
+
     abstract void addColSelection();
     abstract void addFilterSelection();
     abstract boolean validate(StringBuffer error);
     abstract boolean processDefaultButton(ActionEvent e);
+    protected void addColumnsNote() { }
     
     protected void createColumnsPanel(String[] elements) {
         String[] columns = elements.clone();
@@ -226,6 +227,9 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         addNote(columnsPanel, colrow, 4, "NOTE: Fields marked with asterisk (*) are optional");
         // columns note
         addCommentLabel(columnsPanel, ++colrow, 4, "<html><b>Columns Selection - use blank row to clear optional columns.</b></html>");
+        // custom columns note
+        addColumnsNote();
+        int colRowStart = colrow + 1;
         // Add columns for specific implementation
         addColSelection();
         // save dimension of all add column component to set preferred size fo rthe panel so that croll pane doesn't extends
@@ -250,11 +254,15 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         gbc_scrollPane.anchor = GridBagConstraints.PAGE_START;
         gbc_scrollPane.fill = GridBagConstraints.BOTH;
         gbc_scrollPane.gridx = 3;
-        gbc_scrollPane.gridy = 2;
+        gbc_scrollPane.gridy = colRowStart;
         gbc_scrollPane.gridheight = colrow + 1;
         columnsPanel.add(scrollPane, gbc_scrollPane);
         // set size for panel to prevent scroll pane extension 
         columnsPanel.setPreferredSize(d);
+    }
+
+    protected void addColumnsNote(String note) {
+        addNote(columnsPanel, ++colrow, 4, note);
     }
     
     protected void addRPMColSelection() {

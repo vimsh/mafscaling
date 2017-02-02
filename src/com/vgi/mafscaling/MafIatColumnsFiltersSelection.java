@@ -29,10 +29,16 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
         this.isPolfTableSet = isPolfTableSet;
     }
     
+    protected void addColumnsNote() {
+        if (!isPolfTableSet)
+            addColumnsNote("If you don't have 'Commanded AFR' please set 'POL Fueling' table first to use 'Load'");
+    }
+    
     protected void addColSelection() {
         addTimeColSelection();
         addRPMColSelection();
-        addLoadColSelection();
+        if (isPolfTableSet)
+            addLoadColSelection();
         addThrottleAngleColSelection();
         addAFLearningColSelection();
         addAFCorrectionColSelection();
@@ -91,15 +97,17 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
         else
             Config.setRpmColumnName(value);
         
-        // Engine Load
-        value = loadName.getText().trim();
-        colName = loadLabelText;
-        if (value.isEmpty()) {
-            ret = false;
-            error.append("\"").append(colName).append("\" column must be specified\n");
+        if (isPolfTableSet) {
+            // Engine Load
+            value = loadName.getText().trim();
+            colName = loadLabelText;
+            if (value.isEmpty()) {
+                ret = false;
+                error.append("\"").append(colName).append("\" column must be specified\n");
+            }
+            else
+                Config.setLoadColumnName(value);
         }
-        else
-            Config.setLoadColumnName(value);
 
         // AFR Learning
         value = afLearningName.getText().trim();

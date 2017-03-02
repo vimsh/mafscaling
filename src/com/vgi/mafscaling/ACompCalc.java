@@ -189,9 +189,9 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         dataTablesScrollPane.setViewportView(tablesPanel);
         GridBagLayout gbl_tablesPanel = new GridBagLayout();
         gbl_tablesPanel.columnWidths = new int[]{0, 0};
-        gbl_tablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0};
+        gbl_tablesPanel.rowHeights = new int[] {0, 0, 0, 0, 0, 0, 0, 0};
         gbl_tablesPanel.columnWeights = new double[]{0.0, 1.0};
-        gbl_tablesPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_tablesPanel.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         tablesPanel.setLayout(gbl_tablesPanel);
 
         createLogDataTable(dataRunPanel, logColumns);

@@ -106,14 +106,14 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     
     protected void initialize() {
         createDataTab();
-        createGraghTab();
+        createGraphTab();
         createUsageTab();
     }
     
     public abstract void loadData();
     public abstract void saveData();
     protected abstract void createRunPanel(JPanel dataPanel);
-    protected abstract void createGraghTab();
+    protected abstract void createGraphTab();
     protected abstract void onEnableSmoothingView(boolean flag);
     protected abstract void onSmoothReset();
     protected abstract void calculateMafScaling();

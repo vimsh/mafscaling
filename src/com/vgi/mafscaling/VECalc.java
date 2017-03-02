@@ -180,7 +180,7 @@ public class VECalc extends ACompCalc {
     // CREATE CHART TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
-    protected void createGraghTab() {
+    protected void createGraphTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
 

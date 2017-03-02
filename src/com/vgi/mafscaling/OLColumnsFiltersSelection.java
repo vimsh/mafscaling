@@ -22,19 +22,23 @@ import java.awt.event.ActionEvent;
 
 public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
     private boolean isPolfTableSet = false;
+    private boolean isPolfTableMap = false;
     
-    public OLColumnsFiltersSelection(boolean isPolfTableSet) {
+    public OLColumnsFiltersSelection(boolean isPolfTableSet, boolean isPolfTableMap) {
         this.isPolfTableSet = isPolfTableSet;
+        this.isPolfTableMap = isPolfTableMap;
     }
     
     protected void addColumnsNote() {
         if (!isPolfTableSet)
-            addColumnsNote("If you don't have 'Commanded AFR' please set 'POL Fueling' table first to use 'Load'");
+            addColumnsNote("If you don't have 'Commanded AFR' / 'Fueling Final Base' please set 'POL Fueling' table first");
     }
     
     protected void addColSelection() {
         addRPMColSelection();
-        if (isPolfTableSet)
+        if (isPolfTableMap)
+            addManifoldAbsolutePressureColSelection();
+        else if (isPolfTableSet)
             addLoadColSelection();
         addAFLearningColSelection();
         addAFCorrectionColSelection();
@@ -74,7 +78,18 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
         else
             Config.setRpmColumnName(value);
         
-        if (isPolfTableSet) {
+        if (isPolfTableMap) {
+            // Manifold Absolute Pressure
+            value = mapName.getText().trim();
+            colName = mapLabelText;
+            if (value.isEmpty()) {
+                ret = false;
+                error.append("\"").append(colName).append("\" column must be specified\n");
+            }
+            else
+                Config.setMapColumnName(value);
+        }
+        else if (isPolfTableSet) {
             // Engine Load
             value = loadName.getText().trim();
             colName = loadLabelText;
@@ -85,7 +100,7 @@ public class OLColumnsFiltersSelection extends ColumnsFiltersSelection {
             else
                 Config.setLoadColumnName(value);
         }
-
+        
         // AFR Learning
         value = afLearningName.getText().trim();
         colName = afLearningLabelText;

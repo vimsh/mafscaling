@@ -331,7 +331,7 @@ public class VVTCalc extends ACompCalc {
     // CREATE CHART TAB
     //////////////////////////////////////////////////////////////////////////////////////
     
-    protected void createGraghTab() {
+    protected void createGraphTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
 
@@ -602,7 +602,7 @@ public class VVTCalc extends ACompCalc {
         return true;
     }
 
-    protected void create3dGraghTab() {
+    protected void create3dGraphTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br><br>C<br>h<br>a<br>r<br>t</div></html>");
         GridBagLayout gbl_plotPanel = new GridBagLayout();

@@ -232,7 +232,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         int colRowStart = colrow + 1;
         // Add columns for specific implementation
         addColSelection();
-        // save dimension of all add column component to set preferred size fo rthe panel so that croll pane doesn't extends
+        // save dimension of all add column component to set preferred size for the panel so that scroll pane doesn't extend
         Dimension d = columnsPanel.getPreferredSize();
         // Columns selection table
         columnsTable = new JTable() {

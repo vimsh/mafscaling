@@ -110,7 +110,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected abstract void createControlPanel(JPanel dataPanel);
-    protected abstract void createGraghTab();
+    protected abstract void createGraphTab();
     protected abstract void loadLogFile();
     protected abstract boolean processLog();
     protected abstract boolean displayData();
@@ -136,8 +136,8 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 
     protected void initialize(String[] logColumns) {
         createDataTab(logColumns);
-        createGraghTab();
-        create3dGraghTab();
+        createGraphTab();
+        create3dGraphTab();
         createUsageTab();
     }
     
@@ -229,7 +229,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             excelAdapterList.add(excelAdapter);
     }
     
-    protected void create3dGraghTab() {
+    protected void create3dGraphTab() {
         JPanel plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br><br>C<br>h<br>a<br>r<br>t</div></html>");
         GridBagLayout gbl_plotPanel = new GridBagLayout();

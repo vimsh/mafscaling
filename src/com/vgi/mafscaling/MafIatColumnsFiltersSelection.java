@@ -24,20 +24,24 @@ import javax.swing.JEditorPane;
 
 public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
     private boolean isPolfTableSet = false;
+    private boolean isPolfTableMap = false;
     
-    public MafIatColumnsFiltersSelection(boolean isPolfTableSet) {
+    public MafIatColumnsFiltersSelection(boolean isPolfTableSet, boolean isPolfTableMap) {
         this.isPolfTableSet = isPolfTableSet;
+        this.isPolfTableMap = isPolfTableMap;
     }
     
     protected void addColumnsNote() {
         if (!isPolfTableSet)
-            addColumnsNote("If you don't have 'Commanded AFR' please set 'POL Fueling' table first to use 'Load'");
+            addColumnsNote("If you don't have 'Commanded AFR' / 'Fueling Final Base' please set 'POL Fueling' table first");
     }
     
     protected void addColSelection() {
         addTimeColSelection();
         addRPMColSelection();
-        if (isPolfTableSet)
+        if (isPolfTableMap)
+            addManifoldAbsolutePressureColSelection();
+        else if (isPolfTableSet)
             addLoadColSelection();
         addThrottleAngleColSelection();
         addAFLearningColSelection();
@@ -96,8 +100,19 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
         }
         else
             Config.setRpmColumnName(value);
-        
-        if (isPolfTableSet) {
+
+        if (isPolfTableMap) {
+            // Manifold Absolute Pressure
+            value = mapName.getText().trim();
+            colName = mapLabelText;
+            if (value.isEmpty()) {
+                ret = false;
+                error.append("\"").append(colName).append("\" column must be specified\n");
+            }
+            else
+                Config.setMapColumnName(value);
+        }
+        else if (isPolfTableSet) {
             // Engine Load
             value = loadName.getText().trim();
             colName = loadLabelText;

@@ -21,6 +21,11 @@ package com.vgi.mafscaling;
 import java.awt.event.ActionEvent;
 
 public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
+    private boolean isPolfTableMap = false;
+    
+    public CLColumnsFiltersSelection(boolean isPolfTableMap) {
+        this.isPolfTableMap = isPolfTableMap;
+    }
     
     protected void addColSelection() {
         addRPMColSelection();
@@ -32,6 +37,8 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
         addClOlStatusColSelection();
         addTimeColSelection();
         addIATColSelection();
+        if (isPolfTableMap)
+            addManifoldAbsolutePressureColSelection();
     }
     
     protected void addFilterSelection() {
@@ -157,6 +164,18 @@ public class CLColumnsFiltersSelection extends ColumnsFiltersSelection {
         }
         else
             Config.setClOlStatusValue(Integer.valueOf(value));
+        
+        if (isPolfTableMap) {
+            // Manifold Absolute Pressure
+            value = mapName.getText().trim();
+            colName = mapLabelText;
+            if (value.isEmpty()) {
+                ret = false;
+                error.append("\"").append(colName).append("\" column must be specified\n");
+            }
+            else
+                Config.setMapColumnName(value);
+        }
         
         // Max MAF Voltage filter
         Config.setMafVMaximumValue(Double.valueOf(maxMafVFilter.getText()));

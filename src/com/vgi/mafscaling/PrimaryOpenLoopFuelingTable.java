@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -66,8 +67,11 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private JComboBox<String> loadList = null;
     private String fileName = "";
     private String tempFileName = "";
+    private JCheckBox checkBoxMap = null;
+    private boolean isPolfMap = false;
     
     public PrimaryOpenLoopFuelingTable() {
+        checkBoxMap = new JCheckBox("This fueling table has MAP (psi abs) axis");
         File appdir = new File(".");
         FileSystemView fsv = new RestrictedFileSystemView(appdir);
         fileChooser = new JFileChooser(fsv);
@@ -92,9 +96,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         JPanel fuelingPanel = new JPanel();
         GridBagLayout gbl_dataPanel = new GridBagLayout();
         gbl_dataPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
-        gbl_dataPanel.rowHeights = new int[] {0, 0};
+        gbl_dataPanel.rowHeights = new int[] {0, 0, 0};
         gbl_dataPanel.columnWeights = new double[]{0.0, 1.0, 0.0, 0.0, 0.0, 0.0};
-        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0};
+        gbl_dataPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
         fuelingPanel.setLayout(gbl_dataPanel);
         
         loadList = new JComboBox<String>(Config.getPOLFuelingFiles().split(Utils.fileFieldSplitter));
@@ -174,6 +178,13 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         fuelingPanel.add(scrollPane, gbc_fuelingTable);
         fuelingPanel.setPreferredSize(new Dimension(620, 500));
 
+        GridBagConstraints gbc_checkBoxMap = new GridBagConstraints();
+        gbc_checkBoxMap.anchor = GridBagConstraints.WEST;
+        gbc_checkBoxMap.insets = new Insets(5, 0, 0, 0);
+        gbc_checkBoxMap.gridx = 0;
+        gbc_checkBoxMap.gridy = 2;
+        fuelingPanel.add(checkBoxMap, gbc_checkBoxMap);
+
         JComponent[] inputs = new JComponent[] { fuelingPanel };
         do {
             if (JOptionPane.OK_OPTION != JOptionPane.showConfirmDialog(null, inputs, "Fueling settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE)) {
@@ -181,6 +192,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                 Utils.clearTable(tempFuelingTable);
                 tempFuelingTable = null;
                 tempFileName = "";
+                checkBoxMap.setSelected(isPolfMap);
                 return false;
             }
         }
@@ -193,10 +205,12 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                 tempFuelingTable = null;
                 tempFileName = "";
                 fileName = "";
+                checkBoxMap.setSelected(isPolfMap);
             }
             else {
                 fuelingTable = tempFuelingTable;
                 fileName = tempFileName;
+                isPolfMap = checkBoxMap.isSelected();
             }
         }
         return true;
@@ -225,6 +239,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         Utils.clearTable(tempFuelingTable);
         tempFileName = "";
         loadList.setSelectedIndex(0);
+        checkBoxMap.setSelected(false);
+        checkBoxMap.setEnabled(true);
+        isPolfMap = false;
     }
     
     /**
@@ -233,12 +250,11 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      */
     public boolean validate() {
         if (fuelingTable == null || !validateFuelingData(fuelingTable)) {
-            JOptionPane.showMessageDialog(null, "Please set fueling data", "Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         return true;
     }
-    
+
     /**
      * Method returns true if fueling table is set, false otherwise.
      * @return
@@ -247,6 +263,14 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         if (fuelingTable == null || !validateFuelingData(fuelingTable))
             return false;
         return true;
+    }
+    
+    /**
+     * Method returns true if fueling table has MAP axis, false otherwise.
+     * @return
+     */
+    public boolean isMap() {
+        return isPolfMap;
     }
     
     /**
@@ -317,6 +341,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      */
     private void write(JTable fuelingTable, Writer out) throws IOException {
         if (fuelingTable != null) {
+            if (checkBoxMap.isSelected())
+                out.write("MAP\n");
             int i, j;
             for (i = 0; i < fuelingTable.getRowCount(); ++i) {
                 for (j = 0; j < fuelingTable.getColumnCount(); ++j)
@@ -361,7 +387,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     
     /**
      * Method validates that provided table exists and all data is populated.
-     * @param fuelingTable, table to be cecked
+     * @param fuelingTable, table to be checked
      * @return
      */
     private boolean validateFuelingData(JTable fuelingTable) {
@@ -408,7 +434,26 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             }
         }
         Utils.colorTable(fuelingTable);
+        validateMapLoadFuelingData(fuelingTable);
         return true;
+    }
+    
+    /**
+     * Method validates that proper selection of MAP or Load POLF is made.
+     * @param fuelingTable, table to be checked
+     * @return
+     */
+    private void validateMapLoadFuelingData(JTable fuelingTable) {
+        final double maxLoad = 10.0;
+        double firstRowLastColumnValue = Double.parseDouble(fuelingTable.getValueAt(0, fuelingTable.getColumnCount() - 1).toString());
+        if (checkBoxMap.isSelected() && firstRowLastColumnValue < maxLoad) {
+            JOptionPane.showMessageDialog(null, "The data looks like it's Load based POLF table. Unsetting the checkbox.", "Warning", JOptionPane.WARNING_MESSAGE);
+            checkBoxMap.setSelected(false);
+        }
+        else if (!checkBoxMap.isSelected() && firstRowLastColumnValue >= maxLoad) {
+            JOptionPane.showMessageDialog(null, "This data looks like it's MAP (psi) based POLF table. Setting the checkbox.", "Warning", JOptionPane.WARNING_MESSAGE);
+            checkBoxMap.setSelected(true);
+        }
     }
     
     /**
@@ -417,6 +462,9 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private JTable loadPolFueling(JTable fuelingTable, String fileName) {
         if (fileName.isEmpty())
             return null;
+        checkBoxMap.setEnabled(false);
+        checkBoxMap.setSelected(false);
+        isPolfMap = false;
         File file = new File("./" + fileName);
         BufferedReader br = null;
         try {
@@ -424,7 +472,12 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             int i = 0;
             String line = br.readLine();
             while (line != null) {
-                fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
+                if (0 == i && line.equals("MAP")) {
+                    checkBoxMap.setSelected(true);
+                    isPolfMap = true;
+                }
+                else
+                    fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
                 line = br.readLine();
             }
             if (i > 0 && validateFuelingData(fuelingTable))

@@ -79,16 +79,14 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         fileName = Config.getDefaultPOLFueling();
         btnSetDefault = new JButton("Set Default");
         btnSetDefault.addActionListener(this);
-        if (!fileName.isEmpty()) {
-            fuelingTable = loadPolFueling(fuelingTable, fileName);
-            if (fuelingTable != null) {
-                if (Config.getDefaultPOLFueling().equals(fileName))
-                    btnSetDefault.setText("Unset Default");
-            }
-            else {
-                Config.setDefaultPOLFueling("");
-                resetPOLFuelingFiles(fileName, "");
-            }
+        fuelingTable = loadPolFueling(fuelingTable, fileName);
+        if (fuelingTable != null) {
+            if (Config.getDefaultPOLFueling().equals(fileName))
+                btnSetDefault.setText("Unset Default");
+        }
+        else if (!tempFileName.isEmpty()) {
+            Config.setDefaultPOLFueling("");
+            resetPOLFuelingFiles(fileName, "");
         }
     }
     
@@ -238,7 +236,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     public void clear() {
         Utils.clearTable(tempFuelingTable);
         tempFileName = "";
-        loadList.setSelectedIndex(0);
         checkBoxMap.setSelected(false);
         checkBoxMap.setEnabled(true);
         isPolfMap = false;
@@ -462,9 +459,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private JTable loadPolFueling(JTable fuelingTable, String fileName) {
         if (fileName.isEmpty())
             return null;
-        checkBoxMap.setEnabled(false);
-        checkBoxMap.setSelected(false);
-        isPolfMap = false;
         File file = new File("./" + fileName);
         BufferedReader br = null;
         try {
@@ -480,8 +474,10 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                     fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
                 line = br.readLine();
             }
-            if (i > 0 && validateFuelingData(fuelingTable))
+            if (i > 0 && validateFuelingData(fuelingTable)) {
+                checkBoxMap.setEnabled(false);
                 return fuelingTable;
+            }
         }
         catch (FileNotFoundException e) {
             logger.error(e);
@@ -569,27 +565,27 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param fuelingTable
      */
     private void load() {
-        Utils.clearTable(tempFuelingTable);
+        clear();
         tempFileName = (String)loadList.getSelectedItem();
         btnSetDefault.setText("Set Default");
-        if (!tempFileName.isEmpty()) {
-            if (loadPolFueling(tempFuelingTable, tempFileName) != null) {
-                loadList.setSelectedItem(tempFileName);
-                if (Config.getDefaultPOLFueling().equals(tempFileName))
-                    btnSetDefault.setText("Unset Default");
-            }
-            else {
-                loadList.removeItem(tempFileName);
-                loadList.setSelectedItem("");
-                resetPOLFuelingFiles(tempFileName, "");
-            }
+        if (loadPolFueling(tempFuelingTable, tempFileName) != null) {
+            loadList.setSelectedItem(tempFileName);
+            if (Config.getDefaultPOLFueling().equals(tempFileName))
+                btnSetDefault.setText("Unset Default");
+        }
+        else if (!tempFileName.isEmpty()) {
+            loadList.removeItem(tempFileName);
+            loadList.setSelectedItem("");
+            resetPOLFuelingFiles(tempFileName, "");
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if ("clear".equals(e.getActionCommand()))
+        if ("clear".equals(e.getActionCommand())) {
             clear();
+            loadList.setSelectedIndex(0);
+        }
         else if ("check".equals(e.getActionCommand()))
             validateFuelingData(tempFuelingTable);
         else if ("setdefault".equals(e.getActionCommand()))

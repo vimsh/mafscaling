@@ -79,14 +79,14 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         fileName = Config.getDefaultPOLFueling();
         btnSetDefault = new JButton("Set Default");
         btnSetDefault.addActionListener(this);
-        fuelingTable = loadPolFueling(fuelingTable, fileName);
-        if (fuelingTable != null) {
-            if (Config.getDefaultPOLFueling().equals(fileName))
+        if (!fileName.isEmpty()) {
+            fuelingTable = loadPolFueling(fuelingTable, fileName);
+            if (fuelingTable != null)
                 btnSetDefault.setText("Unset Default");
-        }
-        else if (!tempFileName.isEmpty()) {
-            Config.setDefaultPOLFueling("");
-            resetPOLFuelingFiles(fileName, "");
+            else {
+                Config.setDefaultPOLFueling("");
+                resetPOLFuelingFiles(fileName, "");
+            }
         }
     }
     
@@ -236,9 +236,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     public void clear() {
         Utils.clearTable(tempFuelingTable);
         tempFileName = "";
-        checkBoxMap.setSelected(false);
-        checkBoxMap.setEnabled(true);
-        isPolfMap = false;
+        loadList.setSelectedIndex(0);
+        resetMapState();
     }
     
     /**
@@ -329,6 +328,15 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         write(fuelingTable, out);
     }
 
+    /**
+     * Method resets the MAP checkbox and flag states.
+     * @return
+     */
+    private void resetMapState() {
+        checkBoxMap.setSelected(false);
+        checkBoxMap.setEnabled(true);
+        isPolfMap = false;
+    }
     
     /**
      * Method write data in current primary open loop fueling table to provide file handler
@@ -457,8 +465,6 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * Function to load POL Fueling table from file
      */
     private JTable loadPolFueling(JTable fuelingTable, String fileName) {
-        if (fileName.isEmpty())
-            return null;
         File file = new File("./" + fileName);
         BufferedReader br = null;
         try {
@@ -468,16 +474,15 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
             while (line != null) {
                 if (0 == i && line.equals("MAP")) {
                     checkBoxMap.setSelected(true);
+                    checkBoxMap.setEnabled(false);
                     isPolfMap = true;
                 }
                 else
                     fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
                 line = br.readLine();
             }
-            if (i > 0 && validateFuelingData(fuelingTable)) {
-                checkBoxMap.setEnabled(false);
+            if (i > 0 && validateFuelingData(fuelingTable))
                 return fuelingTable;
-            }
         }
         catch (FileNotFoundException e) {
             logger.error(e);
@@ -565,27 +570,28 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @param fuelingTable
      */
     private void load() {
-        clear();
+        Utils.clearTable(tempFuelingTable);
         tempFileName = (String)loadList.getSelectedItem();
         btnSetDefault.setText("Set Default");
-        if (loadPolFueling(tempFuelingTable, tempFileName) != null) {
-            loadList.setSelectedItem(tempFileName);
-            if (Config.getDefaultPOLFueling().equals(tempFileName))
-                btnSetDefault.setText("Unset Default");
-        }
-        else if (!tempFileName.isEmpty()) {
-            loadList.removeItem(tempFileName);
-            loadList.setSelectedItem("");
-            resetPOLFuelingFiles(tempFileName, "");
+        resetMapState(); // needed even when tempFileName == "" (blank table selected) so load log will display columns correctly
+        if (!tempFileName.isEmpty()) {
+            if (loadPolFueling(tempFuelingTable, tempFileName) != null) {
+                loadList.setSelectedItem(tempFileName);
+                if (Config.getDefaultPOLFueling().equals(tempFileName))
+                    btnSetDefault.setText("Unset Default");
+            }
+            else {
+                loadList.removeItem(tempFileName);
+                loadList.setSelectedItem("");
+                resetPOLFuelingFiles(tempFileName, "");
+            }
         }
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if ("clear".equals(e.getActionCommand())) {
+        if ("clear".equals(e.getActionCommand()))
             clear();
-            loadList.setSelectedIndex(0);
-        }
         else if ("check".equals(e.getActionCommand()))
             validateFuelingData(tempFuelingTable);
         else if ("setdefault".equals(e.getActionCommand()))

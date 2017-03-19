@@ -60,7 +60,7 @@ public class OpenLoop extends AMafScaling {
     private static final String Y2AxisName = "AFR Error (%)";
     private static final String rpmAxisName = "RPM";
     private static final String runDataName = "AFR Error";
-    private static final int RunCount = 12;
+    private static final int RunCount = 30;
     private static final int RunRowsCount = 200;
     
     private double minMafV = Config.getMafVMinimumValue();

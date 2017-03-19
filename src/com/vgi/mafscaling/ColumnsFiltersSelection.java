@@ -63,7 +63,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     public static final String mafLabelText = "Mass Airflow";
     public static final String wbAfrLabelText = "Wideband AFR";
     public static final String thrtlAngleLabelText = "Throttle Angle %";
-    public static final String commAfrLabelText = "Commanded AFR";
+    public static final String commAfrLabelText = "ECU Target AFR";
     public static final String stockAfrLabelText = "Stock AFR";
     public static final String clolStatusLabelText = "CL/OL Status";
     public static final String cruiseStatusLabelText = "Cruise/Non-cruise Status *";

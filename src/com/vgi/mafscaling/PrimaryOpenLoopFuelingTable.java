@@ -37,7 +37,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.text.DecimalFormat;
 import java.text.Format;
-import java.util.regex.Pattern;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
@@ -368,6 +367,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
         table.setCellSelectionEnabled(true);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setTableHeader(null);
+        table.putClientProperty("terminateEditOnFocusLost", true);
         if (fuelingTable != null) {
             table.setModel(new DefaultTableModel(fuelingTable.getRowCount(), fuelingTable.getColumnCount()));
             Utils.initializeTable(table, ColumnWidth);
@@ -396,49 +396,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     private boolean validateFuelingData(JTable fuelingTable) {
-        if (fuelingTable == null)
+        if (!Utils.validateTable(fuelingTable))
             return false;
-        // check if table is empty
-        if (Utils.isTableEmpty(fuelingTable))
-            return true;
-        // check paste format
-        if (!fuelingTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-            !((fuelingTable.getValueAt(0, 0).toString().equals("")) &&
-              Pattern.matches(Utils.fpRegex, fuelingTable.getValueAt(0, 1).toString()) &&
-              Pattern.matches(Utils.fpRegex, fuelingTable.getValueAt(1, 0).toString()))) {
-            JOptionPane.showMessageDialog(null, "Invalid data in POL Fueling table!\n\nPlease post 'Primary Open Loop Fueling' table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if (fuelingTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-            // realign if paste is from RomRaider
-            if (fuelingTable.getValueAt(0, 1).toString().equals("")) {
-                Utils.removeRow(0, fuelingTable);
-                for (int i = fuelingTable.getColumnCount() - 2; i >= 0; --i)
-                    fuelingTable.setValueAt(fuelingTable.getValueAt(0, i), 0, i + 1);
-                fuelingTable.setValueAt("", 0, 0);
-            }
-            // paste is probably from excel, just blank out the first cell
-            else
-                fuelingTable.setValueAt("", 0, 0);
-        }
-        // remove extra rows
-        for (int i = fuelingTable.getRowCount() - 1; i >= 0 && fuelingTable.getValueAt(i, 0).toString().equals(""); --i)
-            Utils.removeRow(i, fuelingTable);
-        // remove extra columns
-        for (int i = fuelingTable.getColumnCount() - 1; i >= 0 && fuelingTable.getValueAt(0, i).toString().equals(""); --i)
-            Utils.removeColumn(i, fuelingTable);
-        // validate all cells are numeric
-        for (int i = 0; i < fuelingTable.getRowCount(); ++i) {
-            for (int j = 0; j < fuelingTable.getColumnCount(); ++j) {
-                if (i == 0 && j == 0)
-                    continue;
-                if (!Pattern.matches(Utils.fpRegex, fuelingTable.getValueAt(i, j).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
-        }
-        Utils.colorTable(fuelingTable);
         validateMapLoadFuelingData(fuelingTable);
         return true;
     }

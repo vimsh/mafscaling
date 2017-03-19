@@ -187,6 +187,7 @@ public class ClosedLoop extends AMafScaling {
         logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
         logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        logDataTable.putClientProperty("terminateEditOnFocusLost", true);
         for (int i = 0; i < LogDataTableHeaders.length; ++i)
             logDataTable.getColumnModel().getColumn(i).setHeaderValue(LogDataTableHeaders[i]);
         Utils.initializeTable(logDataTable, ColumnWidth);
@@ -1134,7 +1135,7 @@ public class ClosedLoop extends AMafScaling {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.closed_loop");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.closedloop");
         return bundle.getString("usage"); 
     }
 }

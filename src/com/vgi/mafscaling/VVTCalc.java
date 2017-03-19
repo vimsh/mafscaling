@@ -245,6 +245,7 @@ public class VVTCalc extends ACompCalc {
             table.setModel(new DefaultTableModel(RunRowsCount, colCount));
             table.setColumnSelectionAllowed(true);
             table.setCellSelectionEnabled(true);
+            table.putClientProperty("terminateEditOnFocusLost", true);
             table.setBorder(new LineBorder(new Color(0, 0, 0)));
             table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
             table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -739,7 +740,7 @@ public class VVTCalc extends ACompCalc {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.vvt_calc");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.vvtcalc");
         return bundle.getString("usage"); 
     }
 

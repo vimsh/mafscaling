@@ -40,7 +40,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -111,7 +110,6 @@ public class LogPlayTable extends JFrame implements ActionListener {
     private int xIdx, yIdx, x0Idx, x1Idx, y0Idx, y1Idx, xMult, yMult;
     
     public LogPlayTable(Window owner, String tableName) {
-//        super(owner, tableName);
         super(tableName);
         parent = owner;
         final JFrame frame = this;
@@ -148,57 +146,14 @@ public class LogPlayTable extends JFrame implements ActionListener {
     }
 
     private boolean validateTable(JTable table) {
-        if (table == null)
+        if (!Utils.validateTable(table))
             return false;
-        // check if table is empty
-        if (Utils.isTableEmpty(table))
-            return true;
-        // check paste format
-        if (!table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-            !((table.getValueAt(0, 0).toString().equals("")) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString()) &&
-              Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString()))) {
-            JOptionPane.showMessageDialog(null, "Invalid data in table!\n\nPlease paste correct table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        int i;
-        if (table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-            // realign if paste is from RomRaider
-            if (table.getValueAt(0, 1).toString().equals("")) {
-                Utils.removeRow(0, table);
-                for (i = table.getColumnCount() - 2; i >= 0; --i)
-                    table.setValueAt(table.getValueAt(0, i), 0, i + 1);
-                table.setValueAt("", 0, 0);
-            }
-            // paste is probably from excel, just blank out the first cell
-            else
-                table.setValueAt("", 0, 0);
-        }
-        // remove extra rows
-        for (i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)
-            Utils.removeRow(i, table);
-        // remove extra columns
-        for (i = table.getColumnCount() - 1; i >= 0 && table.getValueAt(0, i).toString().equals(""); --i)
-            Utils.removeColumn(i, table);
-        // validate all cells are numeric
-        for (i = 0; i < table.getRowCount(); ++i) {
-            for (int j = 0; j < table.getColumnCount(); ++j) {
-                if (i == 0 && j == 0)
-                    continue;
-                if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, j).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
-        }
         xaxis.clear();
-        for (i = 1; i < table.getColumnCount(); ++i)
+        for (int i = 1; i < table.getColumnCount(); ++i)
             xaxis.add(Double.valueOf(table.getValueAt(0, i).toString()));
         yaxis.clear();
-        for (i = 1; i < table.getRowCount(); ++i)
+        for (int i = 1; i < table.getRowCount(); ++i)
             yaxis.add(Double.valueOf(table.getValueAt(i, 0).toString()));
-        
-        Utils.colorTable(table);
         
         diameter = table.getCellRect(0, 0, false).getHeight();
         radius = diameter / 2.0;
@@ -206,6 +161,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
         
         return true;
     }
+    
     public void setEditable(boolean flag) {
         playTable.setEnabled(flag);
         playTable.setFocusable(flag);
@@ -382,7 +338,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
                             x0y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x0Idx + 1).toString());
                             x1y1 = Double.valueOf(playTable.getValueAt(y1Idx + 1, x1Idx + 1).toString());
                             
-                            val = Utils.table3DInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
+                            val = Utils.bilinearInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
                             
                             xText.setText(String.format("%.2f", x));
                             yText.setText(String.format("%.2f", y));
@@ -470,6 +426,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
         playTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         playTable.setModel(new DefaultTableModel(RowColumnCount, RowColumnCount));
         playTable.setTableHeader(null);
+        playTable.putClientProperty("terminateEditOnFocusLost", true);
         Utils.initializeTable(playTable, ColumnWidth);
         excelAdapter.addTable(playTable, true, true, false, false, true, false, true, true, true);
         

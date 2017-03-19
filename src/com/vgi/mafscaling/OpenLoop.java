@@ -129,6 +129,7 @@ public class OpenLoop extends AMafScaling {
             table.setCellSelectionEnabled(true);
             table.setBorder(new LineBorder(new Color(0, 0, 0)));
             table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+            table.putClientProperty("terminateEditOnFocusLost", true);
             table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             table.getColumnModel().getColumn(0).setHeaderValue("<html><center>Engine<br>Speed<br>(RPM)<br></center></html>");
             table.getColumnModel().getColumn(1).setHeaderValue("<html><center>MAF<br>Sensor<br>Voltage<br></center></html>");
@@ -802,7 +803,7 @@ public class OpenLoop extends AMafScaling {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.open_loop");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.openloop");
         return bundle.getString("usage"); 
     }
 }

@@ -268,6 +268,7 @@ public class MafCompare extends JFrame {
             origMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             origMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount));
             origMafTable.setTableHeader(null);
+            origMafTable.putClientProperty("terminateEditOnFocusLost", true);
             Utils.initializeTable(origMafTable, ColumnWidth);
             GridBagConstraints gbc_origMafTable = new GridBagConstraints();
             gbc_origMafTable.anchor = GridBagConstraints.PAGE_START;
@@ -289,6 +290,7 @@ public class MafCompare extends JFrame {
             newMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             newMafTable.setModel(new DefaultTableModel(2, MafTableColumnCount));
             newMafTable.setTableHeader(null);
+            newMafTable.putClientProperty("terminateEditOnFocusLost", true);
             Utils.initializeTable(newMafTable, ColumnWidth);
             GridBagConstraints gbc_newMafTable = new GridBagConstraints();
             gbc_newMafTable.anchor = GridBagConstraints.PAGE_START;
@@ -310,6 +312,7 @@ public class MafCompare extends JFrame {
             compMafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
             compMafTable.setModel(new DefaultTableModel(1, MafTableColumnCount));
             compMafTable.setTableHeader(null);
+            compMafTable.putClientProperty("terminateEditOnFocusLost", true);
             Utils.initializeTable(compMafTable, ColumnWidth);
             NumberFormatRenderer numericRenderer = new NumberFormatRenderer();
             numericRenderer.setFormatter(new DecimalFormat("0.000"));

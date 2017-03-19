@@ -300,48 +300,8 @@ public class LogStatsFixedAxis implements ActionListener {
      */
     private boolean validateTemplateData() {
         try {
-            // check if table is empty
-            if (Utils.isTableEmpty(templateTable))
-                return true;
-            // check paste format
-            if (!templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-                !((templateTable.getValueAt(0, 0).toString().equals("")) &&
-                  Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, 1).toString()) &&
-                  Pattern.matches(Utils.fpRegex, templateTable.getValueAt(1, 0).toString()))) {
-                JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease post valid table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
+            if (!Utils.validateTableHeader(templateTable))
                 return false;
-            }
-            if (templateTable.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-                // realign if paste is from RomRaider
-                if (templateTable.getValueAt(0, 1).toString().equals("")) {
-                    Utils.removeRow(0, templateTable);
-                    for (int i = templateTable.getColumnCount() - 2; i >= 0; --i)
-                        templateTable.setValueAt(templateTable.getValueAt(0, i), 0, i + 1);
-                    templateTable.setValueAt("", 0, 0);
-                }
-                // paste is probably from excel, just blank out the first cell
-                else
-                    templateTable.setValueAt("", 0, 0);
-            }
-            // remove extra rows
-            for (int i = templateTable.getRowCount() - 1; i >= 0 && templateTable.getValueAt(i, 0).toString().equals(""); --i)
-                Utils.removeRow(i, templateTable);
-            // remove extra columns
-            for (int i = templateTable.getColumnCount() - 1; i >= 0 && templateTable.getValueAt(0, i).toString().equals(""); --i)
-                Utils.removeColumn(i, templateTable);
-            // validate row/column headers cells are numeric
-            for (int i = 1; i < templateTable.getRowCount(); ++i) {
-                if (!Pattern.matches(Utils.fpRegex, templateTable.getValueAt(i, 0).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column 1", "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
-            for (int i = 1; i < templateTable.getColumnCount(); ++i) {
-                if (!Pattern.matches(Utils.fpRegex, templateTable.getValueAt(0, i).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row 1 column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
             Utils.colorTableHeaders(templateTable);
             // copy axis
             Utils.clearTable(xAxisTable);

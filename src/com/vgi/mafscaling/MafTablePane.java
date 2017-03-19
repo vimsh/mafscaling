@@ -71,6 +71,7 @@ public class MafTablePane extends JScrollPane {
         mafTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         mafTable.setModel(new DefaultTableModel(2, MafTableColumnCount));
         mafTable.setTableHeader(null);
+        mafTable.putClientProperty("terminateEditOnFocusLost", true);
         Utils.initializeTable(mafTable, columnWidth);
         GridBagConstraints gbc_mafTable = new GridBagConstraints();
         gbc_mafTable.insets = insets0;

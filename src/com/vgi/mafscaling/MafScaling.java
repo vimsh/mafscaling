@@ -38,7 +38,8 @@ public class MafScaling {
     private static final String Title = "MAF Scaling - v2.2.10";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
-    private static final String RTabName = "<html>Rescale</html>";
+    private static final String MRTabName = "<html>MAF Rescale</html>";
+    private static final String TRTabName = "<html>Table Rescale</html>";
     private static final String LCTabName = "<html>Load Comp</html>";
     private static final String MITabName = "<html>MAF IAT Comp</html>";
     private static final String VETabName = "<html>MAF VE Calc</html>";
@@ -122,9 +123,13 @@ public class MafScaling {
         cl.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(cl, CLTabName);
 
-        JTabbedPane r = new Rescale(JTabbedPane.LEFT);
-        r.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.add(r, RTabName);
+        JTabbedPane mr = new MafRescale(JTabbedPane.LEFT);
+        mr.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(mr, MRTabName);
+
+        JTabbedPane tr = new TableRescale(JTabbedPane.LEFT);
+        tr.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(tr, TRTabName);
 
         JTabbedPane lc = new LoadComp(JTabbedPane.LEFT);
         lc.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);

@@ -20,7 +20,6 @@ import java.net.URI;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -176,14 +175,14 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
         JScrollPane dataTablesScrollPane = new JScrollPane();
-        GridBagConstraints gbc_dataTablesScrollPanee = new GridBagConstraints();
-        gbc_dataTablesScrollPanee.weightx = 1.0;
-        gbc_dataTablesScrollPanee.weighty = 1.0;
-        gbc_dataTablesScrollPanee.anchor = GridBagConstraints.PAGE_START;
-        gbc_dataTablesScrollPanee.fill = GridBagConstraints.BOTH;
-        gbc_dataTablesScrollPanee.gridx = 1;
-        gbc_dataTablesScrollPanee.gridy = 1;
-        dataPanel.add(dataTablesScrollPane, gbc_dataTablesScrollPanee);
+        GridBagConstraints gbc_dataTablesScrollPane = new GridBagConstraints();
+        gbc_dataTablesScrollPane.weightx = 1.0;
+        gbc_dataTablesScrollPane.weighty = 1.0;
+        gbc_dataTablesScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_dataTablesScrollPane.fill = GridBagConstraints.BOTH;
+        gbc_dataTablesScrollPane.gridx = 1;
+        gbc_dataTablesScrollPane.gridy = 1;
+        dataPanel.add(dataTablesScrollPane, gbc_dataTablesScrollPane);
         
         JPanel tablesPanel = new JPanel();
         dataTablesScrollPane.setViewportView(tablesPanel);
@@ -207,6 +206,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
             logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
             logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            logDataTable.putClientProperty("terminateEditOnFocusLost", true);
             
             for (int i = 0; i < columns.length; ++i)
                 logDataTable.getColumnModel().getColumn(i).setHeaderValue(columns[i]);
@@ -294,6 +294,13 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             };
             excelAdapter = new ExcelAdapter() {
                 protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
+                    if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
+                        table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
+                        return;
+                    if (table.getSelectedRows()[0] != 0 || table.getSelectedColumns()[0] != 0) {
+                        JOptionPane.showMessageDialog(null, "Please paste copied table into the first cell", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
                     super.onPaste(table, extendRows, extendCols);
                     validateTable(table);
                     clearRunTables();
@@ -305,9 +312,12 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         else {
             table = new JTable() {
                 private static final long serialVersionUID = -3754572906310312568L;
+                public boolean isCellEditable(int row, int column) {
+                    return isNonOriginalTableCellEditable(row, column);
+                };
             };
             excelAdapter = new ExcelAdapter();
-            excelAdapter.addTable(table, false, true, false, false, true, true, false, extendRows, extendCols);
+            excelAdapter.addTable(table, false, true, false, false, true, true, false, false, false);
             excelAdapterList.add(excelAdapter);
         }
         DefaultTableColumnModel tableModel = new DefaultTableColumnModel();
@@ -335,15 +345,29 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
             }
         });
         table.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent event) {
+                JTable eventTable =(JTable)event.getSource();
+                int colIdx = eventTable.getSelectedColumn();
+                int rowIdx = eventTable.getSelectedRow();
+                JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+                for (JTable t : tables) {
+                    if (t == null || t == eventTable)
+                        continue;
+                    if (t.getColumnCount() - 1 >= colIdx && t.getRowCount() - 1 >= rowIdx) {
+                        t.setColumnSelectionInterval(colIdx, colIdx);
+                        t.setRowSelectionInterval(rowIdx, rowIdx);
+                    }
+                }
+            }
             public void mouseReleased(MouseEvent event) {
-                JTable evenTable =(JTable)event.getSource();
-                int[] cols = evenTable.getSelectedColumns();
-                int[] rows = evenTable.getSelectedRows();
+                JTable eventTable =(JTable)event.getSource();
+                int[] cols = eventTable.getSelectedColumns();
+                int[] rows = eventTable.getSelectedRows();
                 int lastColIdx = cols.length - 1;
                 int lastRowIdx = rows.length - 1;
                 JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
                 for (JTable t : tables) {
-                    if (t == null || t == evenTable)
+                    if (t == null || t == eventTable)
                         continue;
                     if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
                         t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
@@ -361,6 +385,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setModel(new DefaultTableModel(rowCount, colCount));
+        table.putClientProperty("terminateEditOnFocusLost", true);
         Utils.initializeTable(table, ColumnWidth);
         
         formatTable(table);
@@ -373,6 +398,10 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         panel.add(table, gbc_table);
 
         return table;
+    }
+    
+    protected boolean isNonOriginalTableCellEditable(int row, int column) {
+        return true;
     }
 
     protected void createChart(JPanel plotPanel, String xAxisName, String yAxisName) {
@@ -548,7 +577,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected boolean getAxisData() {
         try {
             if (Utils.isTableEmpty(origTable)) {
-                JOptionPane.showMessageDialog(null, "PLease paste " + origTable.getName() + " table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Please paste " + origTable.getName() + " table into top grid", "Error getting Engine Load Compensation table headers", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
             xAxisArray = new ArrayList<Double>();
@@ -599,59 +628,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected boolean validateTable(JTable table) {
-        if (table == null)
-            return false;
-        // check if table is empty
-        if (Utils.isTableEmpty(table))
-            return true;
-        // check paste format
-        if (!table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]") &&
-            ((table.getColumnCount() > 1 || table.getRowCount() > 1) && !((table.getValueAt(0, 0).toString().equals(""))) &&
-            (table.getColumnCount() > 1 && Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString())) &&
-            (table.getRowCount() > 1 && Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString())))) {
-            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease paste " + table.getName() + " table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if (table.getValueAt(0, 0).toString().equalsIgnoreCase("[table3d]")) {
-            // realign if paste is from RomRaider
-            if (table.getColumnCount() > 1 && table.getValueAt(0, 1).toString().equals("")) {
-                Utils.removeRow(0, table);
-                for (int i = table.getColumnCount() - 2; i >= 0; --i)
-                    table.setValueAt(table.getValueAt(0, i), 0, i + 1);
-                table.setValueAt("", 0, 0);
-            }
-            // paste is probably from excel
-            else {
-                // just blank out the first cell if tabe is 3D
-                if (table.getColumnCount() > 1)
-                    table.setValueAt("", 0, 0);
-                else
-                    Utils.removeRow(0, table);
-            }
-        }
-        // remove extra rows
-        for (int i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)
-            Utils.removeRow(i, table);
-        // remove extra columns
-        for (int i = table.getColumnCount() - 1; i >= 0 && table.getValueAt(0, i).toString().equals(""); --i)
-            Utils.removeColumn(i, table);
-        // validate all cells are numeric
-        String val;
-        for (int i = 0; i < table.getRowCount(); ++i) {
-            for (int j = 0; j < table.getColumnCount(); ++j) {
-                if (i == 0 && j == 0)
-                    continue;
-                val = table.getValueAt(i, j).toString();
-                if (val.equals(""))
-                    table.setValueAt("0", i, j);
-                else if (!Pattern.matches(Utils.fpRegex, val)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
-                }
-            }
-        }
-        Utils.colorTable(table);
-        return true;
+        return Utils.validateTable(table);
     }
     
     protected void calculate() {
@@ -788,7 +765,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     
     protected void clearRunTable(JTable table) {
         if (table == origTable)
-            table.setModel(new DefaultTableModel(newTable.getRowCount(), newTable.getColumnCount()));
+            table.setModel(new DefaultTableModel(TableRowCount, TableRowCount));
         else
             table.setModel(new DefaultTableModel(origTable.getRowCount(), origTable.getColumnCount()));
         Utils.initializeTable(table, ColumnWidth);

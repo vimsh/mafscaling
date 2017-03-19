@@ -192,7 +192,7 @@ public class LoadComp extends ACompCalc {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.load_comp");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.loadcomp");
         return bundle.getString("usage"); 
     }
 

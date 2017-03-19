@@ -284,7 +284,7 @@ public class VECalc extends ACompCalc {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.ve_calc");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.vecalc");
         return bundle.getString("usage"); 
     }
 

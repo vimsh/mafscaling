@@ -369,7 +369,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     
     private void createGraghTab() {
         JPanel plotPanel = new JPanel();
-        add(plotPanel, "<html><div style='text-align: center;'>C<br>h<br>a<br>r<br>t</div></html>");
+        add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br> <br>C<br>h<br>a<br>r<br>t</div></html>");
         GridBagLayout gbl_plotPanel = new GridBagLayout();
         gbl_plotPanel.columnWidths = new int[] {0};
         gbl_plotPanel.rowHeights = new int[] {0, 0};

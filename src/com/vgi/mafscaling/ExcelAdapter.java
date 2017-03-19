@@ -388,7 +388,9 @@ public class ExcelAdapter implements ActionListener {
         int startCol = (table.getSelectedColumns())[0];
         try {
             String trstring = (String)(system.getContents(this).getTransferData(DataFlavor.stringFlavor));
-            String[] lines = trstring.replaceFirst("\\[Table2D\\]\\r?\\n", "").split("\\r?\\n");
+            trstring = trstring.replaceFirst("\\[Table2D\\]\r?\n", "");
+            trstring = trstring.replaceFirst("\\[Table3D\\]\r?[\n\t]", "\t");
+            String[] lines = trstring.split("\r?\n");
             int rowCount = lines.length;
             if (rowCount > 0) {
                 // add extra rows to the table to accommodate for paste data

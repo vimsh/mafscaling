@@ -66,9 +66,9 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListener {
+public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionListener {
     private static final long serialVersionUID = -3803091816206090707L;
-    private static final Logger logger = Logger.getLogger(Rescale.class);
+    private static final Logger logger = Logger.getLogger(MafRescale.class);
     private static final int ColumnWidth = 50;
     private static final int CellsPerSection = 2;
     private static final String OrigMafTableName = "Original MAF Scaling";
@@ -97,7 +97,7 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
     private ArrayList<Double> deltaVoltArray = null;
     private double modeDeltaV;
 
-    public Rescale(int tabPlacement) {
+    public MafRescale(int tabPlacement) {
         super(tabPlacement);
         excelAdapter = new ExcelAdapter() {
             protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
@@ -395,7 +395,7 @@ public class Rescale extends JTabbedPane implements IMafChartHolder, ActionListe
     
     private String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.rescale");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.mafrescale");
         return bundle.getString("usage"); 
     }
 

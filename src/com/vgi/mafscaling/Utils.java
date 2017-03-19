@@ -36,6 +36,25 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import org.apache.commons.math3.analysis.BivariateFunction;
+import org.apache.commons.math3.analysis.UnivariateFunction;
+import org.apache.commons.math3.analysis.interpolation.AkimaSplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.BicubicInterpolator;
+import org.apache.commons.math3.analysis.interpolation.BivariateGridInterpolator;
+import org.apache.commons.math3.analysis.interpolation.LinearInterpolator;
+import org.apache.commons.math3.analysis.interpolation.LoessInterpolator;
+import org.apache.commons.math3.analysis.interpolation.PiecewiseBicubicSplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.SplineInterpolator;
+import org.apache.commons.math3.analysis.interpolation.UnivariateInterpolator;
+import org.apache.commons.math3.analysis.polynomials.PolynomialFunction;
+import org.apache.commons.math3.analysis.polynomials.PolynomialSplineFunction;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NoDataException;
+import org.apache.commons.math3.exception.NonMonotonicSequenceException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.commons.math3.util.MathArrays;
+
 public final class Utils {
     /**
      * Shortened numeric validation regex
@@ -156,13 +175,23 @@ public final class Utils {
      * @param table
      */
     public static void colorTable(JTable table) {
-        Color[][] colorMatrix = Utils.generateTableColorMatrix(table, 1, 1);
+        int row = 1;
+        int col = 1;
+        if (table.getColumnCount() == 2 && table.getRowCount() >= 2 && !table.getValueAt(0, 0).toString().equals(""))
+            row = 0;
+        else if (table.getColumnCount() >= 2 && table.getRowCount() == 2 && !table.getValueAt(0, 0).toString().equals(""))
+            col = 0;
+        Color[][] colorMatrix = Utils.generateTableColorMatrix(table, row, col);
         if (colorMatrix == null)
             colorMatrix = new Color[table.getRowCount()][table.getColumnCount()];
-        for (int i = 0; i < colorMatrix.length; ++i)
-            colorMatrix[i][0] = Color.LIGHT_GRAY;
-        for (int i = 0; i < colorMatrix[0].length; ++i)
-            colorMatrix[0][i] = Color.LIGHT_GRAY;
+        if (col == 1) {
+            for (int i = 0; i < colorMatrix.length; ++i)
+                colorMatrix[i][0] = Color.LIGHT_GRAY;
+        }
+        if (row == 1) {
+            for (int i = 0; i < colorMatrix[0].length; ++i)
+                colorMatrix[0][i] = Color.LIGHT_GRAY;
+        }
         BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
         if (renderer != null)
             renderer.setColors(colorMatrix);
@@ -229,7 +258,7 @@ public final class Utils {
      * @param table
      */
     public static void clearTable(JTable table) {
-        if (table.getCellEditor() != null)
+        if (table.isEditing() && table.getCellEditor() != null)
             table.getCellEditor().stopCellEditing();
         for (int i = 0; i < table.getColumnCount(); ++i) {
             for (int j = 0; j < table.getRowCount(); ++j)
@@ -387,6 +416,102 @@ public final class Utils {
     }
     
     /**
+     * Method checks validates data pasted into the table and realigns the table according to pasted data
+     * @param table
+     * @return
+     */
+    public static boolean validateTablePaste(JTable table) {
+        if (table == null)
+            return false;
+        // check if table is empty
+        if (Utils.isTableEmpty(table))
+            return true;
+        // quick check of pasted data
+        if (table.getColumnCount() < 2 || table.getRowCount() < 2 ||
+            !Pattern.matches(Utils.fpRegex, table.getValueAt(0, 1).toString()) ||
+            !Pattern.matches(Utils.fpRegex, table.getValueAt(1, 0).toString()) ||
+            !Pattern.matches(Utils.fpRegex, table.getValueAt(1, 1).toString())) {
+            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease paste " + table.getName() + " table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        // remove extra rows
+        for (int i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)
+            Utils.removeRow(i, table);
+        // remove extra columns
+        for (int i = table.getColumnCount() - 1; i >= 0 && table.getValueAt(0, i).toString().equals(""); --i)
+            Utils.removeColumn(i, table);
+        if (table.getColumnCount() > 2 && table.getRowCount() > 2 && !table.getValueAt(0, 0).toString().equals("")) {
+            JOptionPane.showMessageDialog(null, "Pasted data doesn't seem to be a valid table with row/column headers.\n\nPlease paste " + table.getName() + " table into first cell", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Method checks if table header values are valid
+     * @param table
+     * @return
+     */
+    public static boolean validateTableHeader(JTable table) {
+        if (!validateTablePaste(table))
+            return false;
+        // validate row headers cells are numeric if table has multiple columns
+        if (table.getColumnCount() > 1) {
+            for (int i = (table.getColumnCount() == 2 ? 0 : 1); i < table.getRowCount(); ++i) {
+                if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, 0).toString())) {
+                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+                if (i > 1 && Double.valueOf(table.getValueAt(i, 0).toString()) <= Double.valueOf(table.getValueAt(i - 1, 0).toString())) {
+                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + i + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            }
+        }
+        // validate column headers cells are numeric if table has multiple rows
+        if (table.getRowCount() > 1) {
+            for (int i = (table.getRowCount() == 2 ? 0 : 1); i < table.getColumnCount(); ++i) {
+                if (!Pattern.matches(Utils.fpRegex, table.getValueAt(0, i).toString())) {
+                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+                if (i > 1 && Double.valueOf(table.getValueAt(0, i).toString()) <= Double.valueOf(table.getValueAt(0, i - 1).toString())) {
+                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + i + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Method checks is the table is valid
+     * @param table
+     * @return
+     */
+    public static boolean validateTable(JTable table) {
+        if (!validateTableHeader(table))
+            return false;
+        // validate all data cells are numeric
+        String val;
+        for (int i = 1; i < table.getRowCount(); ++i) {
+            for (int j = 1; j < table.getColumnCount(); ++j) {
+                if (i == 0 && j == 0)
+                    continue;
+                val = table.getValueAt(i, j).toString();
+                if (val.equals(""))
+                    table.setValueAt("0", i, j);
+                else if (!Pattern.matches(Utils.fpRegex, val)) {
+                    JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1) + " column " + (j + 1), "Error", JOptionPane.ERROR_MESSAGE);
+                    return false;
+                }
+            }
+        }
+        Utils.colorTable(table);
+        return true;
+    }
+    
+    /**
      * Methods copies table to another table
      * @param fromTable
      * @param toTable
@@ -459,6 +584,23 @@ public final class Utils {
     }
 
     /**
+     * Method returns index of value closest to the specified in the given array of values
+     * @param val, target value
+     * @param array, array of values
+     * @return closet value to the target value.
+     * Returns lower index if distance is the same between lower and higher indexed values.
+     */
+    public static int closestValueIndex(double val, double[] arr) {
+        int index = Arrays.binarySearch(arr, val);
+        if (index < 0) {
+            int idxPrev = Math.max(0, -index - 2);
+            int idxNext = Math.min(arr.length - 1, -index - 1);
+            return val - arr[idxPrev] <= arr[idxNext] - val ? idxPrev : idxNext;
+        }
+        return index;
+    }
+
+    /**
      * Method returns a linearly interpolated value
      * @param x is X value you want to interpolate at
      * @param x1 is X value for previous point
@@ -472,7 +614,8 @@ public final class Utils {
     }
 
     /**
-     * Method returns a value interpolated from 3D table
+     * Method returns a value interpolated from 2D grid 
+     * (3D RomRaider tables) using bilinear interpolation
      * @param x is X value you want to interpolate at
      * @param y is Y value you want to interpolate at
      * @param x0 is nearest x-axis value less than X
@@ -485,7 +628,7 @@ public final class Utils {
      * @param x1y1 is the table value at x1 and y1
      * @return
      */
-    public static double table3DInterpolation(double x, double y, double x0, double x1, double y0, double y1, double x0y0, double x0y1, double x1y0, double x1y1) {
+    public static double bilinearInterpolation(double x, double y, double x0, double x1, double y0, double y1, double x0y0, double x0y1, double x1y0, double x1y1) {
         double t1, t2;
         if (y1 == y0) {
             t1 = x0y0;
@@ -497,9 +640,90 @@ public final class Utils {
         }
         if (x1 == x0)
             return t1;
-        else
-            return (x - x0) * (t2 - t1) / (x1 - x0) + t1;
+        return (x - x0) * (t2 - t1) / (x1 - x0) + t1;
     }
+    
+    /**
+     * Interpolation method types
+     *
+     */
+    enum InterpolatorType {
+        // 2D interpolators
+        AkimaCubicSpline,
+        CubicSpline,
+        Linear,
+        Regression,
+        // 3D interpolators
+        Bicubic,
+        BicubicSpline,
+        Bilinear
+    }
+    
+    /**
+     * Method returns an interpolated/extrapolated value, based on
+     * @param x, array of x values
+     * @param y, array of y values
+     * @param xi, is x value you want to interpolate at
+     * @param type, interpolation method type
+     * @return interpolated value
+     * @throws Exception
+     */
+    public static double interpolate(double[] x, double[] y, double xi, InterpolatorType type) throws Exception {
+        UnivariateInterpolator interpolator = null;
+        switch (type) {
+        case AkimaCubicSpline:
+            interpolator = new AkimaSplineInterpolator();
+            break;
+        case Linear:
+            interpolator = new LinearInterpolator();
+            break;
+        case Regression:
+            interpolator = new LoessInterpolator();
+            break;
+        case CubicSpline:
+            interpolator = new SplineInterpolator();
+            break;
+        default:
+            throw new Exception("Invalid interpolator type for this function");
+        }
+        UnivariateFunction function = interpolator.interpolate(x, y);
+        PolynomialFunction[] polynomials = ((PolynomialSplineFunction) function).getPolynomials();
+        if (xi > x[x.length - 1])
+            return polynomials[polynomials.length - 1].value(xi - x[x.length - 2]);
+        if (xi < x[0])
+            return polynomials[0].value(xi - x[0]);
+        return function.value(xi);
+    }
+
+    /**
+     * 
+     * @param x, array of x values
+     * @param y, array of y values
+     * @param z, double array of values at [x,y] point
+     * @param xi, is x value you want to interpolate at
+     * @param yi, is y value you want to interpolate at
+     * @param type, interpolation method type
+     * @return interpolated value
+     * @throws Exception
+     */
+    public static double interpolate3d(double[] x, double[] y, double[][]z, double xi, double yi, InterpolatorType type) throws Exception {
+        BivariateGridInterpolator interpolator = null;
+        switch (type) {
+        case Bilinear:
+            interpolator = new BilinearInterpolator();
+            break;
+        case Bicubic:
+            interpolator = new BicubicInterpolator();
+            break;
+        case BicubicSpline:
+            interpolator = new PiecewiseBicubicSplineInterpolator();
+            break;
+        default:
+            throw new Exception("Invalid interpolator type for this function");
+        }
+        return interpolator.interpolate(x, y, z).value(xi, yi);
+    }
+    
     
     /**
      * Method rounds input number by a specific step
@@ -701,7 +925,7 @@ public final class Utils {
         if (timingHighHigh > minWotEnrichment)
             timingHighHigh = minWotEnrichment;
 
-        return Utils.table3DInterpolation(col, rpm, colLow, colHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
+        return Utils.bilinearInterpolation(col, rpm, colLow, colHigh, rpmLow, rpmHigh, timingLowLow, timingHighLow, timingLowHigh, timingHighHigh);
     }
     
     /**
@@ -749,4 +973,65 @@ public final class Utils {
             return 0.0;
         return Double.valueOf(s);
     }
+    
 }
+
+/**
+ * Class that implements Apache common-math BivariateGridInterpolator to perform
+ * bilinear interpolation
+ */
+class BilinearInterpolator implements BivariateGridInterpolator {
+    public class BilinearInterpolatingFunction implements BivariateFunction {
+        double[] xval = null;
+        double[] yval = null;
+        double[][] fval = null;
+        BilinearInterpolatingFunction(double[] xval, double[] yval, double[][] fval) {
+            this.xval = xval;
+            this.yval = yval;
+            this.fval = fval;
+        }
+        @Override
+        public double value(double x, double y) {
+            int xIdx = Utils.closestValueIndex(x, xval);
+            int yIdx = Utils.closestValueIndex(y, yval);
+
+            if ((xIdx == 0 && x < xval[xIdx]) || (xIdx == xval.length - 1 && x > xval[xval.length - 1]))
+                throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);
+            if ((yIdx == 0 && y < yval[yIdx]) || (yIdx == yval.length - 1 && x > yval[yval.length - 1]))
+                throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);
+            
+            double x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1;
+            int x0Idx, x1Idx, y0Idx, y1Idx;
+            x0 = x1 = xval[xIdx];
+            y0 = y1 = yval[yIdx];
+            x0Idx = x1Idx = xIdx;
+            y0Idx = y1Idx = yIdx;
+            if (x > x0) {
+                x1Idx = xIdx + 1;
+                x1 = xval[x1Idx];
+            }
+            if (y > y0) {
+                y1Idx = yIdx + 1;
+                y1 = yval[y1Idx];
+            }
+            x0y0 = fval[x0Idx][y0Idx];
+            x1y0 = fval[x1Idx][y0Idx];
+            x0y1 = fval[x0Idx][y1Idx];
+            x1y1 = fval[x1Idx][y1Idx];
+            return Utils.bilinearInterpolation(x, y, x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1);
+        }
+    }
+    @Override
+    public BivariateFunction interpolate(double[] xval, double[] yval, double[][] fval) throws NoDataException, DimensionMismatchException, NonMonotonicSequenceException, NumberIsTooSmallException {
+        if (xval.length == 0 || yval.length == 0 || fval.length == 0)
+            throw new NoDataException();
+        if (xval.length != fval.length)
+            throw new DimensionMismatchException(xval.length, fval.length);
+        if (yval.length != fval[0].length)
+            throw new DimensionMismatchException(yval.length, fval[0].length);
+        MathArrays.checkOrder(xval);
+        MathArrays.checkOrder(yval);
+        return new BilinearInterpolatingFunction(xval, yval, fval);
+    }
+}
+

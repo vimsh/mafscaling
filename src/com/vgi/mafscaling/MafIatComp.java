@@ -195,7 +195,7 @@ public class MafIatComp extends ACompCalc {
     
     protected String usage() {
         ResourceBundle bundle;
-        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.mafiat_comp");
+        bundle = ResourceBundle.getBundle("com.vgi.mafscaling.mafiatcomp");
         return bundle.getString("usage"); 
     }
 

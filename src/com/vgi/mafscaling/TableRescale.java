@@ -218,17 +218,17 @@ public class TableRescale extends ACompCalc {
                 }
                 else if (row == 1 && value < Double.valueOf(origTable.getValueAt(row, col).toString()) ||
                     row == newTable.getRowCount() - 1 && value > Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, col).toString())) {
-                    yvals = new double[origTable.getRowCount() - 1];
-                    for (i = 1; i < origTable.getRowCount(); ++i)
-                        yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
                     xvals = new double[origTable.getRowCount() - 1];
+                    for (i = 1; i < origTable.getRowCount(); ++i)
+                        xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
+                    yvals = new double[origTable.getRowCount() - 1];
                     type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
                     for (col = 1; col < origTable.getColumnCount(); ++col) {
                         for (i = 1; i < origTable.getRowCount(); ++i)
-                            xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
+                            yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
                         double x = Utils.interpolate(xvals, yvals, value, type);
                         newTable.setValueAt(x, row, col);
-                    }   
+                    }
                 }
                 else {
                     xvals = new double[origTable.getColumnCount() - 1];
@@ -260,6 +260,12 @@ public class TableRescale extends ACompCalc {
                     }
                 }
                 Utils.colorTable(newTable);
+                xvals = new double[newTable.getColumnCount() - 1];
+                yvals = new double[newTable.getRowCount() - 1];
+                for (i = 1; i < newTable.getColumnCount(); ++i)
+                    xvals[i - 1] = Double.valueOf(newTable.getValueAt(0, i).toString());
+                for (i = 1; i < newTable.getRowCount(); ++i)
+                    yvals[i - 1] = Double.valueOf(newTable.getValueAt(i, 0).toString());
                 zvals = Utils.doubleZArray(newTable, xvals, yvals);
                 Color[][] tableColors = Utils.generateTableColorMatrix(newTable, 1, 1, yvals.length + 1, xvals.length + 1);
                 Color[][] colors = new Color[yvals.length][xvals.length];

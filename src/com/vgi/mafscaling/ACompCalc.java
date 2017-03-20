@@ -2,6 +2,7 @@ package com.vgi.mafscaling;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Font;
@@ -42,7 +43,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
+import javax.swing.text.JTextComponent;
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -198,7 +201,15 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected void createLogDataTable(JPanel panel, String[] columns) {
-            logDataTable = new JTable();
+            logDataTable = new JTable() {
+                private static final long serialVersionUID = 1L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
             logDataTable.getTableHeader().setReorderingAllowed(false);
             logDataTable.setModel(new DefaultTableModel(LogDataRowCount, columns.length));
             logDataTable.setColumnSelectionAllowed(true);
@@ -315,6 +326,12 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                 public boolean isCellEditable(int row, int column) {
                     return isNonOriginalTableCellEditable(row, column);
                 };
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
             };
             excelAdapter = new ExcelAdapter();
             excelAdapter.addTable(table, false, true, false, false, true, true, false, false, false);

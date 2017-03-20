@@ -54,6 +54,8 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.text.JTextComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -239,7 +241,15 @@ public class VVTCalc extends ACompCalc {
         if (!Config.getVvt2ColumnName().equals(Config.NO_NAME))
             colCount = 4;
         for (int i = 0; i < RunCount; ++i) {
-            runTables[i] = new JTable();
+            runTables[i] = new JTable() {
+                private static final long serialVersionUID = -568006420776880766L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
             JTable table = runTables[i];
             table.getTableHeader().setReorderingAllowed(false);
             table.setModel(new DefaultTableModel(RunRowsCount, colCount));

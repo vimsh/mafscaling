@@ -19,6 +19,7 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -46,6 +47,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.text.JTextComponent;
 
 import org.apache.log4j.Logger;
 
@@ -164,7 +167,15 @@ public class LogStatsFixedAxis implements ActionListener {
     }
 
     private JTable createAxisPanel(int row, String tableName) {
-        JTable axisTable = new JTable();
+        JTable axisTable = new JTable() {
+            private static final long serialVersionUID = -731761682656923981L;
+            public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                Component c = super.prepareEditor(editor, row, column);
+                if (c instanceof JTextComponent)
+                    ((JTextComponent) c).selectAll();
+                return c;
+            }
+        };
         axisTable.setColumnSelectionAllowed(true);
         axisTable.setCellSelectionEnabled(true);
         axisTable.setBorder(new LineBorder(Color.GRAY));
@@ -194,7 +205,15 @@ public class LogStatsFixedAxis implements ActionListener {
     }
 
     public void createAxisTablePanel(int row) {
-        templateTable = new JTable();
+        templateTable = new JTable() {
+            private static final long serialVersionUID = -5292434981612251526L;
+            public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                Component c = super.prepareEditor(editor, row, column);
+                if (c instanceof JTextComponent)
+                    ((JTextComponent) c).selectAll();
+                return c;
+            }
+        };
         templateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         templateTable.setColumnSelectionAllowed(true);
         templateTable.setCellSelectionEnabled(true);

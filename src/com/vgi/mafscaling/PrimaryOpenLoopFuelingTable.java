@@ -52,6 +52,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.text.JTextComponent;
 
 import org.apache.log4j.Logger;
 
@@ -361,7 +363,15 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     private JTable createFuelingTable() {
-        JTable table = new JTable();
+        JTable table = new JTable() {
+            private static final long serialVersionUID = -6869302678522640906L;
+            public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                Component c = super.prepareEditor(editor, row, column);
+                if (c instanceof JTextComponent)
+                    ((JTextComponent) c).selectAll();
+                return c;
+            }
+        };
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.setColumnSelectionAllowed(true);
         table.setCellSelectionEnabled(true);

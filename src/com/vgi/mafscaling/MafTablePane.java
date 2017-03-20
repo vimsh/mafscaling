@@ -1,6 +1,7 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -14,6 +15,8 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.text.JTextComponent;
 
 public class MafTablePane extends JScrollPane {
     private static final long serialVersionUID = 4656913571229048807L;
@@ -43,18 +46,39 @@ public class MafTablePane extends JScrollPane {
         gsLabel = new JLabel("g/s ");
         dataMafPanel.add(gsLabel, gbc_label);
     
-        if (editableFirstRow && editableSecondRow)
-            mafTable = new JTable();
+        if (editableFirstRow && editableSecondRow) {
+            mafTable = new JTable() {
+                private static final long serialVersionUID = 3433982343234115599L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
+        }
         else if (editableFirstRow) {
             mafTable = new JTable() {
                 private static final long serialVersionUID = 7749582128758153892L;
                 public boolean isCellEditable(int row, int column) { if (row == 1) return true; return false; };
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
             };
         }
         else if (editableSecondRow) {
             mafTable = new JTable() {
                 private static final long serialVersionUID = 7749582128758153892L;
                 public boolean isCellEditable(int row, int column) { if (row == 1) return false; return true; };
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
             };
         }
         else {

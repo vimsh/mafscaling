@@ -20,6 +20,7 @@ package com.vgi.mafscaling;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -52,6 +53,9 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.text.JTextComponent;
+
 import org.apache.log4j.Logger;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -259,7 +263,15 @@ public class MafCompare extends JFrame {
             gbc_mafScrollPane.gridheight = 5;
             dataPanel.add(mafScrollPane, gbc_mafScrollPane);
 
-            origMafTable = new JTable();
+            origMafTable = new JTable() {
+                private static final long serialVersionUID = -5250830467289840818L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
             origMafTable.setColumnSelectionAllowed(true);
             origMafTable.setCellSelectionEnabled(true);
             origMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -281,7 +293,15 @@ public class MafCompare extends JFrame {
             tablesPanel.add(origMafTable, gbc_origMafTable);
             excelAdapter.addTable(origMafTable, false, false, false, false, true, false, true, false, true);
          
-            newMafTable = new JTable();
+            newMafTable = new JTable() {
+                private static final long serialVersionUID = -2258083549809233922L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
             newMafTable.setColumnSelectionAllowed(true);
             newMafTable.setCellSelectionEnabled(true);
             newMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -303,7 +323,15 @@ public class MafCompare extends JFrame {
             tablesPanel.add(newMafTable, gbc_newMafTable);
             excelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
          
-            compMafTable = new JTable();
+            compMafTable = new JTable() {
+                private static final long serialVersionUID = 1619234153959039431L;
+                public Component prepareEditor(TableCellEditor editor, int row, int column) {
+                    Component c = super.prepareEditor(editor, row, column);
+                    if (c instanceof JTextComponent)
+                        ((JTextComponent) c).selectAll();
+                    return c;
+                }
+            };
             compMafTable.setColumnSelectionAllowed(true);
             compMafTable.setCellSelectionEnabled(true);
             compMafTable.setBorder(new LineBorder(new Color(0, 0, 0)));

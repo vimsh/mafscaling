@@ -295,6 +295,7 @@ public class TableRescale extends ACompCalc {
                 }
                 double y = Utils.interpolate(xvals, yvals, value, type);
                 newTable.setValueAt(y, row, col);
+                yvals[(tableType == TableType.Table2DVertical ? row : col)] = y;
                 Utils.colorTable(newTable);
                 double[][] xyzArray = new double[xvals.length][3];
                 Color[] colors = new Color[xvals.length];
@@ -369,12 +370,12 @@ public class TableRescale extends ACompCalc {
     protected void clearRunTables() {
         clearRunTable(newTable);
         copyOriginalTable();
+        plot3d.removeAllPlots();
         interpTypeCheckBox.setEnabled(true);
     }
     
     protected void clearTables() {
         super.clearTables();
-        plot3d.removeAllPlots();
         intXCheckBox.setEnabled(true);
         intYCheckBox.setEnabled(true);
         intXCheckBox.setSelected(false);

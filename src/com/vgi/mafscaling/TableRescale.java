@@ -61,6 +61,10 @@ public class TableRescale extends ACompCalc {
     protected JComboBox<String> interpTypeCheckBox = null;
     protected String decimalPts = "0.00";
     protected Format[][] formatMatrix = { { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) }, { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) } };
+    protected double minX = 0;
+    protected double maxX = 0;
+    protected double minY = 0;
+    protected double maxY = 0;
 
     public TableRescale(int tabPlacement) {
         super(tabPlacement);
@@ -125,13 +129,26 @@ public class TableRescale extends ACompCalc {
                 if (origTable.getColumnCount() == 2 && origTable.getRowCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
                     tableType = TableType.Table2DVertical;
                     intXCheckBox.setEnabled(false);
+                    minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
+                    maxX = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
+                    minY = 0;
+                    maxY = 0;
                 }
                 else if (origTable.getRowCount() == 2 && origTable.getColumnCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
                     tableType = TableType.Table2DHorizontal;
                     intYCheckBox.setEnabled(false);
+                    minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
+                    maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
+                    minY = 0;
+                    maxY = 0;
                 }
-                else
+                else {
                     tableType = TableType.Table3D;
+                    minX = Double.valueOf(origTable.getValueAt(0, 1).toString());
+                    maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
+                    minY = Double.valueOf(origTable.getValueAt(1, 0).toString());
+                    maxY = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
+                }
                 interpTypeCheckBox.removeAllItems();
                 interpTypeCheckBox.setModel(new DefaultComboBoxModel<String>(getInterpolationMethods()));
             }
@@ -202,8 +219,7 @@ public class TableRescale extends ACompCalc {
             double value = Double.valueOf(newTable.getValueAt(row, col).toString());
             Utils.InterpolatorType type = Utils.InterpolatorType.valueOf((String)interpTypeCheckBox.getSelectedItem());
             if (tableType == TableType.Table3D) {
-                if (col == 1 && value < Double.valueOf(origTable.getValueAt(row, col).toString()) ||
-                    col == newTable.getColumnCount() - 1 && value > Double.valueOf(origTable.getValueAt(row, origTable.getColumnCount() - 1).toString())) {
+                if (row == 0 && (value < minX || value > maxX)) {
                     xvals = new double[origTable.getColumnCount() - 1];
                     for (i = 1; i < origTable.getColumnCount(); ++i)
                         xvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
@@ -216,8 +232,7 @@ public class TableRescale extends ACompCalc {
                         newTable.setValueAt(y, row, col);
                     }
                 }
-                else if (row == 1 && value < Double.valueOf(origTable.getValueAt(row, col).toString()) ||
-                    row == newTable.getRowCount() - 1 && value > Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, col).toString())) {
+                else if (col == 0 && (value < minY || value > maxY)) {
                     xvals = new double[origTable.getRowCount() - 1];
                     for (i = 1; i < origTable.getRowCount(); ++i)
                         xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());

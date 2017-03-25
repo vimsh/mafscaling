@@ -19,7 +19,6 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
@@ -56,9 +55,6 @@ import javax.swing.border.LineBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.text.JTextComponent;
-
 import org.apache.log4j.Logger;
 
 public class LogPlayTable extends JFrame implements ActionListener {
@@ -422,15 +418,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
     }
     
     private void addTable(int rowCount) {
-        playTable = new JTable() {
-            private static final long serialVersionUID = -8178378619218634895L;
-            public Component prepareEditor(TableCellEditor editor, int row, int column) {
-                Component c = super.prepareEditor(editor, row, column);
-                if (c instanceof JTextComponent)
-                    ((JTextComponent) c).selectAll();
-                return c;
-            }
-        };
+        playTable = new JTable();
         playTable.setColumnSelectionAllowed(true);
         playTable.setCellSelectionEnabled(true);
         playTable.setBorder(new LineBorder(new Color(0, 0, 0)));

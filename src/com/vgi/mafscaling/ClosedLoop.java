@@ -19,7 +19,6 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -57,10 +56,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
-import javax.swing.text.JTextComponent;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.function.Function2D;
@@ -183,15 +179,7 @@ public class ClosedLoop extends AMafScaling {
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
         
-        logDataTable = new JTable() {
-            private static final long serialVersionUID = -140235091687086463L;
-            public Component prepareEditor(TableCellEditor editor, int row, int column) {
-                Component c = super.prepareEditor(editor, row, column);
-                if (c instanceof JTextComponent)
-                    ((JTextComponent) c).selectAll();
-                return c;
-            }
-        };
+        logDataTable = new JTable();
         logDataTable.getTableHeader().setReorderingAllowed(false);
         logDataTable.setModel(new DefaultTableModel(LogDataRowCount, ColumnCount));
         logDataTable.setColumnSelectionAllowed(true);

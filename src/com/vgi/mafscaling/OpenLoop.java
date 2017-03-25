@@ -19,7 +19,6 @@
 package com.vgi.mafscaling;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -49,9 +48,6 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.text.JTextComponent;
-
 import org.apache.log4j.Logger;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYSeries;
@@ -125,15 +121,7 @@ public class OpenLoop extends AMafScaling {
         gbc_run.anchor = GridBagConstraints.PAGE_START;
         gbc_run.insets = new Insets(0, 2, 0, 2);
         for (int i = 0; i < RunCount; ++i) {
-            runTables[i] = new JTable() {
-                private static final long serialVersionUID = 1L;
-                public Component prepareEditor(TableCellEditor editor, int row, int column) {
-                    Component c = super.prepareEditor(editor, row, column);
-                    if (c instanceof JTextComponent)
-                        ((JTextComponent) c).selectAll();
-                    return c;
-                };
-            };
+            runTables[i] = new JTable();
             JTable table = runTables[i];
             table.getTableHeader().setReorderingAllowed(false);
             table.setModel(new DefaultTableModel(RunRowsCount, 3));

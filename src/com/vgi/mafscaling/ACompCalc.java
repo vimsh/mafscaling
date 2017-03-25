@@ -201,15 +201,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected void createLogDataTable(JPanel panel, String[] columns) {
-            logDataTable = new JTable() {
-                private static final long serialVersionUID = 1L;
-                public Component prepareEditor(TableCellEditor editor, int row, int column) {
-                    Component c = super.prepareEditor(editor, row, column);
-                    if (c instanceof JTextComponent)
-                        ((JTextComponent) c).selectAll();
-                    return c;
-                }
-            };
+            logDataTable = new JTable();
             logDataTable.getTableHeader().setReorderingAllowed(false);
             logDataTable.setModel(new DefaultTableModel(LogDataRowCount, columns.length));
             logDataTable.setColumnSelectionAllowed(true);

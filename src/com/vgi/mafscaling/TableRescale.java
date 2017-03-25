@@ -55,6 +55,7 @@ public class TableRescale extends ACompCalc {
     }
 
     protected TableType tableType = TableType.Table3D;
+    protected JCheckBox extrCheckBox = null;
     protected JCheckBox intXCheckBox = null;
     protected JCheckBox intYCheckBox = null;
     protected JCheckBox intVCheckBox = null;
@@ -74,6 +75,7 @@ public class TableRescale extends ACompCalc {
         y3dAxisName = "Y";
         z3dAxisName = "Z";
         initialize(new String[] {});
+        extrCheckBox.setSelected(true);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -93,22 +95,23 @@ public class TableRescale extends ACompCalc {
         dataPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
         addButton(cntlPanel, 0, "Clear", "clearall", GridBagConstraints.WEST);
         addButton(cntlPanel, 1, "Reset Rescaled", "clearlog", GridBagConstraints.WEST);
-        addLabel(cntlPanel, 2, "Precision: ");
-        addSpinnerFilter(cntlPanel, 3, 2, 1, 4, 1);
-        addLabel(cntlPanel, 4, " ");
-        intXCheckBox = addCheckBox(cntlPanel, 5, "Integer X-Axis", "chgfmt");
-        intYCheckBox = addCheckBox(cntlPanel, 6, "Integer Y-Axis", "chgfmt");
-        intVCheckBox = addCheckBox(cntlPanel, 7, "Integer Values", "chgfmt");
-        interpTypeCheckBox = addComboBox(cntlPanel, 8, getInterpolationMethods());
-        addLabel(cntlPanel, 9, " ");
+        interpTypeCheckBox = addComboBox(cntlPanel, 2, getInterpolationMethods());
+        addLabel(cntlPanel, 3, "Precision: ");
+        addSpinnerFilter(cntlPanel, 4, 2, 1, 4, 1);
+        addLabel(cntlPanel, 5, " ");
+        extrCheckBox = addCheckBox(cntlPanel, 6, "Extrapolate", null);
+        intXCheckBox = addCheckBox(cntlPanel, 7, "Integer X-Axis", "chgfmt");
+        intYCheckBox = addCheckBox(cntlPanel, 8, "Integer Y-Axis", "chgfmt");
+        intVCheckBox = addCheckBox(cntlPanel, 9, "Integer Values", "chgfmt");
+        addLabel(cntlPanel, 10, " ");
     }
     
     protected void createDataTables(JPanel panel) {
@@ -124,6 +127,7 @@ public class TableRescale extends ACompCalc {
                     return;
                 }
                 super.onPaste(table, extendRows, extendCols);
+                zeroOutBlankCells();
                 validateTable(table);
                 clearRunTables();
                 if (origTable.getColumnCount() == 2 && origTable.getRowCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
@@ -220,29 +224,43 @@ public class TableRescale extends ACompCalc {
             Utils.InterpolatorType type = Utils.InterpolatorType.valueOf((String)interpTypeCheckBox.getSelectedItem());
             if (tableType == TableType.Table3D) {
                 if (row == 0 && (value < minX || value > maxX)) {
-                    xvals = new double[origTable.getColumnCount() - 1];
-                    for (i = 1; i < origTable.getColumnCount(); ++i)
-                        xvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
-                    yvals = new double[origTable.getColumnCount() - 1];
-                    type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
-                    for (row = 1; row < origTable.getRowCount(); ++row) {
+                    if (extrCheckBox.isSelected()) {
+                        xvals = new double[origTable.getColumnCount() - 1];
                         for (i = 1; i < origTable.getColumnCount(); ++i)
-                            yvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
-                        double y = Utils.interpolate(xvals, yvals, value, type);
-                        newTable.setValueAt(y, row, col);
+                            xvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
+                        yvals = new double[origTable.getColumnCount() - 1];
+                        type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
+                        for (row = 1; row < origTable.getRowCount(); ++row) {
+                            for (i = 1; i < origTable.getColumnCount(); ++i)
+                                yvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
+                            double y = Utils.interpolate(xvals, yvals, value, type);
+                            newTable.setValueAt(y, row, col);
+                        }
+                    }
+                    else {
+                        int copyCol = (value < minX ? 1 : origTable.getColumnCount() - 1);
+                        for (row = 1; row < origTable.getRowCount(); ++row)
+                            newTable.setValueAt(origTable.getValueAt(row, copyCol), row, col);
                     }
                 }
                 else if (col == 0 && (value < minY || value > maxY)) {
-                    xvals = new double[origTable.getRowCount() - 1];
-                    for (i = 1; i < origTable.getRowCount(); ++i)
-                        xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
-                    yvals = new double[origTable.getRowCount() - 1];
-                    type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
-                    for (col = 1; col < origTable.getColumnCount(); ++col) {
+                    if (extrCheckBox.isSelected()) {
+                        xvals = new double[origTable.getRowCount() - 1];
                         for (i = 1; i < origTable.getRowCount(); ++i)
-                            yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
-                        double x = Utils.interpolate(xvals, yvals, value, type);
-                        newTable.setValueAt(x, row, col);
+                            xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
+                        yvals = new double[origTable.getRowCount() - 1];
+                        type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
+                        for (col = 1; col < origTable.getColumnCount(); ++col) {
+                            for (i = 1; i < origTable.getRowCount(); ++i)
+                                yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
+                            double x = Utils.interpolate(xvals, yvals, value, type);
+                            newTable.setValueAt(x, row, col);
+                        }
+                    }
+                    else {
+                        int copyRow = (value < minY ? 1 : origTable.getColumnCount() - 1);
+                        for (col = 1; col < origTable.getColumnCount(); ++col)
+                            newTable.setValueAt(origTable.getValueAt(copyRow, col), row, col);
                     }
                 }
                 else {
@@ -308,7 +326,11 @@ public class TableRescale extends ACompCalc {
                         yvals[i] = Double.valueOf(origTable.getValueAt(1, i).toString());
                     }
                 }
-                double y = Utils.interpolate(xvals, yvals, value, type);
+                double y;
+                if (!extrCheckBox.isSelected() && (value < minX || value > maxX))
+                    y = (value < minX ? yvals[0] : yvals[yvals.length - 1]);
+                else
+                    y = Utils.interpolate(xvals, yvals, value, type);
                 newTable.setValueAt(y, row, col);
                 yvals[(tableType == TableType.Table2DVertical ? row : col)] = y;
                 Utils.colorTable(newTable);
@@ -379,6 +401,49 @@ public class TableRescale extends ACompCalc {
                     newTable.setValueAt(origTable.getValueAt(i, j), i, j);
             }
             validateTable(newTable);
+        }
+    }
+    
+    private void zeroOutBlankCells() {
+        if (!Utils.isTableEmpty(origTable)) {
+            // Check last column with value
+            int col = 0;
+            for (int i = 0; i < origTable.getColumnCount(); ++i) {
+                if (!origTable.getValueAt(0, i).toString().isEmpty())
+                    col = i;
+            }
+            int row = 0;
+            for (int i = 0; i < origTable.getRowCount(); ++i) {
+                if (!origTable.getValueAt(i, 0).toString().isEmpty())
+                    row = i;
+            }
+            // 3D table
+            if (col > 1 && row > 1 && origTable.getValueAt(0, 0).toString().isEmpty()) {
+                for (int i = 0; i <= col; ++i) {
+                    for (int j = 0; j <= row; ++j) {
+                        if (origTable.getValueAt(j, i).toString().isEmpty() && (i != 0 || j != 0))
+                            origTable.setValueAt("0", j, i);
+                    }
+                }
+            }
+            // 2D horizontal
+            else if (col > 1) {
+                for (int i = 0; i <= col; ++i) {
+                    if (origTable.getValueAt(0, i).toString().isEmpty())
+                        origTable.setValueAt("0", 0, i);
+                    if (origTable.getValueAt(1, i).toString().isEmpty())
+                        origTable.setValueAt("0", 1, i);
+                }
+            }
+            // 2D horizontal
+            else if (row > 1) {
+                for (int i = 0; i <= row; ++i) {
+                    if (origTable.getValueAt(i, 0).toString().isEmpty())
+                        origTable.setValueAt("0", i, 0);
+                    if (origTable.getValueAt(i, 1).toString().isEmpty())
+                        origTable.setValueAt("0", i, 1);
+                }
+            }
         }
     }
     

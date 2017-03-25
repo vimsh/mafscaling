@@ -408,7 +408,7 @@ public class ExcelAdapter implements ActionListener {
                     // populate cells with the data
                     for (int i = 0; i < rows.length; ++i) {
                         for (int j = 0; j < cols.length; ++j)
-                            table.setValueAt(entries[0].isEmpty() ? "0" : entries[0], rows[i], cols[j]);
+                            table.setValueAt(entries[0], rows[i], cols[j]);
                     }
                 }
                 else {
@@ -423,7 +423,7 @@ public class ExcelAdapter implements ActionListener {
                         for (int j = 0; j < entries.length; ++j) {
                             value = entries[j];
                             if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
-                                table.setValueAt(value.isEmpty() ? "0" : value, startRow + i, startCol + j);
+                                table.setValueAt(value, startRow + i, startCol + j);
                         }
                     }
                 }
@@ -466,7 +466,7 @@ public class ExcelAdapter implements ActionListener {
                     for (int j = 0; j < colCount; ++j) {
                         value = data.get(j).get(i);
                         if (startRow + i < table.getRowCount() && startCol + j< table.getColumnCount())
-                            table.setValueAt(value.isEmpty() ? "0" : value, startRow + i, startCol + j);
+                            table.setValueAt(value, startRow + i, startCol + j);
                     }
                 }
             }

@@ -568,8 +568,10 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     
     protected JCheckBox addCheckBox(JPanel panel, int column, String name, String action) {
         JCheckBox check = new JCheckBox(name);
-        check.setActionCommand(action);
-        check.addActionListener(this);
+        if (action != null) {
+            check.setActionCommand(action);
+            check.addActionListener(this);
+        }
         GridBagConstraints gbc_check = new GridBagConstraints();
         gbc_check.insets = new Insets(2, 2, 2, 0);
         gbc_check.gridx = column;

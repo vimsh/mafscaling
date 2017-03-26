@@ -20,6 +20,7 @@ package com.vgi.mafscaling;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -39,6 +40,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -60,7 +63,7 @@ public class OpenLoop extends AMafScaling {
     private static final String Y2AxisName = "AFR Error (%)";
     private static final String rpmAxisName = "RPM";
     private static final String runDataName = "AFR Error";
-    private static final int RunCount = 30;
+    private static final int RunCount = 10;
     private static final int RunRowsCount = 200;
     
     private double minMafV = Config.getMafVMinimumValue();
@@ -82,7 +85,11 @@ public class OpenLoop extends AMafScaling {
     
     private JCheckBox checkBoxMafRpmData = null;
     private ArrayList<Double> afrArray = new ArrayList<Double>();
-    private final JTable[] runTables = new JTable[RunCount];
+    private ArrayList<JTable> runTables = new ArrayList<JTable>();
+    private ArrayList<JButton> removeButtons = new ArrayList<JButton>();
+    private GridBagLayout gbl_dataRunPanel = null;
+    private GridBagConstraints gbc_run = null;
+    JPanel dataRunPanel = null;
 
     public OpenLoop(int tabPlacement, PrimaryOpenLoopFuelingTable table, MafCompare comparer) {
         super(tabPlacement, table, comparer);
@@ -104,12 +111,13 @@ public class OpenLoop extends AMafScaling {
         gbc_dataScrollPane.gridy = 3;
         dataPanel.add(dataScrollPane, gbc_dataScrollPane);
         
-        JPanel dataRunPanel = new JPanel();
+        dataRunPanel = new JPanel();
         dataScrollPane.setViewportView(dataRunPanel);
-        GridBagLayout gbl_dataRunPanel = new GridBagLayout();
-        gbl_dataRunPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataRunPanel = new GridBagLayout();
+        gbl_dataRunPanel.columnWidths = new int[RunCount];
         gbl_dataRunPanel.rowHeights = new int[] {0};
-        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_dataRunPanel.columnWeights = new double[RunCount];
+        gbl_dataRunPanel.columnWeights[RunCount -1] = 1.0;
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
@@ -117,32 +125,77 @@ public class OpenLoop extends AMafScaling {
     }
     
     private void createRunTables(JPanel dataRunPanel) {
-        GridBagConstraints gbc_run = new GridBagConstraints();
+        gbc_run = new GridBagConstraints();
         gbc_run.anchor = GridBagConstraints.PAGE_START;
         gbc_run.insets = new Insets(0, 2, 0, 2);
-        for (int i = 0; i < RunCount; ++i) {
-            runTables[i] = new JTable();
-            JTable table = runTables[i];
-            table.getTableHeader().setReorderingAllowed(false);
-            table.setModel(new DefaultTableModel(RunRowsCount, 3));
-            table.setColumnSelectionAllowed(true);
-            table.setCellSelectionEnabled(true);
-            table.setBorder(new LineBorder(new Color(0, 0, 0)));
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-            table.putClientProperty("terminateEditOnFocusLost", true);
-            table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            table.getColumnModel().getColumn(0).setHeaderValue("<html><center>Engine<br>Speed<br>(RPM)<br></center></html>");
-            table.getColumnModel().getColumn(1).setHeaderValue("<html><center>MAF<br>Sensor<br>Voltage<br></center></html>");
-            table.getColumnModel().getColumn(2).setHeaderValue("<html><center>AFR<br>Error<br>%<br></center></html>");
-            Utils.initializeTable(table, ColumnWidth);
-            excelAdapter.addTable(table, true, false);
+        gbc_run.fill = GridBagConstraints.HORIZONTAL;
+        for (int i = 0; i < RunCount; ++i)
+            addRunTable();
+    }
+    
+    private void addRunTable() {
+        JTable table = new JTable();
+        runTables.add(table);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setModel(new DefaultTableModel(RunRowsCount, 3));
+        table.setColumnSelectionAllowed(true);
+        table.setCellSelectionEnabled(true);
+        table.setBorder(new LineBorder(new Color(0, 0, 0)));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+        table.putClientProperty("terminateEditOnFocusLost", true);
+        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        table.getColumnModel().getColumn(0).setHeaderValue("<html><center>Engine<br>Speed<br>(RPM)<br></center></html>");
+        table.getColumnModel().getColumn(1).setHeaderValue("<html><center>MAF<br>Sensor<br>Voltage<br></center></html>");
+        table.getColumnModel().getColumn(2).setHeaderValue("<html><center>AFR<br>Error<br>%<br></center></html>");
+        Utils.initializeTable(table, ColumnWidth);
+        excelAdapter.addTable(table, true, false);
 
+        gbl_dataRunPanel.columnWidths = new int[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights = new double[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights[runTables.size()] = 1.0;
+
+        gbc_run.gridx = runTables.size() - 1;
+        gbc_run.gridy = 0;
+        JButton jb = new JButton("remove");
+        jb.setActionCommand("trem");
+        jb.addActionListener(this);
+        jb.setPreferredSize(new Dimension(150,20));
+        removeButtons.add(jb);
+        dataRunPanel.add(jb, gbc_run);
+        gbc_run.gridy = 1;
+        dataRunPanel.add(table.getTableHeader(), gbc_run);
+        gbc_run.gridy = 2;
+        dataRunPanel.add(table, gbc_run);
+        repaint();
+        revalidate();
+    }
+    
+    private void removeRunTable(int index) {
+        JButton jb = removeButtons.remove(index);
+        JTable table = runTables.remove(index);
+        
+        excelAdapter.removeTable(table);
+        dataRunPanel.remove(jb);
+        dataRunPanel.remove(table.getTableHeader());
+        dataRunPanel.remove(table);
+
+        gbl_dataRunPanel.columnWidths = new int[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights = new double[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights[runTables.size()] = 1.0;
+        
+        for (int i = 0; i < runTables.size(); ++i) {
+            jb = removeButtons.get(i);
+            table = runTables.get(i);
             gbc_run.gridx = i;
             gbc_run.gridy = 0;
-            dataRunPanel.add(table.getTableHeader(), gbc_run);
+            dataRunPanel.add(jb, gbc_run);
             gbc_run.gridy = 1;
+            dataRunPanel.add(table.getTableHeader(), gbc_run);
+            gbc_run.gridy = 2;
             dataRunPanel.add(table, gbc_run);
         }
+        repaint();
+        revalidate();
     }
 
     //////////////////////////////////////////////////////////////////////////////////////
@@ -267,15 +320,27 @@ public class OpenLoop extends AMafScaling {
                 enableSmoothingView(false);
             setRanges();
         }
+        else if ("trem".equals(e.getActionCommand())) {
+            JButton sjb = (JButton) e.getSource();
+            int idx = 0;
+            for (JButton jb : removeButtons) {
+                if (jb == sjb)
+                    break;
+                idx += 1;
+            }
+            removeRunTable(idx);
+        }
     }
     
     protected void clearRunTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-            for (int i = 0; i < runTables.length; ++i) {
-                while (RunRowsCount < runTables[i].getRowCount())
-                    Utils.removeRow(RunRowsCount, runTables[i]);
-                Utils.clearTable(runTables[i]);
+            while (runTables.size() > RunCount)
+                runTables.remove(runTables.size() - 1);
+            for (int i = 0; i < runTables.size(); ++i) {
+                while (RunRowsCount < runTables.get(i).getRowCount())
+                    Utils.removeRow(RunRowsCount, runTables.get(i));
+                Utils.clearTable(runTables.get(i));
             }
         }
         finally {
@@ -332,8 +397,8 @@ public class OpenLoop extends AMafScaling {
         double voltage;
         double error;
         ArrayList<Double> closestVolatageArray;
-        for (int i = 0; i < runTables.length; ++i) {
-            JTable table = runTables[i];
+        for (int i = 0; i < runTables.size(); ++i) {
+            JTable table = runTables.get(i);
             String tableName = RunTableName + (i + 1);
             String rpmValue;
             String mafvValue;
@@ -499,10 +564,11 @@ public class OpenLoop extends AMafScaling {
                 out.write("\n");
             }
             // write run data
-            for (int t = 0; t < runTables.length; ++t) {
-                for (i = 0; i < runTables[t].getColumnCount(); ++i) {
-                    for (j = 0; j < runTables[t].getRowCount(); ++j)
-                        out.write(runTables[t].getValueAt(j, i).toString() + ",");
+            for (int t = 0; t < runTables.size(); ++t) {
+                JTable table = runTables.get(t);
+                for (i = 0; i < table.getColumnCount(); ++i) {
+                    for (j = 0; j < table.getRowCount(); ++j)
+                        out.write(table.getValueAt(j, i).toString() + ",");
                     out.write("\n");
                 }
             }
@@ -556,10 +622,10 @@ public class OpenLoop extends AMafScaling {
                         mafTable.setValueAt(elements[j], i, j);
                     break;
                 default:
-                    int offset = runTables.length * 3 + mafTable.getRowCount();
+                    int offset = runTables.size() * 3 + mafTable.getRowCount();
                     if (i > 1 && i < offset) {
                         if (l == 0 )
-                            table = runTables[k++];
+                            table = runTables.get(k++);
                         Utils.ensureRowCount(elements.length - 1, table);
                         for (j = 0; j < elements.length - 1; ++j)
                             table.setValueAt(elements[j], j, l);
@@ -689,12 +755,13 @@ public class OpenLoop extends AMafScaling {
                 int row = 0;
                 int i = 0;
                 int j = 0;
-                for (; i < runTables.length; ++i) {
-                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
+                for (; i < runTables.size(); ++i) {
+                    if (runTables.get(i).getValueAt(0, 0).toString().isEmpty())
                         break;
                 }
-                if (i == runTables.length)
-                    return;
+                if (i == runTables.size())
+                    addRunTable();
+                JTable table = runTables.get(i);
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
@@ -718,9 +785,9 @@ public class OpenLoop extends AMafScaling {
                                 skipRowCount = 0;
                                 j -= 1;
                                 while (j > 0 && skipRowCount < skipRowsOnTransition) {
-                                    runTables[i].setValueAt("", j, 0);
-                                    runTables[i].setValueAt("", j, 1);
-                                    runTables[i].setValueAt("", j, 2);
+                                    table.setValueAt("", j, 0);
+                                    table.setValueAt("", j, 1);
+                                    table.setValueAt("", j, 2);
                                     skipRowCount += 1;
                                     j -= 1;
                                 }
@@ -732,12 +799,13 @@ public class OpenLoop extends AMafScaling {
                                 wotFlag = true;
                                 skipRowCount = 0;
                                 if (foundWot &&
-                                    !runTables[i].getValueAt(0, 0).equals("") &&
-                                    !runTables[i].getValueAt(1, 0).equals("") &&
-                                    !runTables[i].getValueAt(2, 0).equals("")) {
+                                    !table.getValueAt(0, 0).equals("") &&
+                                    !table.getValueAt(1, 0).equals("") &&
+                                    !table.getValueAt(2, 0).equals("")) {
                                     i += 1;
-                                    if (i == runTables.length)
-                                        return;
+                                    if (i == runTables.size())
+                                        addRunTable();
+                                    table = runTables.get(i);
                                 }
                                 if (row > 0)
                                     j = 0;
@@ -759,10 +827,10 @@ public class OpenLoop extends AMafScaling {
 
                                     afrErr = (afr - cmdafr) / cmdafr * 100.0;
                                     if (Math.abs(afrErr) <= afrErrPrct) {
-                                        Utils.ensureRowCount(j + 1, runTables[i]);
-                                        runTables[i].setValueAt(rpm, j, 0);
-                                        runTables[i].setValueAt(mafv, j, 1);
-                                        runTables[i].setValueAt(afrErr, j, 2);
+                                        Utils.ensureRowCount(j + 1, table);
+                                        table.setValueAt(rpm, j, 0);
+                                        table.setValueAt(mafv, j, 1);
+                                        table.setValueAt(afrErr, j, 2);
                                         j += 1;
                                     }
                                 }

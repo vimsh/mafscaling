@@ -277,16 +277,16 @@ public class TableRescale extends ACompCalc {
                     }
                     if (row == 0) {
                         double yi;
-                        for (i = 1; i < origTable.getRowCount(); ++i) {
-                            yi = Double.valueOf(origTable.getValueAt(i, 0).toString());
+                        for (i = 1; i < newTable.getRowCount(); ++i) {
+                            yi = Double.valueOf(newTable.getValueAt(i, 0).toString());
                             double zi = Utils.interpolate3d(xvals, yvals, zvals, value, yi, type);
                             newTable.setValueAt(zi, i, col);
                         }
                     }
                     else if (col == 0) {
                         double xi;
-                        for (i = 1; i < origTable.getColumnCount(); ++i) {
-                            xi = Double.valueOf(origTable.getValueAt(0, i).toString());
+                        for (i = 1; i < newTable.getColumnCount(); ++i) {
+                            xi = Double.valueOf(newTable.getValueAt(0, i).toString());
                             double zi = Utils.interpolate3d(xvals, yvals, zvals, xi, value, type);
                             newTable.setValueAt(zi, row, i);
                         }

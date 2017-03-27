@@ -336,7 +336,7 @@ public class OpenLoop extends AMafScaling {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
             while (runTables.size() > RunCount)
-                runTables.remove(runTables.size() - 1);
+                removeRunTable(runTables.size() - 1);
             for (int i = 0; i < runTables.size(); ++i) {
                 while (RunRowsCount < runTables.get(i).getRowCount())
                     Utils.removeRow(RunRowsCount, runTables.get(i));

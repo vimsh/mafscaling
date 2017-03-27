@@ -1010,9 +1010,17 @@ class BilinearInterpolator implements BivariateGridInterpolator {
                 x1Idx = xIdx + 1;
                 x1 = xval[x1Idx];
             }
+            else if (x < x0) {
+                x0Idx = xIdx - 1;
+                x0 = xval[x0Idx];
+            }
             if (y > y0) {
                 y1Idx = yIdx + 1;
                 y1 = yval[y1Idx];
+            }
+            else if (y < y0) {
+                y0Idx = yIdx - 1;
+                y0 = yval[y0Idx];
             }
             x0y0 = fval[x0Idx][y0Idx];
             x1y0 = fval[x1Idx][y0Idx];

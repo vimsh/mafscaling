@@ -28,6 +28,7 @@ import java.text.Format;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -43,6 +44,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.table.TableCellEditor;
 import javax.swing.text.DefaultFormatter;
 import org.apache.log4j.Logger;
+import org.math.plot.Plot3DPanel;
 
 public class TableRescale extends ACompCalc {
     private static final long serialVersionUID = 7955359935085174590L;
@@ -59,6 +61,7 @@ public class TableRescale extends ACompCalc {
     protected JCheckBox intXCheckBox = null;
     protected JCheckBox intYCheckBox = null;
     protected JCheckBox intVCheckBox = null;
+    protected Plot3DPanel newPlot3d = null;
     protected JComboBox<String> interpTypeCheckBox = null;
     protected String decimalPts = "0.00";
     protected Format[][] formatMatrix = { { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) }, { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) } };
@@ -75,6 +78,7 @@ public class TableRescale extends ACompCalc {
         y3dAxisName = "Y";
         z3dAxisName = "Z";
         initialize(new String[] {});
+        addBase3dPanel();
         extrCheckBox.setSelected(true);
     }
 
@@ -155,6 +159,7 @@ public class TableRescale extends ACompCalc {
                 }
                 interpTypeCheckBox.removeAllItems();
                 interpTypeCheckBox.setModel(new DefaultComboBoxModel<String>(getInterpolationMethods()));
+                add3DPlot(origTable, "Original");
             }
         });
         excelAdapterList.get(0).addTable(origTable, false, true, false, false, true, true, false, true, true);
@@ -196,6 +201,48 @@ public class TableRescale extends ACompCalc {
             return false;
         return true;
     }
+    
+
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CREATE CHART TAB
+    //////////////////////////////////////////////////////////////////////////////////////
+    
+    protected void addBase3dPanel() {
+        GridBagLayout gbl_plotPanel = (GridBagLayout)plotPanel.getLayout();
+        gbl_plotPanel.columnWidths = new int[] {0, 0};
+        gbl_plotPanel.columnWeights = new double[]{1.0, 1.0};
+                
+        newPlot3d = new Plot3DPanel("SOUTH") {
+            private static final long serialVersionUID = 7914951068593204419L;
+            public void addPlotToolBar(String location) {
+                super.addPlotToolBar(location);
+                super.plotToolBar.remove(7);
+                super.plotToolBar.remove(5);
+                super.plotToolBar.remove(4);
+            }            
+        };
+        newPlot3d.setAutoBounds();
+        newPlot3d.setAutoscrolls(true);
+        newPlot3d.setEditable(false);
+        newPlot3d.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        newPlot3d.setForeground(Color.BLACK);
+        newPlot3d.getAxis(0).setColor(Color.BLACK);
+        newPlot3d.getAxis(1).setColor(Color.BLACK);
+        newPlot3d.getAxis(2).setColor(Color.BLACK);
+        newPlot3d.setAxisLabel(0, x3dAxisName);
+        newPlot3d.setAxisLabel(1, y3dAxisName);
+        newPlot3d.setAxisLabel(2, z3dAxisName);
+        
+        GridBagConstraints gbl_chartPanel = new GridBagConstraints();
+        gbl_chartPanel.anchor = GridBagConstraints.CENTER;
+        gbl_chartPanel.insets = insets3;
+        gbl_chartPanel.fill = GridBagConstraints.BOTH;
+        gbl_chartPanel.gridx = 0;
+        gbl_chartPanel.gridy = 0;
+        plotPanel.add(plot3d, gbl_chartPanel);
+        gbl_chartPanel.gridx = 1;
+        plotPanel.add(newPlot3d, gbl_chartPanel);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////
     // CREATE USAGE TAB
@@ -219,7 +266,7 @@ public class TableRescale extends ACompCalc {
         int i, j;
         try {
             interpTypeCheckBox.setEnabled(false);
-            plot3d.removeAllPlots();
+            newPlot3d.removeAllPlots();
             double value = Double.valueOf(newTable.getValueAt(row, col).toString());
             Utils.InterpolatorType type = Utils.InterpolatorType.valueOf((String)interpTypeCheckBox.getSelectedItem());
             if (tableType == TableType.Table3D) {
@@ -292,20 +339,6 @@ public class TableRescale extends ACompCalc {
                         }
                     }
                 }
-                Utils.colorTable(newTable);
-                xvals = new double[newTable.getColumnCount() - 1];
-                yvals = new double[newTable.getRowCount() - 1];
-                for (i = 1; i < newTable.getColumnCount(); ++i)
-                    xvals[i - 1] = Double.valueOf(newTable.getValueAt(0, i).toString());
-                for (i = 1; i < newTable.getRowCount(); ++i)
-                    yvals[i - 1] = Double.valueOf(newTable.getValueAt(i, 0).toString());
-                zvals = Utils.doubleZArray(newTable, xvals, yvals);
-                Color[][] tableColors = Utils.generateTableColorMatrix(newTable, 1, 1, yvals.length + 1, xvals.length + 1);
-                Color[][] colors = new Color[yvals.length][xvals.length];
-                for (j = 1; j < tableColors.length; ++j)
-                    for (i = 1; i < tableColors[j].length; ++i)
-                        colors[j - 1][i - 1] = tableColors[j][i];
-                plot3d.addGridPlot("Rescaled", colors, xvals, yvals, zvals);
             }
             else {
                 if (tableType == TableType.Table2DVertical) {
@@ -332,21 +365,9 @@ public class TableRescale extends ACompCalc {
                 else
                     y = Utils.interpolate(xvals, yvals, value, type);
                 newTable.setValueAt(y, row, col);
-                yvals[(tableType == TableType.Table2DVertical ? row : col)] = y;
-                Utils.colorTable(newTable);
-                double[][] xyzArray = new double[xvals.length][3];
-                Color[] colors = new Color[xvals.length];
-                BgColorFormatRenderer renderer = (BgColorFormatRenderer)newTable.getDefaultRenderer(Object.class);
-                for (j = 0; j < xvals.length; ++j) {
-                    for (i = 0; i < xvals.length; ++i) {
-                        colors[i] = (tableType == TableType.Table2DVertical ? renderer.getColorAt(i, 1) : renderer.getColorAt(1, i));
-                        xyzArray[i][0] = xvals[i];
-                        xyzArray[i][1] = xvals[i];
-                        xyzArray[i][2] = yvals[i];
-                    }
-                }
-                plot3d.addLinePlot("Rescaled", colors, xyzArray);
             }
+            Utils.colorTable(newTable);
+            add3DPlot(newTable, "Rescaled");
         }
         catch (Exception e) {
             logger.error(e);
@@ -446,11 +467,67 @@ public class TableRescale extends ACompCalc {
             }
         }
     }
+
+    private void add3DPlot(JTable table, String name) {
+        int i;
+        double[] xvals = new double[table.getColumnCount() - 1];
+        double[] yvals = new double[table.getRowCount() - 1];
+        if (tableType == TableType.Table3D) {
+            for (i = 1; i < table.getColumnCount(); ++i)
+                xvals[i - 1] = Double.valueOf(table.getValueAt(0, i).toString());
+            for (i = 1; i < table.getRowCount(); ++i)
+                yvals[i - 1] = Double.valueOf(table.getValueAt(i, 0).toString());
+            double[][] zvals = Utils.doubleZArray(table, xvals, yvals);
+            Color[][] tableColors = Utils.generateTableColorMatrix(table, 1, 1, yvals.length + 1, xvals.length + 1);
+            Color[][] colors = new Color[yvals.length][xvals.length];
+            for (int j = 1; j < tableColors.length; ++j)
+                for (i = 1; i < tableColors[j].length; ++i)
+                    colors[j - 1][i - 1] = tableColors[j][i];
+            if (table == newTable)
+                newPlot3d.addGridPlot(name, colors, xvals, yvals, zvals);
+            else
+                plot3d.addGridPlot(name, colors, xvals, yvals, zvals);
+        }
+        else {
+            if (tableType == TableType.Table2DVertical) {
+                xvals = new double[table.getRowCount()];
+                yvals = new double[table.getRowCount()];
+                for (i = 0; i < table.getRowCount(); ++i) {
+                    xvals[i] = Double.valueOf(table.getValueAt(i, 0).toString());
+                    yvals[i] = Double.valueOf(table.getValueAt(i, 1).toString());
+                }
+            }
+            else if (tableType == TableType.Table2DHorizontal) {
+                xvals = new double[table.getColumnCount()];
+                yvals = new double[table.getColumnCount()];
+                for (i = 0; i < table.getColumnCount(); ++i) {
+                    xvals[i] = Double.valueOf(table.getValueAt(0, i).toString());
+                    yvals[i] = Double.valueOf(table.getValueAt(1, i).toString());
+                }
+            }
+            double[][] xyzArray = new double[xvals.length][3];
+            Color[] colors = new Color[xvals.length];
+            BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
+            for (int j = 0; j < xvals.length; ++j) {
+                for (i = 0; i < xvals.length; ++i) {
+                    colors[i] = (tableType == TableType.Table2DVertical ? renderer.getColorAt(i, 1) : renderer.getColorAt(1, i));
+                    xyzArray[i][0] = xvals[i];
+                    xyzArray[i][1] = xvals[i];
+                    xyzArray[i][2] = yvals[i];
+                }
+            }
+            if (table == newTable)
+                newPlot3d.addLinePlot(name, colors, xyzArray);
+            else
+                plot3d.addLinePlot(name, colors, xyzArray);
+        }
+    }
     
     protected void clearRunTables() {
         clearRunTable(newTable);
         copyOriginalTable();
         plot3d.removeAllPlots();
+        newPlot3d.removeAllPlots();
         interpTypeCheckBox.setEnabled(true);
     }
     

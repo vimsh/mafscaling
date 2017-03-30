@@ -83,6 +83,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     protected JTable corrTable = null;
     protected JTable corrCountTable = null;
     protected JTable logDataTable = null;
+    protected JPanel plotPanel = null;
     protected JCheckBox compareTableCheckBox = null;
     protected ButtonGroup rbGroup = null;
     protected ChartPanel chartPanel = null;
@@ -233,7 +234,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected void create3dGraphTab() {
-        JPanel plotPanel = new JPanel();
+        plotPanel = new JPanel();
         add(plotPanel, "<html><div style='text-align: center;'>3<br>D<br><br>C<br>h<br>a<br>r<br>t</div></html>");
         GridBagLayout gbl_plotPanel = new GridBagLayout();
         gbl_plotPanel.columnWidths = new int[] {0};

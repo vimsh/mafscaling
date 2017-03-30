@@ -560,6 +560,10 @@ public class ClosedLoop extends AMafScaling {
         boolean polfTableSet = polfTable.validate();
         if (!polfTableSet)
             JOptionPane.showMessageDialog(null, "Fueling data is not set - '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed", "Warning", JOptionPane.WARNING_MESSAGE);
+        int logDataTableRowCount = logDataTable.getRowCount();
+        if (polfTableSet && polfTable.isMap() && mapArray.size() != logDataTableRowCount)
+            JOptionPane.showMessageDialog(null, "Fueling data was set after loading the log file(s) and thus Manifold Abs Pressure column was not specified. '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed unless you clear and reload run data", "Warning", JOptionPane.WARNING_MESSAGE);
+
         double[] values = new double[LogDataTableHeaders.length];
         double corr;
         double rpm;
@@ -587,7 +591,7 @@ public class ClosedLoop extends AMafScaling {
         }
         ArrayList<Double> afrRpmArray = new ArrayList<Double>();
         ArrayList<Double> afrLoadOrMapArray = new ArrayList<Double>();
-        if (polfTableSet) {
+        if (polfTableSet && !(polfTable.isMap() && mapArray.size() != logDataTableRowCount)) {
             for (i = 1; i < polfTable.getRowCount(); ++i) {
                 afrRpmArray.add(Double.valueOf(polfTable.getValueAt(i, 0).toString()));
                 Utils.ensureRowCount(i + 1, afr1Table);
@@ -605,7 +609,7 @@ public class ClosedLoop extends AMafScaling {
         }
             
         HashMap<Double, Integer> modeCountMap;
-        for (i = 0; i < logDataTable.getRowCount(); ++i) {
+        for (i = 0; i < logDataTableRowCount; ++i) {
             for (j = 0; j < values.length; ++j) {
                 valStr = logDataTable.getValueAt(i, j).toString();
                 if (valStr.isEmpty())
@@ -639,7 +643,7 @@ public class ClosedLoop extends AMafScaling {
             else
                 modeCountMap.put(roundedCorr, val + 1);
             
-            if (polfTableSet) {
+            if (polfTableSet && !(polfTable.isMap() && mapArray.size() != logDataTableRowCount)) {
                 closestLoadOrMapIdx = Utils.closestValueIndex((polfTable.isMap() ? mapArray.get(i) : load), afrLoadOrMapArray) + 1;
                 closestRmpIdx = Utils.closestValueIndex(rpm, afrRpmArray) + 1;
                 val1 = (afr1Table.getValueAt(closestRmpIdx, closestLoadOrMapIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr1Table.getValueAt(closestRmpIdx, closestLoadOrMapIdx).toString());

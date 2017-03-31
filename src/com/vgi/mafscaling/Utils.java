@@ -997,7 +997,7 @@ class BilinearInterpolator implements BivariateGridInterpolator {
 
             if ((xIdx == 0 && x < xval[xIdx]) || (xIdx == xval.length - 1 && x > xval[xval.length - 1]))
                 throw new OutOfRangeException(x, xval[0], xval[xval.length - 1]);
-            if ((yIdx == 0 && y < yval[yIdx]) || (yIdx == yval.length - 1 && x > yval[yval.length - 1]))
+            if ((yIdx == 0 && y < yval[yIdx]) || (yIdx == yval.length - 1 && y > yval[yval.length - 1]))
                 throw new OutOfRangeException(y, yval[0], yval[yval.length - 1]);
             
             double x0, x1, y0, y1, x0y0, x0y1, x1y0, x1y1;

@@ -244,9 +244,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     public boolean validate() {
-        if (fuelingTable == null || !validateFuelingData(fuelingTable)) {
+        if (fuelingTable == null || !validateFuelingData(fuelingTable))
             return false;
-        }
         return true;
     }
 
@@ -255,7 +254,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     public boolean isSet() {
-        if (fuelingTable == null || !validateFuelingData(fuelingTable))
+        if (fuelingTable == null || Utils.isTableEmpty(fuelingTable) || !validateFuelingData(fuelingTable))
             return false;
         return true;
     }
@@ -396,6 +395,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     private boolean validateFuelingData(JTable fuelingTable) {
+        if (fuelingTable != null && Utils.isTableEmpty(fuelingTable))
+            return true;
         if (!Utils.validateTable(fuelingTable))
             return false;
         validateMapLoadFuelingData(fuelingTable);
@@ -485,7 +486,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     private String save(JTable fuelingTable) {
-        if (Utils.isTableEmpty(fuelingTable) || !validateFuelingData(fuelingTable))
+        if (fuelingTable == null || Utils.isTableEmpty(fuelingTable) || !validateFuelingData(fuelingTable))
             return "";
         File file = null;
         if (tempFileName.isEmpty()) {

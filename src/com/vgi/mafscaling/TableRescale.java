@@ -26,8 +26,8 @@ import java.awt.event.ActionEvent;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
-
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
@@ -63,12 +63,14 @@ public class TableRescale extends ACompCalc {
     protected JCheckBox intVCheckBox = null;
     protected Plot3DPanel newPlot3d = null;
     protected JComboBox<String> interpTypeCheckBox = null;
+    protected TreeMap<Long, TreeMap<Long, Double>> workdata = null;
     protected String decimalPts = "0.00";
     protected Format[][] formatMatrix = { { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) }, { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) } };
     protected double minX = 0;
     protected double maxX = 0;
     protected double minY = 0;
     protected double maxY = 0;
+    protected int precision = 100000;
 
     public TableRescale(int tabPlacement) {
         super(tabPlacement);
@@ -108,10 +110,10 @@ public class TableRescale extends ACompCalc {
         addButton(cntlPanel, 0, "Clear", "clearall", GridBagConstraints.WEST);
         addButton(cntlPanel, 1, "Reset Rescaled", "clearlog", GridBagConstraints.WEST);
         interpTypeCheckBox = addComboBox(cntlPanel, 2, getInterpolationMethods());
-        addLabel(cntlPanel, 3, "Precision: ");
-        addSpinnerFilter(cntlPanel, 4, 2, 1, 4, 1);
-        addLabel(cntlPanel, 5, " ");
-        extrCheckBox = addCheckBox(cntlPanel, 6, "Extrapolate", null);
+        extrCheckBox = addCheckBox(cntlPanel, 3, "Extrapolate", null);
+        addLabel(cntlPanel, 4, "Precision: ");
+        addSpinnerFilter(cntlPanel, 5, 2, 1, 4, 1);
+        addLabel(cntlPanel, 6, " ");
         intXCheckBox = addCheckBox(cntlPanel, 7, "Integer X-Axis", "chgfmt");
         intYCheckBox = addCheckBox(cntlPanel, 8, "Integer Y-Axis", "chgfmt");
         intVCheckBox = addCheckBox(cntlPanel, 9, "Integer Values", "chgfmt");
@@ -123,43 +125,17 @@ public class TableRescale extends ACompCalc {
         origTable = createDataTable(panel, origTableName, 0, true);
         excelAdapterList.set(0, new ExcelAdapter() {
             protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
-                if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
-                    table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
+                if (!validatePasteData(table))
                     return;
-                if (table.getSelectedRows()[0] != 0 || table.getSelectedColumns()[0] != 0) {
-                    JOptionPane.showMessageDialog(null, "Please paste copied table into the first cell", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
                 super.onPaste(table, extendRows, extendCols);
                 zeroOutBlankCells();
                 validateTable(table);
                 clearRunTables();
-                if (origTable.getColumnCount() == 2 && origTable.getRowCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
-                    tableType = TableType.Table2DVertical;
-                    intXCheckBox.setEnabled(false);
-                    minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
-                    maxX = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
-                    minY = 0;
-                    maxY = 0;
-                }
-                else if (origTable.getRowCount() == 2 && origTable.getColumnCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
-                    tableType = TableType.Table2DHorizontal;
-                    intYCheckBox.setEnabled(false);
-                    minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
-                    maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
-                    minY = 0;
-                    maxY = 0;
-                }
-                else {
-                    tableType = TableType.Table3D;
-                    minX = Double.valueOf(origTable.getValueAt(0, 1).toString());
-                    maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
-                    minY = Double.valueOf(origTable.getValueAt(1, 0).toString());
-                    maxY = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
-                }
+                initTableType();
+                initWorkdata();
+                add3DPlot(origTable, "Original");
                 interpTypeCheckBox.removeAllItems();
                 interpTypeCheckBox.setModel(new DefaultComboBoxModel<String>(getInterpolationMethods()));
-                add3DPlot(origTable, "Original");
             }
         });
         excelAdapterList.get(0).addTable(origTable, false, true, false, false, true, true, false, true, true);
@@ -186,7 +162,65 @@ public class TableRescale extends ACompCalc {
         });
     }
     
-    protected String[] getInterpolationMethods() {
+    private boolean validatePasteData(JTable table) {
+        if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
+            table.getSelectedColumns() == null || table.getSelectedColumns().length == 0)
+            return false;
+        if (table.getSelectedRows()[0] != 0 || table.getSelectedColumns()[0] != 0) {
+            JOptionPane.showMessageDialog(null, "Please paste copied table into the first cell", "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        return true;
+    }
+
+    private void initTableType() {
+        if (origTable.getColumnCount() == 2 && origTable.getRowCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
+            tableType = TableType.Table2DVertical;
+            intXCheckBox.setEnabled(false);
+            minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
+            maxX = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
+            minY = 0;
+            maxY = 0;
+        }
+        else if (origTable.getRowCount() == 2 && origTable.getColumnCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
+            tableType = TableType.Table2DHorizontal;
+            intYCheckBox.setEnabled(false);
+            minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
+            maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
+            minY = 0;
+            maxY = 0;
+        }
+        else {
+            tableType = TableType.Table3D;
+            minX = Double.valueOf(origTable.getValueAt(0, 1).toString());
+            maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
+            minY = Double.valueOf(origTable.getValueAt(1, 0).toString());
+            maxY = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
+        }
+    }
+ 
+    private void initWorkdata() {
+        if (tableType == TableType.Table3D) {
+            workdata = new TreeMap<Long, TreeMap<Long, Double>>();
+            long x, y;
+            double z;
+            TreeMap<Long, Double> col;
+            for (int i = 1; i < origTable.getColumnCount(); ++i) {
+                x = Math.round(Double.valueOf(origTable.getValueAt(0, i).toString()) * precision);
+                col = new TreeMap<Long, Double>();
+                workdata.put(x, col);
+                for (int j = 1; j < origTable.getRowCount(); ++j) {
+                    y = Math.round(Double.valueOf(origTable.getValueAt(j, 0).toString()) * precision);
+                    z = Double.valueOf(origTable.getValueAt(j, i).toString());
+                    col.put(y, z);
+                }
+            }
+        }
+        else
+            workdata = null;
+    }
+    
+    private String[] getInterpolationMethods() {
         if (tableType == TableType.Table3D)
             return new String [] { Utils.InterpolatorType.Bilinear.name(), Utils.InterpolatorType.BicubicSpline.name() };
         return new String [] { Utils.InterpolatorType.Linear.name(), Utils.InterpolatorType.CubicSpline.name() };
@@ -259,6 +293,7 @@ public class TableRescale extends ACompCalc {
     // WORK FUNCTIONS
     //////////////////////////////////////////////////////////////////////////////////////
     
+    @SuppressWarnings("unchecked")
     private void calculate(int row, int col) {
         double[] xvals = null;
         double[] yvals = null;
@@ -266,81 +301,97 @@ public class TableRescale extends ACompCalc {
         int i, j;
         try {
             interpTypeCheckBox.setEnabled(false);
+            extrCheckBox.setEnabled(false);
             newPlot3d.removeAllPlots();
-            double value = Double.valueOf(newTable.getValueAt(row, col).toString());
             Utils.InterpolatorType type = Utils.InterpolatorType.valueOf((String)interpTypeCheckBox.getSelectedItem());
             if (tableType == TableType.Table3D) {
+                TreeMap<Long, Double> column = workdata.get(workdata.firstKey());
+                long minX = workdata.firstKey();
+                long maxX = workdata.lastKey();
+                long minY = column.firstKey();
+                long maxY = column.lastKey();
+                long value = Math.round(Double.valueOf(newTable.getValueAt(row, col).toString()) * precision);
+                // new X-Axis value
                 if (row == 0 && (value < minX || value > maxX)) {
+                    TreeMap<Long, Double> newColumn;
                     if (extrCheckBox.isSelected()) {
-                        xvals = new double[origTable.getColumnCount() - 1];
-                        for (i = 1; i < origTable.getColumnCount(); ++i)
-                            xvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
-                        yvals = new double[origTable.getColumnCount() - 1];
-                        type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
-                        for (row = 1; row < origTable.getRowCount(); ++row) {
-                            for (i = 1; i < origTable.getColumnCount(); ++i)
-                                yvals[i - 1] = Double.valueOf(origTable.getValueAt(row, i).toString());
-                            double y = Utils.interpolate(xvals, yvals, value, type);
-                            newTable.setValueAt(y, row, col);
+                        newColumn = (TreeMap<Long, Double>)column.clone();
+                        Utils.InterpolatorType t = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
+                        xvals = new double[workdata.size()];
+                        yvals = new double[workdata.size()];
+                        i = 0;
+                        for (long k : workdata.keySet())
+                            xvals[i++] = k;
+                        for (long k : column.keySet()) {
+                            i = 0;
+                            for (TreeMap<Long, Double> c : workdata.values())
+                                yvals[i++] = c.get(k);
+                            double y = Utils.interpolate(xvals, yvals, value, t);
+                            newColumn.put(k, y);
                         }
                     }
                     else {
-                        int copyCol = (value < minX ? 1 : origTable.getColumnCount() - 1);
-                        for (row = 1; row < origTable.getRowCount(); ++row)
-                            newTable.setValueAt(origTable.getValueAt(row, copyCol), row, col);
+                        long x = (value < minX ? minX : maxX);
+                        newColumn = (TreeMap<Long, Double>) workdata.get(x).clone();
                     }
+                    workdata.put(value, newColumn);
                 }
+                // new Y-Axis value
                 else if (col == 0 && (value < minY || value > maxY)) {
                     if (extrCheckBox.isSelected()) {
-                        xvals = new double[origTable.getRowCount() - 1];
-                        for (i = 1; i < origTable.getRowCount(); ++i)
-                            xvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
-                        yvals = new double[origTable.getRowCount() - 1];
-                        type = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
-                        for (col = 1; col < origTable.getColumnCount(); ++col) {
-                            for (i = 1; i < origTable.getRowCount(); ++i)
-                                yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, col).toString());
-                            double x = Utils.interpolate(xvals, yvals, value, type);
-                            newTable.setValueAt(x, row, col);
+                        Utils.InterpolatorType t = (type == Utils.InterpolatorType.Bilinear ? Utils.InterpolatorType.Linear : Utils.InterpolatorType.CubicSpline);
+                        xvals = new double[column.size()];
+                        yvals = new double[column.size()];
+                        Long[] oxvals = column.keySet().toArray(new Long[column.size()]);
+                        for (TreeMap<Long, Double> c : workdata.values()) {
+                            i = 0;
+                            for (long k : oxvals) {
+                                xvals[i] = k;
+                                yvals[i++] = c.get(k);
+                            }
+                            double y = Utils.interpolate(xvals, yvals, value, t);
+                            c.put(value, y);
                         }
                     }
                     else {
-                        int copyRow = (value < minY ? 1 : origTable.getColumnCount() - 1);
-                        for (col = 1; col < origTable.getColumnCount(); ++col)
-                            newTable.setValueAt(origTable.getValueAt(copyRow, col), row, col);
+                        long y = (value < minY ? minY : maxY);
+                        for (TreeMap<Long, Double> c : workdata.values())
+                            c.put(value, c.get(y));
                     }
                 }
-                else {
-                    xvals = new double[origTable.getColumnCount() - 1];
-                    yvals = new double[origTable.getRowCount() - 1];
-                    for (i = 1; i < origTable.getColumnCount(); ++i)
-                        xvals[i - 1] = Double.valueOf(origTable.getValueAt(0, i).toString());
-                    for (i = 1; i < origTable.getRowCount(); ++i)
-                        yvals[i - 1] = Double.valueOf(origTable.getValueAt(i, 0).toString());
-                    zvals = new double[origTable.getColumnCount() - 1][origTable.getRowCount() - 1];
-                    for (i = 1; i < origTable.getColumnCount(); ++i) {
-                        for (j = 1; j < origTable.getRowCount(); ++j)
-                            zvals[i - 1][j - 1] = Double.valueOf(origTable.getValueAt(j, i).toString());
+
+                xvals = new double[workdata.size()];
+                yvals = new double[column.size()];
+                zvals = new double[workdata.size()][column.size()];
+                i = 0;
+                for (long k : workdata.keySet())
+                    xvals[i++] = k;
+                i = 0;
+                for (long k : column.keySet())
+                    yvals[i++] = k;
+                for (i = 0; i < xvals.length; ++i) {
+                    for (j = 0; j < yvals.length; ++j)
+                        zvals[i][j] = workdata.get((long)xvals[i]).get((long)yvals[j]);
+                }
+                if (row == 0) {
+                    double yi;
+                    for (i = 1; i < newTable.getRowCount(); ++i) {
+                        yi = Math.round(Double.valueOf(newTable.getValueAt(i, 0).toString()) * precision);
+                        double zi = Utils.interpolate3d(xvals, yvals, zvals, value, yi, type);
+                        newTable.setValueAt(zi, i, col);
                     }
-                    if (row == 0) {
-                        double yi;
-                        for (i = 1; i < newTable.getRowCount(); ++i) {
-                            yi = Double.valueOf(newTable.getValueAt(i, 0).toString());
-                            double zi = Utils.interpolate3d(xvals, yvals, zvals, value, yi, type);
-                            newTable.setValueAt(zi, i, col);
-                        }
-                    }
-                    else if (col == 0) {
-                        double xi;
-                        for (i = 1; i < newTable.getColumnCount(); ++i) {
-                            xi = Double.valueOf(newTable.getValueAt(0, i).toString());
-                            double zi = Utils.interpolate3d(xvals, yvals, zvals, xi, value, type);
-                            newTable.setValueAt(zi, row, i);
-                        }
+                }
+                else if (col == 0) {
+                    double xi;
+                    for (i = 1; i < newTable.getColumnCount(); ++i) {
+                        xi = Math.round(Double.valueOf(newTable.getValueAt(0, i).toString()) * precision);
+                        double zi = Utils.interpolate3d(xvals, yvals, zvals, xi, value, type);
+                        newTable.setValueAt(zi, row, i);
                     }
                 }
             }
             else {
+                double value = Double.valueOf(newTable.getValueAt(row, col).toString());
                 if (tableType == TableType.Table2DVertical) {
                     col = 1;
                     xvals = new double[origTable.getRowCount()];
@@ -526,19 +577,22 @@ public class TableRescale extends ACompCalc {
     protected void clearRunTables() {
         clearRunTable(newTable);
         copyOriginalTable();
-        plot3d.removeAllPlots();
         newPlot3d.removeAllPlots();
+        initWorkdata();
         interpTypeCheckBox.setEnabled(true);
+        extrCheckBox.setEnabled(true);
     }
     
     protected void clearTables() {
         super.clearTables();
+        plot3d.removeAllPlots();
         intXCheckBox.setEnabled(true);
         intYCheckBox.setEnabled(true);
         intXCheckBox.setSelected(false);
         intYCheckBox.setSelected(false);
         intVCheckBox.setSelected(false);
         interpTypeCheckBox.setEnabled(true);
+        extrCheckBox.setEnabled(true);
         setFormatMatrix();
     }
 

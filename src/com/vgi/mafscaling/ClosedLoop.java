@@ -562,7 +562,7 @@ public class ClosedLoop extends AMafScaling {
             JOptionPane.showMessageDialog(null, "Fueling data is not set - '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed", "Warning", JOptionPane.WARNING_MESSAGE);
         int logDataTableRowCount = logDataTable.getRowCount();
         if (polfTableSet && polfTable.isMap() && mapArray.size() != logDataTableRowCount)
-            JOptionPane.showMessageDialog(null, "Fueling data was set after loading the log file(s) and thus Manifold Abs Pressure column was not specified. '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed unless you clear and reload run data", "Warning", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(null, "MAP based fueling data was set after loading of log file(s) and thus Manifold Abs Pressure data is not available. '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed unless you clear run data and reload log file(s)", "Warning", JOptionPane.WARNING_MESSAGE);
 
         double[] values = new double[LogDataTableHeaders.length];
         double corr;

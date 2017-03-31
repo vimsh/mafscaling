@@ -244,9 +244,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     public boolean validate() {
-        if (fuelingTable == null || !validateFuelingData(fuelingTable))
-            return false;
-        return true;
+        return validateFuelingData(fuelingTable);
     }
 
     /**
@@ -254,9 +252,8 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
      * @return
      */
     public boolean isSet() {
-        if (fuelingTable == null || Utils.isTableEmpty(fuelingTable) || !validateFuelingData(fuelingTable))
-            return false;
-        return true;
+        // TODO: I don't think the validateFuelingData call is necessary here - if a table has been set it SHOULD always be valid
+        return fuelingTable != null && !Utils.isTableEmpty(fuelingTable) && validateFuelingData(fuelingTable);
     }
     
     /**
@@ -397,7 +394,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
     private boolean validateFuelingData(JTable fuelingTable) {
         if (fuelingTable != null && Utils.isTableEmpty(fuelingTable))
             return true;
-        if (!Utils.validateTable(fuelingTable))
+        if (fuelingTable == null || !Utils.validateTable(fuelingTable))
             return false;
         validateMapLoadFuelingData(fuelingTable);
         return true;

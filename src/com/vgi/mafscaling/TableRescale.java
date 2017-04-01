@@ -25,11 +25,15 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.text.DecimalFormat;
 import java.text.Format;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFormattedTextField;
@@ -38,6 +42,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JTable;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.UIDefaults;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -56,21 +61,26 @@ public class TableRescale extends ACompCalc {
         Table2DHorizontal
     }
 
-    protected TableType tableType = TableType.Table3D;
-    protected JCheckBox extrCheckBox = null;
-    protected JCheckBox intXCheckBox = null;
-    protected JCheckBox intYCheckBox = null;
-    protected JCheckBox intVCheckBox = null;
-    protected Plot3DPanel newPlot3d = null;
-    protected JComboBox<String> interpTypeCheckBox = null;
-    protected TreeMap<Long, TreeMap<Long, Double>> workdata = null;
-    protected String decimalPts = "0.00";
-    protected Format[][] formatMatrix = { { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) }, { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) } };
-    protected double minX = 0;
-    protected double maxX = 0;
-    protected double minY = 0;
-    protected double maxY = 0;
-    protected int precision = 100000;
+    private TableType tableType = TableType.Table3D;
+    private JCheckBox extrCheckBox = null;
+    private JCheckBox intXCheckBox = null;
+    private JCheckBox intYCheckBox = null;
+    private JCheckBox intVCheckBox = null;
+    private JButton undoButton = null;
+    private JButton redoButton = null;
+    private ImageIcon undoIcon = null;
+    private ImageIcon redoIcon = null;
+    private Plot3DPanel newPlot3d = null;
+    private JComboBox<String> interpTypeCheckBox = null;
+    private TreeMap<Long, TreeMap<Long, Double>> workdata = null;
+    private Stack<ArrayList<ArrayList<Object>>> undoStack = null;
+    private Stack<ArrayList<ArrayList<Object>>> redoStack = null;
+    private UIDefaults zeroInsets = new UIDefaults();
+    private String decimalPts = "0.00";
+    private Format[][] formatMatrix = { { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) }, { new DecimalFormat(decimalPts), new DecimalFormat(decimalPts) } };
+    private double minX = 0;
+    private double maxX = 0;
+    private int precision = 100000;
 
     public TableRescale(int tabPlacement) {
         super(tabPlacement);
@@ -79,6 +89,9 @@ public class TableRescale extends ACompCalc {
         x3dAxisName = "X";
         y3dAxisName = "Y";
         z3dAxisName = "Z";
+        undoIcon = new ImageIcon(getClass().getResource("/undo.png"));
+        redoIcon = new ImageIcon(getClass().getResource("/redo.png"));
+        zeroInsets.put("Button.contentMargins", insets0);
         initialize(new String[] {});
         addBase3dPanel();
         extrCheckBox.setSelected(true);
@@ -101,10 +114,10 @@ public class TableRescale extends ACompCalc {
         dataPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-        gbl_cntlPanel.rowWeights = new double[]{0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.rowHeights = new int[]{0, 0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.rowWeights = new double[]{0, 0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
         addButton(cntlPanel, 0, "Clear", "clearall", GridBagConstraints.WEST);
@@ -117,7 +130,9 @@ public class TableRescale extends ACompCalc {
         intXCheckBox = addCheckBox(cntlPanel, 7, "Integer X-Axis", "chgfmt");
         intYCheckBox = addCheckBox(cntlPanel, 8, "Integer Y-Axis", "chgfmt");
         intVCheckBox = addCheckBox(cntlPanel, 9, "Integer Values", "chgfmt");
-        addLabel(cntlPanel, 10, " ");
+        undoButton = addImageButton(cntlPanel, 10, "undo", undoIcon);
+        redoButton = addImageButton(cntlPanel, 11, "redo", redoIcon);
+        addLabel(cntlPanel, 12, " ");
     }
     
     protected void createDataTables(JPanel panel) {
@@ -132,7 +147,7 @@ public class TableRescale extends ACompCalc {
                 validateTable(table);
                 clearRunTables();
                 initTableType();
-                initWorkdata();
+                initializeRescale();
                 add3DPlot(origTable, "Original");
                 interpTypeCheckBox.removeAllItems();
                 interpTypeCheckBox.setModel(new DefaultComboBoxModel<String>(getInterpolationMethods()));
@@ -179,29 +194,27 @@ public class TableRescale extends ACompCalc {
             intXCheckBox.setEnabled(false);
             minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
             maxX = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
-            minY = 0;
-            maxY = 0;
         }
         else if (origTable.getRowCount() == 2 && origTable.getColumnCount() >= 2 && !origTable.getValueAt(0, 0).toString().equals("")) {
             tableType = TableType.Table2DHorizontal;
             intYCheckBox.setEnabled(false);
             minX = Double.valueOf(origTable.getValueAt(0, 0).toString());
             maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
-            minY = 0;
-            maxY = 0;
         }
         else {
             tableType = TableType.Table3D;
             minX = Double.valueOf(origTable.getValueAt(0, 1).toString());
             maxX = Double.valueOf(origTable.getValueAt(0, origTable.getColumnCount() - 1).toString());
-            minY = Double.valueOf(origTable.getValueAt(1, 0).toString());
-            maxY = Double.valueOf(origTable.getValueAt(origTable.getRowCount() - 1, 0).toString());
         }
     }
  
-    private void initWorkdata() {
+    private void initializeRescale() {
         if (tableType == TableType.Table3D) {
             workdata = new TreeMap<Long, TreeMap<Long, Double>>();
+            undoStack = new Stack<ArrayList<ArrayList<Object>>>();
+            redoStack = new Stack<ArrayList<ArrayList<Object>>>();
+            undoButton.setEnabled(false);
+            redoButton.setEnabled(false);
             long x, y;
             double z;
             TreeMap<Long, Double> col;
@@ -300,9 +313,9 @@ public class TableRescale extends ACompCalc {
         double[][] zvals = null;
         int i, j;
         try {
-            interpTypeCheckBox.setEnabled(false);
-            extrCheckBox.setEnabled(false);
-            newPlot3d.removeAllPlots();
+            enableCalculateControls(false);
+            pushUndoTable();
+            // start processing the change
             Utils.InterpolatorType type = Utils.InterpolatorType.valueOf((String)interpTypeCheckBox.getSelectedItem());
             if (tableType == TableType.Table3D) {
                 TreeMap<Long, Double> column = workdata.get(workdata.firstKey());
@@ -449,6 +462,24 @@ public class TableRescale extends ACompCalc {
         return spinner;
     }
     
+    private JButton addImageButton(JPanel panel, int column, String action, ImageIcon icon) {
+        JButton button = new JButton(icon);
+        button.putClientProperty("Nimbus.Overrides", zeroInsets);
+        button.setMargin(insets0);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setActionCommand(action);
+        button.addActionListener(this);
+        button.setEnabled(false);
+        GridBagConstraints gbc_button = new GridBagConstraints();
+        gbc_button.insets = insets0;
+        gbc_button.anchor = GridBagConstraints.WEST;
+        gbc_button.gridx = column;
+        gbc_button.gridy = 0;
+        panel.add(button, gbc_button);
+        return button;
+    }
+    
     private void setFormatMatrix() {
         formatMatrix[0][1] = (intXCheckBox.isSelected() ? new DecimalFormat("#") : new DecimalFormat(decimalPts));
         formatMatrix[1][0] = (intYCheckBox.isSelected() ? new DecimalFormat("#") : new DecimalFormat(decimalPts));
@@ -574,25 +605,78 @@ public class TableRescale extends ACompCalc {
         }
     }
     
+    protected void pushUndoTable() {
+        ArrayList<ArrayList<Object>> table = saveUndoRedoTable(undoStack, undoButton);
+        int row = newTable.getSelectedRow();
+        int col = newTable.getSelectedColumn();
+        if (undoStack.size() > 0) {
+            ArrayList<ArrayList<Object>> prevTable = undoStack.peek();
+            table.get(col).set(row, prevTable.get(col).get(row));
+        }
+        else
+            table.get(col).set(row, origTable.getValueAt(row, col));
+    }
+    
+    protected ArrayList<ArrayList<Object>> saveUndoRedoTable(Stack<ArrayList<ArrayList<Object>>> stack, JButton button) {
+        ArrayList<ArrayList<Object>> table = new ArrayList<ArrayList<Object>>();
+        for (int i = 0; i < newTable.getColumnCount(); ++i) {
+            ArrayList<Object> column = new ArrayList<Object>();
+            for (int j = 0; j < newTable.getRowCount(); ++j)
+                column.add(newTable.getValueAt(j, i));
+            table.add(column);
+        }
+        stack.push(table);
+        button.setEnabled(true);
+        return table;
+    }
+    
+    private void onUndoRedo(char type) {
+        Stack<ArrayList<ArrayList<Object>>> fromStack = redoStack;
+        Stack<ArrayList<ArrayList<Object>>> toStack = undoStack;
+        JButton fromButton = redoButton;
+        JButton toButton = undoButton;
+        if (type == 'U') {
+            fromStack = undoStack;
+            toStack = redoStack;
+            fromButton = undoButton;
+            toButton = redoButton;
+        }
+        if (fromStack.size() > 0) {
+            ArrayList<ArrayList<Object>> table = fromStack.pop();
+            if (fromStack.size() == 0)
+                fromButton.setEnabled(false);
+            saveUndoRedoTable(toStack, toButton);
+            for (int i = 0; i < newTable.getColumnCount(); ++i) {
+                ArrayList<Object> column = table.get(i);
+                for (int j = 0; j < newTable.getRowCount(); ++j)
+                    newTable.setValueAt(column.get(j), j, i);
+            }
+            Utils.colorTable(newTable);
+        }
+    }
+    
+    protected void enableCalculateControls(boolean flag) {
+        newPlot3d.removeAllPlots();
+        interpTypeCheckBox.setEnabled(flag);
+        extrCheckBox.setEnabled(flag);
+    }
+    
     protected void clearRunTables() {
         clearRunTable(newTable);
         copyOriginalTable();
-        newPlot3d.removeAllPlots();
-        initWorkdata();
-        interpTypeCheckBox.setEnabled(true);
-        extrCheckBox.setEnabled(true);
+        enableCalculateControls(true);
+        initializeRescale();
     }
     
     protected void clearTables() {
         super.clearTables();
         plot3d.removeAllPlots();
+        enableCalculateControls(true);
         intXCheckBox.setEnabled(true);
         intYCheckBox.setEnabled(true);
         intXCheckBox.setSelected(false);
         intYCheckBox.setSelected(false);
         intVCheckBox.setSelected(false);
-        interpTypeCheckBox.setEnabled(true);
-        extrCheckBox.setEnabled(true);
         setFormatMatrix();
     }
 
@@ -602,6 +686,10 @@ public class TableRescale extends ACompCalc {
             return;
         if ("chgfmt".equals(e.getActionCommand()))
             setFormatMatrix();
+        else if ("undo".equals(e.getActionCommand()))
+            onUndoRedo('U');
+        else if ("redo".equals(e.getActionCommand()))
+            onUndoRedo('R');
     }
 
     @Override

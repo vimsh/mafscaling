@@ -557,12 +557,9 @@ public class ClosedLoop extends AMafScaling {
     }
 
     private void calculateCorrectedGS() {
-        boolean polfTableSet = polfTable.validate();
-        if (!polfTableSet)
-            JOptionPane.showMessageDialog(null, "Fueling data is not set - '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed", "Warning", JOptionPane.WARNING_MESSAGE);
-        int logDataTableRowCount = logDataTable.getRowCount();
-        if (polfTableSet && polfTable.isMap() && mapArray.size() != logDataTableRowCount)
-            JOptionPane.showMessageDialog(null, "MAP based fueling data was set after loading of log file(s) and thus Manifold Abs Pressure data is not available. '" + Afr1TableName + "' and '" + Afr2TableName + "' will not be displayed unless you clear run data and reload log file(s)", "Warning", JOptionPane.WARNING_MESSAGE);
+        boolean calculateAfrTables = polfTable.validate() && !(polfTable.isMap() && mapArray.size() != getLogTableEmptyRow());
+        if (!calculateAfrTables)
+            JOptionPane.showMessageDialog(null, "'POL Fueling' table was not set at 'Load Log' time - '" + Afr1TableName + "' and '" + Afr2TableName + "' tables will not be displayed.\nNote that these tables are only for your information and have no impact on MAF scale which will be performed regardless.\nIf you wish to see them displayed ensure that 'POL Fueling' table is set; perform 'Clear Run Data' and do 'Load Log' on your files again.", "Warning", JOptionPane.WARNING_MESSAGE);
 
         double[] values = new double[LogDataTableHeaders.length];
         double corr;
@@ -591,7 +588,7 @@ public class ClosedLoop extends AMafScaling {
         }
         ArrayList<Double> afrRpmArray = new ArrayList<Double>();
         ArrayList<Double> afrLoadOrMapArray = new ArrayList<Double>();
-        if (polfTableSet && !(polfTable.isMap() && mapArray.size() != logDataTableRowCount)) {
+        if (calculateAfrTables) {
             for (i = 1; i < polfTable.getRowCount(); ++i) {
                 afrRpmArray.add(Double.valueOf(polfTable.getValueAt(i, 0).toString()));
                 Utils.ensureRowCount(i + 1, afr1Table);
@@ -607,9 +604,9 @@ public class ClosedLoop extends AMafScaling {
                 afr2Table.setValueAt(polfTable.getValueAt(0, i), 0, i);
             }
         }
-            
+
         HashMap<Double, Integer> modeCountMap;
-        for (i = 0; i < logDataTableRowCount; ++i) {
+        for (i = 0; i < logDataTable.getRowCount(); ++i) {
             for (j = 0; j < values.length; ++j) {
                 valStr = logDataTable.getValueAt(i, j).toString();
                 if (valStr.isEmpty())
@@ -642,8 +639,8 @@ public class ClosedLoop extends AMafScaling {
                 modeCountMap.put(roundedCorr, 1);
             else
                 modeCountMap.put(roundedCorr, val + 1);
-            
-            if (polfTableSet && !(polfTable.isMap() && mapArray.size() != logDataTableRowCount)) {
+
+            if (calculateAfrTables) {
                 closestLoadOrMapIdx = Utils.closestValueIndex((polfTable.isMap() ? mapArray.get(i) : load), afrLoadOrMapArray) + 1;
                 closestRmpIdx = Utils.closestValueIndex(rpm, afrRpmArray) + 1;
                 val1 = (afr1Table.getValueAt(closestRmpIdx, closestLoadOrMapIdx).toString().isEmpty()) ? 0 : Double.valueOf(afr1Table.getValueAt(closestRmpIdx, closestLoadOrMapIdx).toString());
@@ -652,7 +649,7 @@ public class ClosedLoop extends AMafScaling {
                 afr2Table.setValueAt(val2 + 1.0, closestRmpIdx, closestLoadOrMapIdx);
             }
         }
-        
+
         for (i = 0; i < modeCalcArray.size(); ++i) {
             modeCountMap = modeCalcArray.get(i);
             if (modeCountMap.size() > 0) {
@@ -668,7 +665,7 @@ public class ClosedLoop extends AMafScaling {
                 correctionModeArray.set(i, sum / count);
             }
         }
-            
+
         int size = afrRpmArray.size() + 1;
         while (size < afr1Table.getRowCount())
             Utils.removeRow(size, afr1Table);
@@ -973,7 +970,7 @@ public class ClosedLoop extends AMafScaling {
     private int getLogTableEmptyRow() {
         if (logDataTable.getValueAt(0, 0) != null && logDataTable.getValueAt(0, 0).toString().isEmpty())
             return 0;
-        if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(0, 0).toString().isEmpty())
+        if (logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0) != null && !logDataTable.getValueAt(logDataTable.getRowCount() - 1, 0).toString().isEmpty())
             return logDataTable.getRowCount();
         for (int i = logDataTable.getRowCount() - 2; i > 0; --i) {
             if (logDataTable.getValueAt(i, 0) != null && !logDataTable.getValueAt(i, 0).toString().isEmpty())

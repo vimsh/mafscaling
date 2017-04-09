@@ -8,6 +8,8 @@ MAF CL/OL Scaling
 
 MAF Rescaling
 
+Table Rescaling
+
 Load Compensation / Injector Pulse Width Compensation
 
 IAT Compensation

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="jar" name="MafScaling">
+    <property name="src.dir"  value="src"/>
+    <property name="lib.dir"  value="lib"/>
+    <property name="bin.dir"  value="bin"/>
+    <property name="jar.file" value="${ant.project.name}.jar"/>
+    	
+    <path id="lib.path">    
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+	
+    <target name="clean">
+        <delete dir="${bin.dir}"/>
+    </target>
+	
+    <target name="init" depends="clean">
+        <mkdir dir="${bin.dir}"/>
+    	<copy file="log4j.properties" todir="${bin.dir}"/>
+        <copy file="LICENSE" todir="${bin.dir}"/>
+        <copy includeemptydirs="false" todir="${bin.dir}">
+            <fileset dir="${src.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy includeemptydirs="false" todir="${bin.dir}">
+            <fileset dir="resources">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+	
+    <target name="compile" depends="init">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac destdir="${bin.dir}" includeantruntime="false">
+            <src path="${src.dir}"/>
+            <src path="resources"/>
+        	<classpath refid="lib.path"/>
+        </javac>
+    </target>
+	
+    <target name="jar" depends="compile">
+    	<mkdir dir="${bin.dir}/${lib.dir}"/>
+        <copy todir="${bin.dir}/${lib.dir}" flatten="true">
+            <path refid="lib.path"/>
+        </copy>
+    	
+        <manifestclasspath property="manifest.classpath" jarfile="${jar.file}">
+            <classpath refid="lib.path"/>
+        </manifestclasspath>
+        	
+        <jar destfile="${jar.file}" basedir="${bin.dir}">
+            <manifest>
+                <attribute name="Manifest-Version" value="1.0"/>
+                <attribute name="Class-Path" value="${manifest.classpath}"/>
+                <attribute name="Main-Class" value="com.vgi.mafscaling.${ant.project.name}"/>
+            </manifest>
+        </jar>
+    </target>
+	
+    <target name="run" depends="jar">
+        <java jar="${jar.file}" failonerror="true" fork="yes"/>
+    </target>
+</project>

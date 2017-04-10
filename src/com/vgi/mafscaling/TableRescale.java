@@ -209,6 +209,8 @@ public class TableRescale extends ACompCalc {
     }
  
     private void initializeRescale() {
+        if (Utils.isTableEmpty(origTable))
+            return;
         if (tableType == TableType.Table3D) {
             workdata = new TreeMap<Long, TreeMap<Long, Double>>();
             undoStack = new Stack<ArrayList<ArrayList<Object>>>();

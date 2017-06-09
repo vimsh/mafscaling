@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ResourceBundle;
+import java.util.regex.Pattern;
+
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -963,6 +965,26 @@ public class VVTCalc extends ACompCalc {
     
     protected boolean getAxisData() {
         return true;
+    }
+    
+    protected boolean validateTable(JTable table) {
+        if ((table == origTable || table == newTable) && !Utils.isTableEmpty(table)) {
+            if (!Utils.isTableEmpty(table)) {
+                for (int i = table.getRowCount() - 1; i >= 0 && table.getValueAt(i, 0).toString().equals(""); --i)
+                    Utils.removeRow(i, table);
+                if (table.getValueAt(0, 0).toString().isEmpty())
+                    Utils.removeRow(0, table);
+                Utils.colorTable(table);
+                for (int i = 0; i < table.getRowCount(); ++i) {
+                    if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, 0).toString())) {
+                        JOptionPane.showMessageDialog(null, "Invalid value at row " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return Utils.validateTable(table);
     }
 
     protected boolean processLog() {

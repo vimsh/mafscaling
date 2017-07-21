@@ -781,6 +781,22 @@ public class Config {
         props.setProperty("YAxisTemplates", s);
     }
 
+    public static String getLastXAxis() {
+        return props.getProperty("LastXAxis", "");
+    }
+
+    public static void setLastXAxis(String s) {
+        props.setProperty("LastXAxis", s);
+    }
+
+    public static String getLastYAxis() {
+        return props.getProperty("LastYAxis", "");
+    }
+
+    public static void setLastYAxis(String s) {
+        props.setProperty("LastYAxis", s);
+    }
+
     public static String getVVT1RPMColumn() {
         return props.getProperty("VVT1RPMColumn", "");
     }

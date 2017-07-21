@@ -141,6 +141,10 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         excelAdapter = new ExcelAdapter();
         xAxisArray = new ArrayList<Double>();
         yAxisArray = new ArrayList<Double>();
+        for (String s : Config.getLastXAxis().split(","))
+            if (!s.isEmpty()) xAxisArray.add(Double.valueOf(s));
+        for (String s : Config.getLastYAxis().split(","))
+            if (!s.isEmpty()) yAxisArray.add(Double.valueOf(s));
         filterButtonList = new ArrayList<JButton>();
         filterComboBoxList = new ArrayList<JComboBox<String>>();
         filterColumnList = new ArrayList<JComboBox<String>>();
@@ -475,6 +479,8 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         ArrayList<Integer> distancePct = new ArrayList<Integer>();
         distancePct.add(distance);
         new LogStatsFixedAxis(distancePct, xAxisArray, yAxisArray);
+        Config.setLastXAxis(xAxisArray.toString().replaceAll("\\[|\\]", ""));
+        Config.setLastYAxis(yAxisArray.toString().replaceAll("\\[|\\]", ""));
         if (xAxisArray.size() > 0)
             xAxisRoundTextBox.setValue(null);
         if (yAxisArray.size() > 0)
@@ -707,7 +713,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         int xAxisArraySize = xAxisArray.size();
         int yAxisArraySize = yAxisArray.size();
         if (xAxisColumn.getSelectedItem() == null || yAxisColumn.getSelectedItem() == null || dataColumn.getSelectedItems() == null) {
-            JOptionPane.showMessageDialog(null, "lease select X-Axis, Y-Axis, and Data columns.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, "Please select X-Axis, Y-Axis, and Data columns.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
         if (xAxisRoundTextBox.getValue() == null && xAxisArraySize == 0) {

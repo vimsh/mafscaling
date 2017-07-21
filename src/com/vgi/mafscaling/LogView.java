@@ -155,9 +155,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private static final String timeAxisName = "Time (RPM aligned)";
     private static final String fileNameReplaceString = "\\<.*?\\>";
     private static final String pullIndexReplaceString = "Pull ";
+    private static final String thrtlMatchString = ".*throttle.*";
     private static final String rpmMatchString = ".*rpm.*";
     private static final String engineSpeedMatchString = ".*eng.*speed.*";
-    private static final String timeMatchString = "^\\s*time\\s*(\\(.*\\))?$";
+    private static final String timeMatchString = "^.*time\\s*(\\(.*\\))?$";
     
     public class XYZ {
         @Override
@@ -1655,6 +1656,17 @@ public class LogView extends FCTabbedPane implements ActionListener {
         logThtlAngleColIdx = columns.indexOf(logThtlAngleColName);
         int logRpmColIdx = columns.indexOf(logRpmColName);
         int logTimeColIdx = columns.indexOf(logTimeColName);
+        if (logThtlAngleColIdx == -1) {
+            String lcColName;
+            for (int i = 0; i < columns.size(); ++i) {
+                lcColName = columns.get(i).toLowerCase();
+                if (lcColName.matches(thrtlMatchString)) {
+                    logThtlAngleColIdx = i;
+                    logThtlAngleColName = columns.get(i);
+                    break;
+                }
+            }
+        }
         if (logRpmColIdx == -1) {
             String lcColName;
             for (int i = 0; i < columns.size(); ++i) {
@@ -1662,6 +1674,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 if (lcColName.matches(rpmMatchString) || lcColName.matches(engineSpeedMatchString)) {
                     logRpmColIdx = i;
                     logRpmColName = columns.get(i);
+                    break;
                 }
             }
         }
@@ -1669,9 +1682,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
             String lcColName;
             for (int i = 0; i < columns.size(); ++i) {
                 lcColName = columns.get(i).toLowerCase();
-                if (lcColName.toLowerCase().matches(timeMatchString)) {
+                if (lcColName.matches(timeMatchString)) {
                     logTimeColIdx = i;
                     logTimeColName = columns.get(i);
+                    break;
                 }
             }
         }

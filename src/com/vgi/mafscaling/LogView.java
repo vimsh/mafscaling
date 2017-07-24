@@ -468,6 +468,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         }
     }
     
+    private static JColorChooser colorChooser = new JColorChooser();
     private ChartPanel chartPanel = null;
     private ChartPanel wotChartPanel = null;
     private JTree wotTree = null;
@@ -1198,7 +1199,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 int seriesIndex = ((XYDataset)itemEntity.getDataset()).indexOf(itemEntity.getSeriesKey());
                 XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)wotChartPanel.getChart().getXYPlot().getRenderer();
                 Paint p = renderer.getSeriesPaint(seriesIndex);
-                JColorChooser colorChooser = new JColorChooser((Color) p);
+                colorChooser.setColor((Color)p);
                 final ColorPreviewPanel preview = new ColorPreviewPanel(colorChooser);
                 colorChooser.setPreviewPanel(preview);
                 AbstractColorChooserPanel[] panels = colorChooser.getChooserPanels();

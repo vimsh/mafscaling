@@ -30,6 +30,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.Paint;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -70,6 +71,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
@@ -92,6 +94,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.colorchooser.ColorSelectionModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
@@ -111,12 +117,15 @@ import org.jfree.chart.axis.AxisLocation;
 import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.StandardTickUnitSource;
 import org.jfree.chart.axis.ValueAxis;
+import org.jfree.chart.entity.ChartEntity;
+import org.jfree.chart.entity.LegendItemEntity;
 import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
@@ -435,6 +444,27 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 return (Component)value;
             else
                 return new JLabel("???");
+        }
+    }
+
+    private class ColorPreviewPanel extends JPanel {
+        private static final long serialVersionUID = 1L;
+        private Color color;
+        private int width = 400;
+        private int height = 60;
+        private int margin = 40;
+        public ColorPreviewPanel(JColorChooser chooser) {
+            color = chooser.getColor();
+            setPreferredSize(new Dimension(width, height));
+        }
+        public void paint(Graphics g) {
+            g.setColor(chartBgColor);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(color);
+            g.fillRect(margin, getHeight() / 2 - 1, getWidth() - margin * 2, 1);
+        }
+        public void setColor(Color c) {
+            color = c;
         }
     }
     
@@ -1161,6 +1191,32 @@ public class LogView extends FCTabbedPane implements ActionListener {
             @Override
             public void chartMouseClicked(ChartMouseEvent event) {
                 wotChartPanel.requestFocusInWindow();
+                ChartEntity entity = event.getEntity();                
+                if (entity == null || !(entity instanceof LegendItemEntity))
+                    return;
+                LegendItemEntity itemEntity = (LegendItemEntity)entity;
+                int seriesIndex = ((XYDataset)itemEntity.getDataset()).indexOf(itemEntity.getSeriesKey());
+                XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer)wotChartPanel.getChart().getXYPlot().getRenderer();
+                Paint p = renderer.getSeriesPaint(seriesIndex);
+                JColorChooser colorChooser = new JColorChooser((Color) p);
+                final ColorPreviewPanel preview = new ColorPreviewPanel(colorChooser);
+                colorChooser.setPreviewPanel(preview);
+                AbstractColorChooserPanel[] panels = colorChooser.getChooserPanels();
+                for (AbstractColorChooserPanel accp : panels) {
+                    if(!accp.getDisplayName().equals("Swatches")) {
+                        colorChooser.removeChooserPanel(accp);
+                    } 
+                }
+                ColorSelectionModel model = colorChooser.getSelectionModel();                
+                model.addChangeListener(new ChangeListener() {
+                    @Override
+                    public void stateChanged(ChangeEvent event) {
+                        ColorSelectionModel model = (ColorSelectionModel)event.getSource();
+                        preview.setColor(model.getSelectedColor());
+                    }
+                });
+                if (JOptionPane.OK_OPTION == JOptionPane.showConfirmDialog(null, colorChooser, "Select new color for " + itemEntity.getSeriesKey(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE))
+                    renderer.setSeriesPaint(seriesIndex, colorChooser.getColor());
             }
         });
         wotChartPanel.addKeyListener(new KeyListener() {
@@ -1988,6 +2044,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
             for (int i = 0; i < dataColNames.size(); ++i) {
                 String yAxisColName = dataColNames.get(i);
                 XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
                 XYSeriesCollection dataset = new XYSeriesCollection();
                 for (idx = 0; idx < allpulls.size(); ++idx) {
                     Map.Entry<String, HashMap<String, ArrayList<Double>>> keyval = allpulls.get(idx).entrySet().iterator().next();
@@ -2000,7 +2057,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
                         for (int k = 0; k < timeData.size(); ++k)
                             series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
                         dataset.addSeries(series);
-                        lineRenderer.setSeriesShapesVisible(dataset.getSeriesCount() - 1, showWotCurvePoints);
                     }
                 }
                 NumberAxis yAxis = new NumberAxis(yAxisColName);
@@ -2042,6 +2098,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
             for (int i = 0; i < dataColNames.size(); ++i) {
                 String yAxisColName = dataColNames.get(i);
                 XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
                 XYSeriesCollection dataset = new XYSeriesCollection();
                 DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
                 for (int idx = 0; idx < root.getChildCount(); ++idx) {
@@ -2068,7 +2125,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
                                     series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
                             }
                             dataset.addSeries(series);
-                            lineRenderer.setSeriesShapesVisible(dataset.getSeriesCount() - 1, showWotCurvePoints);
                         }
                     }
                 }
@@ -2305,8 +2361,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 XYSeriesCollection dataset = (XYSeriesCollection)wotPlot.getDataset(i);
                 if (lineRenderer == null || dataset == null)
                     continue;
-                for (int j = 0; j < dataset.getSeriesCount(); ++j)
-                    lineRenderer.setSeriesShapesVisible(j, showWotCurvePoints);
+                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
             }
         }
         else if ("export".equals(e.getActionCommand()))

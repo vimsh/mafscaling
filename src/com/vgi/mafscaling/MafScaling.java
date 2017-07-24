@@ -23,6 +23,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import javax.swing.ImageIcon;
@@ -104,8 +105,10 @@ public class MafScaling {
         frame = new JFrame();
         frame.addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
-                Config.setWindowSize(frame.getSize());
-                Config.setWindowLocation(frame.getLocation());
+                if ((frame.getExtendedState() & Frame.MAXIMIZED_BOTH) == 0) {
+                    Config.setWindowSize(frame.getSize());
+                    Config.setWindowLocation(frame.getLocation());
+                }
                 Config.setLastLogFilesPath(FCTabbedPane.getLogFilesPath());
                 Config.save();
             }

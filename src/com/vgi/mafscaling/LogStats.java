@@ -112,6 +112,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     private JComboBox<String> statistics = null;
     private JFormattedTextField xAxisRoundTextBox = null;
     private JFormattedTextField yAxisRoundTextBox = null;
+    private JFormattedTextField hitCountTextBox = null;
     private ArrayList<JButton> filterButtonList = null;
     private ArrayList<JComboBox<String>> filterComboBoxList = null;
     private ArrayList<JComboBox<String>> filterColumnList = null;
@@ -205,6 +206,9 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.2, 0.0, 1.0};
             gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
             cntlPanel.setLayout(gbl_cntlPanel);
+            
+            addLabel(2, 1, "Cell Hit Minimum Count");
+            hitCountTextBox = addTextField(2, 2, 3, NumberFormat.getIntegerInstance(), true);
             
             JButton selectLogButton = addButton(0, 0, 2, "<html><center>Select<br>Log</center></html>", "selectlog");
             selectLogButton.setMargin(new Insets(3, 5, 3, 5));
@@ -967,6 +971,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             double val = 0;
             HashMap<Double, ArrayList<Double>> xentry;
             ArrayList<Double> yentry;
+            int hitCount = hitCountTextBox.getValue() != null ? (((Number)hitCountTextBox.getValue()).intValue()) : 0; 
             for (double xval : xAxisArray) {
                 dataTable.setValueAt(xval, 0, ++x);
                 xentry = xData.get(xval);
@@ -976,7 +981,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 for (double yval : yAxisArray) {
                     dataTable.setValueAt(yval, ++y, 0);
                     yentry = xentry.get(yval);
-                    if (yentry == null || yentry.size() == 0)
+                    if (yentry == null || yentry.size() <= hitCount)
                         continue;
                     switch (id) {
                     case COUNT:

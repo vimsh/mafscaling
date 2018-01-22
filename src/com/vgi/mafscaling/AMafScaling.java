@@ -707,42 +707,12 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         int start = cols[0];
         int end = cols[cols.length - 1];
         try {
-            int movWind;
-            int i;
-            ArrayList<Double> tmpArray = new ArrayList<Double>();
-            if (degree == 3) {
-                movWind = 1;
-                for (i = movWind + start; i + movWind <= end; ++i)
-                    tmpArray.add(0.25 * smoothGsArray.get(i - 1) + 
-                                 0.5  * smoothGsArray.get(i) + 
-                                 0.25 * smoothGsArray.get(i + 1));
-                for (i = 0; i < tmpArray.size(); ++i)
-                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-            }
-            if (degree == 5) {
-                movWind = 2;
-                for (i = movWind + start; i + movWind <= end; ++i)
-                    tmpArray.add(0.1 * smoothGsArray.get(i - 2) + 
-                                 0.2 * smoothGsArray.get(i - 1) + 
-                                 0.4 * smoothGsArray.get(i) + 
-                                 0.2 * smoothGsArray.get(i + 1) +
-                                 0.1 * smoothGsArray.get(i + 2));
-                for (i = 0; i < tmpArray.size(); ++i)
-                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-            }
-            if (degree == 7) {
-                movWind = 3;
-                for (i = movWind + start; i + movWind <= end; ++i)
-                    tmpArray.add(0.05 * smoothGsArray.get(i - 3) +
-                                 0.1  * smoothGsArray.get(i - 2) + 
-                                 0.15 * smoothGsArray.get(i - 1) + 
-                                 0.4  * smoothGsArray.get(i) + 
-                                 0.15 * smoothGsArray.get(i + 1) +
-                                 0.1  * smoothGsArray.get(i + 2) +
-                                 0.05 * smoothGsArray.get(i + 3));
-                for (i = 0; i < tmpArray.size(); ++i)
-                    smoothGsArray.set(i + movWind + start, tmpArray.get(i));
-            }
+            double[] input = new double[end - start + 1];
+            for (int i = 0; i < input.length; ++i)
+                input[i] = smoothGsArray.get(i + start);
+            double[] output = Utils.getWeightedMovingAverageSmoothing(input, degree);
+            for (int i = 0; i < output.length; ++i)
+                smoothGsArray.set(i + start, output[i]);
             plotSmoothingLineSlopes();
         }
         finally {

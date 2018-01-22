@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="resources"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.7.0"/>
 	<classpathentry kind="lib" path="lib/jcommon-1.0.21.jar"/>
 	<classpathentry kind="lib" path="lib/jfreechart-1.0.17.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.14.jar"/>
@@ -12,5 +11,6 @@
 	<classpathentry kind="lib" path="lib/CheckBoxTree_1.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/jmathio.jar"/>
 	<classpathentry kind="lib" path="lib/commons-math3-3.6.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

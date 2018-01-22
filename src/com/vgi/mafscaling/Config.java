@@ -61,6 +61,7 @@ public class Config {
     public static final String DefaultMafVMaximum = "5.0";
     public static final String DefaultMafVMinimum = "0.0";
     public static final String DefaultRPMMaximum = "5000";
+    public static final String DefaultVVTRPMMaximum = "8000";
     public static final String DefaultRPMMinimum = "0";
     public static final String DefaultFFBMaximum = "100.0";
     public static final String DefaultFFBMinimum = "0.0";
@@ -564,7 +565,7 @@ public class Config {
     public static void setMafVMinimumValue(double v) {
         props.setProperty("MafVMinimum", Double.toString(v));
     }
-
+    
     public static int getRPMMaximumValue() {
         return Integer.parseInt(props.getProperty("RPMMaximum", DefaultRPMMaximum));
     }
@@ -587,6 +588,14 @@ public class Config {
 
     public static void setVERPMMinimumValue(int v) {
         props.setProperty("VERPMMinimum", Integer.toString(v));
+    }
+    
+    public static int getVVTRPMMaximumValue() {
+        return Integer.parseInt(props.getProperty("VVTRPMMaximum", DefaultVVTRPMMaximum));
+    }
+
+    public static void setVVTRPMMaximumValue(int v) {
+        props.setProperty("VVTRPMMaximum", Integer.toString(v));
     }
 
     public static double getFFBMaximumValue() {

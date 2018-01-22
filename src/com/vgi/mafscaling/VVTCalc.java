@@ -38,11 +38,12 @@ import java.text.Format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
-
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -86,6 +87,7 @@ import org.scijava.swing.checkboxtree.CheckBoxNodeRenderer;
 public class VVTCalc extends ACompCalc {
     private static final long serialVersionUID = -5375830681660294773L;
     private static final Logger logger = Logger.getLogger(VVTCalc.class);
+    private static final int ChartPanelCount = 3;
     private static final int RunCount = 12;
     private static final int RunRowsCount = 200;
     private static final String xAxisName = "RPM";
@@ -98,6 +100,7 @@ public class VVTCalc extends ACompCalc {
 
     private int wotPoint = Config.getWOTStationaryPointValue();
     private int skipRowsOnTransition = Config.getOLCLTransitionSkipRows();
+    private double rpmMax = Config.getVVTRPMMaximumValue();
     private char temperScale = Config.getTemperatureScale();
     private char mapUnit = Config.getMapUnit();
 
@@ -109,17 +112,23 @@ public class VVTCalc extends ACompCalc {
     private int logMapColIdx = -1;
     private int logMafColIdx = -1;
 
-    protected ChartPanel[] chartPanels = new ChartPanel[3];
-    private JTable[] runTables = new JTable[RunCount];
-    private XYSeries[][] runSeries = new XYSeries[3][RunCount];
-    private XYSeries vvt1BestSeries = new XYSeries(RunCount + 1);
-    private XYSeries vvt2BestSeries = new XYSeries(RunCount + 2);
-    private XYSeries ve1BestSeries = new XYSeries(RunCount + 3);
-    private XYSeries ve2BestSeries = new XYSeries(RunCount + 4);
+    private ChartPanel[] chartPanels = new ChartPanel[ChartPanelCount];
+    private ArrayList<JTable> runTables = new ArrayList<JTable>();
+    private ArrayList<XYSeries> vvt1RunSeries = new ArrayList<XYSeries>();
+    private ArrayList<XYSeries> vvt2RunSeries = new ArrayList<XYSeries>();
+    private ArrayList<XYSeries> veRunSeries = new ArrayList<XYSeries>();
+    private ArrayList<HashMap<String, XYSeries>> hiddenSeries = new ArrayList<HashMap<String, XYSeries>>();
+    private XYSeries vvt1BestSeries = new XYSeries("vvt1BestSeries");
+    private XYSeries vvt2BestSeries = new XYSeries("vvt2BestSeries");
+    private XYSeries ve1BestSeries = new XYSeries("ve1BestSeries");
+    private XYSeries ve2BestSeries = new XYSeries("ve2BestSeries");
+    private ExcelAdapter excelAdapter = new ExcelAdapter();
     private JComboBox<String> pullsComboBox = null;
     private JPanel dataRunPanel = null;
     private JTree pullTree = null;
-    protected ArrayList<Double> xAxisArray = null;
+    private GridBagLayout gbl_dataRunPanel = null;
+    private GridBagConstraints gbc_run = null;
+    private boolean smoothFlag = false;
 
     public VVTCalc(int tabPlacement) {
         super(tabPlacement);
@@ -134,6 +143,9 @@ public class VVTCalc extends ACompCalc {
         vvt2BestSeries.setDescription(corrCountTableName);
         ve1BestSeries.setDescription("Best VE1");
         ve2BestSeries.setDescription("Best VE2");
+        
+        for (int i = 0; i < ChartPanelCount; ++i)
+            hiddenSeries.add(new HashMap<String, XYSeries>());
         initialize(null);
         loadConfig();
     }
@@ -174,17 +186,18 @@ public class VVTCalc extends ACompCalc {
         dataPanel.add(cntlPanel, gbl_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
         addButton(cntlPanel, 0, "Load Log", "loadlog", GridBagConstraints.WEST);
         addButton(cntlPanel, 1, "Clear Run Data", "clearlog", GridBagConstraints.WEST);
         addButton(cntlPanel, 2, "Clear All", "clearall", GridBagConstraints.WEST);
-        addButton(cntlPanel, 3, "Save RPM Columns", "save", GridBagConstraints.EAST);
-        addButton(cntlPanel, 4, "GO", "go", GridBagConstraints.EAST);
+        addButton(cntlPanel, 3, "Save RPM Columns", "save", GridBagConstraints.WEST);
+        addCheckBox(cntlPanel, 4, "Apply Smoothing", "smooth");
+        addButton(cntlPanel, 5, "GO", "go", GridBagConstraints.EAST);
     }
 
     protected void createDataPanel(JPanel dataPanel, String[] logColumns) {
@@ -199,10 +212,11 @@ public class VVTCalc extends ACompCalc {
 
         dataRunPanel = new JPanel();
         dataScrollPane.setViewportView(dataRunPanel);
-        GridBagLayout gbl_dataRunPanel = new GridBagLayout();
-        gbl_dataRunPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_dataRunPanel = new GridBagLayout();
+        gbl_dataRunPanel.columnWidths = new int[RunCount];
         gbl_dataRunPanel.rowHeights = new int[] {0};
-        gbl_dataRunPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+        gbl_dataRunPanel.columnWeights = new double[RunCount];
+        gbl_dataRunPanel.columnWeights[RunCount -1] = 1.0;
         gbl_dataRunPanel.rowWeights = new double[]{0.0};
         dataRunPanel.setLayout(gbl_dataRunPanel);
 
@@ -228,49 +242,49 @@ public class VVTCalc extends ACompCalc {
         gbl_tablesPanel.rowWeights = new double[]{0.0, 1.0};
         tablesPanel.setLayout(gbl_tablesPanel);
         
-        createLogDataTable(dataRunPanel);
+        createRunTables(dataRunPanel);
         createDataTables(tablesPanel);
     }
 
-    private void createLogDataTable(JPanel dataRunPanel) {
-        dataRunPanel.removeAll();
-        GridBagConstraints gbc_run = new GridBagConstraints();
+    private void createRunTables(JPanel dataRunPanel) {
+        gbc_run = new GridBagConstraints();
         gbc_run.anchor = GridBagConstraints.PAGE_START;
         gbc_run.insets = new Insets(0, 2, 0, 2);
-        int colCount = 3;
-        if (!Config.getVvt2ColumnName().equals(Config.NO_NAME))
-            colCount = 4;
-        for (int i = 0; i < RunCount; ++i) {
-            runTables[i] = new JTable();
-            JTable table = runTables[i];
-            table.getTableHeader().setReorderingAllowed(false);
-            table.setModel(new DefaultTableModel(RunRowsCount, colCount));
-            table.setColumnSelectionAllowed(true);
-            table.setCellSelectionEnabled(true);
-            table.putClientProperty("terminateEditOnFocusLost", true);
-            table.setBorder(new LineBorder(new Color(0, 0, 0)));
-            table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-            table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            table.getColumnModel().getColumn(0).setHeaderValue("RPM");
-            table.getColumnModel().getColumn(1).setHeaderValue("VVT1");
-            if (3 == colCount)
-                table.getColumnModel().getColumn(2).setHeaderValue("VE");
-            else {
-                table.getColumnModel().getColumn(2).setHeaderValue("VVT2");
-                table.getColumnModel().getColumn(3).setHeaderValue("VE");
-            }
-            Utils.initializeTable(table, ColumnWidth);
-            
-            ExcelAdapter excelAdapter = new ExcelAdapter();
-            excelAdapter.addTable(table, true, false);
-            excelAdapterList.add(excelAdapter);
+        gbc_run.fill = GridBagConstraints.HORIZONTAL;
+        for (int i = 0; i < RunCount; ++i)
+            addRunTable();
+    }
+    
+    protected void addRunTable()
+    {
+        JTable table = new JTable();
+        runTables.add(table);
+        table.getTableHeader().setReorderingAllowed(false);
+        table.setModel(new DefaultTableModel(RunRowsCount, 4));
+        table.setColumnSelectionAllowed(true);
+        table.setCellSelectionEnabled(true);
+        table.putClientProperty("terminateEditOnFocusLost", true);
+        table.setBorder(new LineBorder(new Color(0, 0, 0)));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        table.getColumnModel().getColumn(0).setHeaderValue("RPM");
+        table.getColumnModel().getColumn(1).setHeaderValue("VVT1");
+        table.getColumnModel().getColumn(2).setHeaderValue("VVT2");
+        table.getColumnModel().getColumn(3).setHeaderValue("VE");
+        Utils.initializeTable(table, ColumnWidth);
+        excelAdapter.addTable(table, true, false);
 
-            gbc_run.gridx = i;
-            gbc_run.gridy = 0;
-            dataRunPanel.add(table.getTableHeader(), gbc_run);
-            gbc_run.gridy = 1;
-            dataRunPanel.add(table, gbc_run);
-        }
+        gbl_dataRunPanel.columnWidths = new int[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights = new double[runTables.size() + 1];
+        gbl_dataRunPanel.columnWeights[runTables.size()] = 1.0;
+    
+        gbc_run.gridx = runTables.size() - 1;
+        gbc_run.gridy = 0;
+        dataRunPanel.add(table.getTableHeader(), gbc_run);
+        gbc_run.gridy = 1;
+        dataRunPanel.add(table, gbc_run);
+        repaint();
+        revalidate();
     }
     
     protected void createDataTables(JPanel panel) {
@@ -313,15 +327,17 @@ public class VVTCalc extends ACompCalc {
         clearRunTable(origTable);
         clearRunTable(newTable);
         clearRunTables();
+        validateTable(origTable);
+        validateTable(newTable);
     }
     
     protected void clearLogDataTables() {
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-            for (int i = 0; i < runTables.length; ++i) {
-                while (RunRowsCount < runTables[i].getRowCount())
-                    Utils.removeRow(RunRowsCount, runTables[i]);
-                Utils.clearTable(runTables[i]);
+            for (JTable table : runTables) {
+                while (RunRowsCount < table.getRowCount())
+                    Utils.removeRow(RunRowsCount, table);
+                Utils.clearTable(table);
             }
             clearChartData();
         }
@@ -414,30 +430,21 @@ public class VVTCalc extends ACompCalc {
                     CheckBoxNodeData checkBoxNode = (CheckBoxNodeData) obj;
                     XYSeriesCollection dataset;
                     XYSeries series;
-                    for (int i = 0; i < 3; ++i) {
+                    for (int i = 0; i < hiddenSeries.size(); ++i) {
                         dataset = (XYSeriesCollection) chartPanels[i].getChart().getXYPlot().getDataset(0);
                         if (checkBoxNode.isChecked()) {
-                            for (int j = 0; j < runSeries[i].length; ++j) {
-                                if (runSeries[i][j] != null) {
-                                    series = runSeries[i][j];
-                                    if (series.getDescription().equals(checkBoxNode.getText())) {
-                                        dataset.addSeries(series);
-                                        runSeries[i][j] = null;
-                                        break;
-                                    }
-                                }
+                            series = hiddenSeries.get(i).get(checkBoxNode.getText());
+                            if (series != null) {
+                                dataset.addSeries(series);
+                                hiddenSeries.get(i).remove(checkBoxNode.getText());
                             }
                         }
                         else {
                             for (int j = 0; j < dataset.getSeriesCount(); ++j) {
                                 series = dataset.getSeries(j);
-                                int k = Integer.parseInt(series.getDescription().substring(pullIndexReplaceString.length())) - 1;
-                                if (runSeries[i][k] == null) {
-                                    if (series.getDescription().equals(checkBoxNode.getText())) {
-                                        runSeries[i][k] = series;
-                                        dataset.removeSeries(j);
-                                        break;
-                                    }
+                                if (series.getDescription().equals(checkBoxNode.getText())) {
+                                    hiddenSeries.get(i).put(checkBoxNode.getText(), series);
+                                    dataset.removeSeries(j);
                                 }
                             }
                         }
@@ -455,8 +462,6 @@ public class VVTCalc extends ACompCalc {
         chartPanels[index] = chartPanel;
         chartPanel.setFocusable(true);
         chartPanel.setAutoscrolls(true);
-        if (index == 1 && Config.getVvt2ColumnName().equals(Config.NO_NAME))
-            chartPanels[index].setVisible(false);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
@@ -545,44 +550,58 @@ public class VVTCalc extends ACompCalc {
         double rpm;
         String name;
         try {
+            boolean isVvt2Specified = !Config.getVvt2ColumnName().equals(Config.NO_NAME);
             clearChartData();
             DefaultMutableTreeNode treeNode;
             TreePath path;
-            XYSeries[] series = new XYSeries[3];
-            XYSeriesCollection[] datasets = new XYSeriesCollection[3];
-            XYLineAndShapeRenderer[] lineRenderers = new XYLineAndShapeRenderer[3];
+            XYSeriesCollection[] datasets = new XYSeriesCollection[ChartPanelCount];
+            XYLineAndShapeRenderer[] lineRenderers = new XYLineAndShapeRenderer[ChartPanelCount];
             DefaultMutableTreeNode root = (DefaultMutableTreeNode)pullTree.getModel().getRoot();
             ((DefaultTreeModel )pullTree.getModel()).reload(root);
-            for (k = 0; k < 3; ++k) {
+            for (k = 0; k < ChartPanelCount; ++k) {
                 datasets[k] = (XYSeriesCollection) chartPanels[k].getChart().getXYPlot().getDataset(0);
                 lineRenderers[k] = (XYLineAndShapeRenderer) chartPanels[k].getChart().getXYPlot().getRenderer(0);
             }
             Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);
-            for (i = 0; i < runTables.length; ++i) {
+            for (i = 0; i < runTables.size(); ++i) {
                 try {
-                    JTable table = runTables[i];
-                    int veIdx = table.getColumnCount() - 1;
-                    series[0] = new XYSeries(i);
-                    series[1] = new XYSeries(i);
-                    series[2] = new XYSeries(i);
+                    JTable table = runTables.get(i);
+                    XYSeries vvt1Series = new XYSeries(i);
+                    XYSeries vvt2Series = new XYSeries(i);
+                    XYSeries veSeries = new XYSeries(i);
                     for (j = 0; j < table.getRowCount(); ++j) {
-                        if (table.getValueAt(j, 0).equals("") || table.getValueAt(j, veIdx).equals(""))
+                        if (table.getValueAt(j, 0).equals("") || table.getValueAt(j, 3).equals(""))
                             break;
                         rpm = Double.valueOf(table.getValueAt(j, 0).toString());
-                        series[0].add(rpm, Double.valueOf(table.getValueAt(j, 1).toString()));
-                        if (3 == veIdx)
-                            series[1].add(rpm, Double.valueOf(table.getValueAt(j, 2).toString()));
-                        series[2].add(rpm, Double.valueOf(table.getValueAt(j, veIdx).toString()));
+                        vvt1Series.add(rpm, Double.valueOf(table.getValueAt(j, 1).toString()));
+                        if (isVvt2Specified)
+                            vvt2Series.add(rpm, Double.valueOf(table.getValueAt(j, 2).toString()));
+                        veSeries.add(rpm, Double.valueOf(table.getValueAt(j, 3).toString()));
                     }
-                    if (series[0].getItemCount() > 0) {
+                    if (vvt1Series.getItemCount() > 0) {
                         name = pullIndexReplaceString + (i + 1);
+                        vvt1Series.setDescription(name);
+                        vvt2Series.setDescription(name);
+                        veSeries.setDescription(name);
                         pullsComboBox.addItem(name);
-                        for (k = 0; k < 3; ++k) {
-                            series[k].setDescription(name);
-                            datasets[k].addSeries(series[k]);
-                            lineRenderers[k].setSeriesShapesVisible(datasets[k].getSeriesCount() - 1, false);
-                            lineRenderers[k].setSeriesStroke(datasets[k].getSeriesCount() - 1, stroke);
+
+                        vvt1RunSeries.add(vvt1Series);
+                        datasets[0].addSeries(vvt1Series);
+                        lineRenderers[0].setSeriesShapesVisible(datasets[0].getSeriesCount() - 1, false);
+                        lineRenderers[0].setSeriesStroke(datasets[0].getSeriesCount() - 1, stroke);
+                        
+                        if (isVvt2Specified && vvt2Series.getItemCount() > 0) {
+                            vvt2RunSeries.add(vvt2Series);
+                            datasets[1].addSeries(vvt2Series);
+                            lineRenderers[1].setSeriesShapesVisible(datasets[1].getSeriesCount() - 1, false);
+                            lineRenderers[1].setSeriesStroke(datasets[1].getSeriesCount() - 1, stroke);
                         }
+                        
+                        veRunSeries.add(veSeries);
+                        datasets[2].addSeries(veSeries);
+                        lineRenderers[2].setSeriesShapesVisible(datasets[2].getSeriesCount() - 1, false);
+                        lineRenderers[2].setSeriesStroke(datasets[2].getSeriesCount() - 1, stroke);
+                        
                         treeNode = new DefaultMutableTreeNode(new CheckBoxNodeData(name, true));
                         root.add(treeNode);
                         path = new TreePath(root);
@@ -695,27 +714,23 @@ public class VVTCalc extends ACompCalc {
         plot3d.removeAllPlots();
         String pullName = pullsComboBox.getSelectedItem().toString();
         int idx = Integer.parseInt(pullName.substring(pullIndexReplaceString.length())) - 1;
-        JTable table = runTables[idx];
-        int veIdx = table.getColumnCount() - 1;
+        JTable table = runTables.get(idx);
         String val;
-        int xColIdx = 0;
-        int yColIdx = veIdx;
-        int z1ColIdx = 1;
-        int z2ColIdx = (veIdx == 3 ? 2 : -1);
+        boolean isVvt2Specified = !Config.getVvt2ColumnName().equals(Config.NO_NAME);
         double x, y, z1;
         double z2 = 0;
         ArrayList<double[]> temp = new ArrayList<double[]>();
         for (int i = 0; i < table.getRowCount(); ++i) {
-            val = table.getValueAt(i, xColIdx).toString();
+            val = table.getValueAt(i, 0).toString();
             if (val.equals(""))
                 break;
             x = Double.valueOf(val);
-            val = table.getValueAt(i, yColIdx).toString();
+            val = table.getValueAt(i, 3).toString();
             y = Double.valueOf(val);
-            val = table.getValueAt(i, z1ColIdx).toString();
+            val = table.getValueAt(i, 1).toString();
             z1 = Double.valueOf(val);
-            if (z2ColIdx != -1) {
-                val = (String)table.getValueAt(i, z2ColIdx).toString();
+            if (isVvt2Specified) {
+                val = (String)table.getValueAt(i, 3).toString();
                 z2 = Double.valueOf(val);
             }
             temp.add(new double[]{x, y, z1, z2});
@@ -726,7 +741,7 @@ public class VVTCalc extends ACompCalc {
             xyzArray1[i][0] = temp.get(i)[0];
             xyzArray1[i][1] = temp.get(i)[1];
             xyzArray1[i][2] = temp.get(i)[2];
-            if (z2ColIdx != -1) {
+            if (isVvt2Specified) {
                 xyzArray2[i][0] = temp.get(i)[0];
                 xyzArray2[i][1] = temp.get(i)[1];
                 xyzArray2[i][2] = temp.get(i)[3];
@@ -776,6 +791,7 @@ public class VVTCalc extends ACompCalc {
         if (logMafColIdx == -1)          { Config.setMassAirflowColumnName(Config.NO_NAME);   ret = false; }
         wotPoint = Config.getWOTStationaryPointValue();
         skipRowsOnTransition = Config.getOLCLTransitionSkipRows();
+        rpmMax = Config.getVVTRPMMaximumValue();
         temperScale = Config.getTemperatureScale();
         mapUnit = Config.getMapUnit();
         if (temperScale != 'F' && temperScale != 'C') {
@@ -800,8 +816,7 @@ public class VVTCalc extends ACompCalc {
                 String [] elements = null;
                 while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
-                getColumnsFilters(elements);                
-                int origLogVvt2ColIdx = logVvt2ColIdx;
+                getColumnsFilters(elements);
                 boolean resetColumns = false;
                 if (logThtlAngleColIdx >= 0 || logRpmColIdx >= 0 || logVvt1ColIdx >= 0 ||
                     logVvt2ColIdx >= 0 || logIatColIdx >= 0 || logMapColIdx >= 0 || logMafColIdx >=0) {
@@ -820,15 +835,10 @@ public class VVTCalc extends ACompCalc {
                     if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements))
                         return;
                 }
-                if (origLogVvt2ColIdx != logVvt2ColIdx) {
-                    createLogDataTable(dataRunPanel);
-                    if (logVvt2ColIdx != -1)
-                        chartPanels[1].setVisible(true);
-                    else
-                        chartPanels[1].setVisible(false);
-                    validate();
-                    repaint();
-                }
+                if (logVvt2ColIdx != -1)
+                    chartPanels[1].setVisible(true);
+                else
+                    chartPanels[1].setVisible(false);
 
                 String[] flds;
                 boolean wotFlag = true;
@@ -845,12 +855,13 @@ public class VVTCalc extends ACompCalc {
                 int i = 0;
                 int j = 0;
                 int k = 0;
-                for (; i < runTables.length; ++i) {
-                    if (runTables[i].getValueAt(0, 0).toString().isEmpty())
+                for (; i < runTables.size(); ++i) {
+                    if (runTables.get(i).getValueAt(0, 0).toString().isEmpty())
                         break;
                 }
-                if (i == runTables.length)
-                    return;
+                if (i == runTables.size())
+                    addRunTable();
+                JTable table = runTables.get(i);
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 while ((line = br.readLine()) != null) {
                     flds = line.split(Utils.fileFieldSplitter, -1);
@@ -865,8 +876,8 @@ public class VVTCalc extends ACompCalc {
                                 skipRowCount = 0;
                                 j -= 1;
                                 while (j > 0 && skipRowCount < skipRowsOnTransition) {
-                                    for (k = 0; k < runTables[i].getColumnCount(); ++k)
-                                        runTables[i].setValueAt("", j, k);
+                                    for (k = 0; k < table.getColumnCount(); ++k)
+                                        table.setValueAt("", j, k);
                                     skipRowCount += 1;
                                     j -= 1;
                                 }
@@ -878,13 +889,14 @@ public class VVTCalc extends ACompCalc {
                                 wotFlag = true;
                                 skipRowCount = 0;
                                 if (foundWot &&
-                                    !runTables[i].getValueAt(0, 0).equals("") &&
-                                    !runTables[i].getValueAt(1, 0).equals("") &&
-                                    !runTables[i].getValueAt(2, 0).equals("")) {
+                                    !table.getValueAt(0, 0).equals("") &&
+                                    !table.getValueAt(1, 0).equals("") &&
+                                    !table.getValueAt(2, 0).equals("")) {
                                     if (j > 1)
                                         i += 1;
-                                    if (i == runTables.length)
-                                        return;
+                                    if (i == runTables.size())
+                                        addRunTable();
+                                    table = runTables.get(i);
                                 }
                                 if (row > 0)
                                     j = 0;
@@ -892,7 +904,7 @@ public class VVTCalc extends ACompCalc {
                             if (skipRowCount >= skipRowsOnTransition) {
                                 foundWot = true;
                                 rpm = Double.valueOf(flds[logRpmColIdx]);
-                                if (rpm > prpm) {
+                                if (rpm > prpm && rpm <= rpmMax) {
                                     prpm = rpm;
                                     map = Double.valueOf(flds[logMapColIdx]);
                                     iat = Double.valueOf(flds[logIatColIdx]);
@@ -914,13 +926,12 @@ public class VVTCalc extends ACompCalc {
                                         else // must be 'K' for kPa
                                             ve = (maf / ((map * 1000) / ((iat + 273.15) * 287.05) * 1000)) / (121.9254 * rpm / 3456 * 0.0283 / 60 ) * 100;
                                     }
-                                    k = 0;
-                                    Utils.ensureRowCount(j + 1, runTables[i]);
-                                    runTables[i].setValueAt(rpm, j, k++);
-                                    runTables[i].setValueAt(Double.valueOf(flds[logVvt1ColIdx]), j, k++);
+                                    Utils.ensureRowCount(j + 1, table);
+                                    table.setValueAt(rpm, j, 0);
+                                    table.setValueAt(Double.valueOf(flds[logVvt1ColIdx]), j, 1);
                                     if (logVvt2ColIdx >= 0)
-                                        runTables[i].setValueAt(Double.valueOf(flds[logVvt2ColIdx]), j, k++);
-                                    runTables[i].setValueAt(ve, j, k++);
+                                        table.setValueAt(Double.valueOf(flds[logVvt2ColIdx]), j, 2);
+                                    table.setValueAt(ve, j, 3);
                                     j += 1;
                                 }
                             }
@@ -935,8 +946,8 @@ public class VVTCalc extends ACompCalc {
                     row += 1;
                 }
                 if (j == 0) {
-                    for (k = 0; k < runTables[i].getColumnCount(); ++k)
-                        runTables[i].setValueAt("", j, k);
+                    for (k = 0; k < table.getColumnCount(); ++k)
+                        table.setValueAt("", j, k);
                 }
 
                 if (!foundWot) {
@@ -945,6 +956,7 @@ public class VVTCalc extends ACompCalc {
                 }
             }
             catch (Exception e) {
+                e.printStackTrace();
                 logger.error(e);
                 JOptionPane.showMessageDialog(null, e, "Error opening file", JOptionPane.ERROR_MESSAGE);
             }
@@ -989,98 +1001,110 @@ public class VVTCalc extends ACompCalc {
 
     protected boolean processLog() {
         try {
-            int i = 0;
-            int j = 0;
             int idx;
             double rpm, vvt, ve, x1, x2, y1, y2;
-            ArrayList<Double> rpmArray;
             Double[] ve1Array = new Double[origTable.getRowCount()];
             Double[] ve2Array = new Double[newTable.getRowCount()];
-            for (i = 0; i < runTables.length; ++i) {
-                try {
-                    JTable table = runTables[i];
-                    int veIdx = table.getColumnCount() - 1;
-                    int vvtIdx = 1;
-                    rpmArray = new ArrayList<Double>();
-                    for (j = 0; j < table.getRowCount(); ++j) {
-                        if (table.getValueAt(j, 0).equals(""))
-                            break;
-                        rpmArray.add(Double.valueOf(table.getValueAt(j, 0).toString()));
+            
+            for (int i = 0; i < vvt1RunSeries.size(); ++i) {
+                XYSeries vvt1Series = vvt1RunSeries.get(i);
+                XYSeries vvt2Series = (vvt2RunSeries.size() > 0 ? vvt2RunSeries.get(i) : null);
+                XYSeries veSeries = veRunSeries.get(i);
+                
+                double[] vvt1arr = new double[vvt1Series.getItemCount()];
+                double[] vvt2arr = (vvt2Series == null ? null : new double[vvt2Series.getItemCount()]);
+                double[] vearr = new double[veSeries.getItemCount()];
+                ArrayList<Double> rpmArray = new ArrayList<Double>();
+                
+                for (int j = 0; j < vvt1arr.length; ++j) {
+                    rpmArray.add(vvt1Series.getX(j).doubleValue());
+                    vvt1arr[j] = vvt1Series.getY(j).doubleValue();
+                    if (vvt2arr != null)
+                        vvt2arr[j] = vvt2Series.getY(j).doubleValue();
+                    vearr[j] = veSeries.getY(j).doubleValue();
+                }
+                
+                if (smoothFlag) {
+                    vearr = Utils.getWeightedMovingAverageSmoothing(vearr, 3);
+                    vvt1arr = Utils.getWeightedMovingAverageSmoothing(vvt1arr, 3);
+                    if (vvt2arr != null)
+                        vvt2arr = Utils.getWeightedMovingAverageSmoothing(vvt2arr, 3);
+                    for (int j = 0; j < vvt1Series.getItemCount(); ++j) {
+                        vvt1Series.updateByIndex(j, vvt1arr[j]);
+                        veSeries.updateByIndex(j, vearr[j]);
+                        if (vvt2arr != null)
+                            vvt2Series.updateByIndex(j, vvt2arr[j]);
                     }
-                    if (rpmArray.size() > 1) {
-                        for (j = 0; j < origTable.getRowCount(); ++j) {
-                            if (origTable.getValueAt(j, 0).equals(""))
-                                break;                            
-                            rpm = Double.valueOf(origTable.getValueAt(j, 0).toString());
-                            idx = Collections.binarySearch(rpmArray, rpm);
-                            if (idx == -1)
-                                continue;
-                            if (idx < 0)
-                                idx = -idx - 2;
-                            if (rpmArray.size() - 1 == idx)
-                                continue;
-                            x1 = rpmArray.get(idx);
-                            x2 = rpmArray.get(idx + 1);
-                            // vvt
-                            y1 = Double.valueOf(table.getValueAt(idx, vvtIdx).toString());
-                            y2 = Double.valueOf(table.getValueAt(idx, vvtIdx).toString());
-                            vvt = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
-                            // ve
-                            y1 = Double.valueOf(table.getValueAt(idx, veIdx).toString());
-                            y2 = Double.valueOf(table.getValueAt(idx, veIdx).toString());
-                            ve = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
+                    vvt1Series.fireSeriesChanged();
+                    veSeries.fireSeriesChanged();
+                    if (vvt2arr != null)
+                        vvt2Series.fireSeriesChanged();
+                }
+                
+                for (int j = 0; j < origTable.getRowCount(); ++j) {
+                    if (origTable.getValueAt(j, 0).equals(""))
+                        break;                            
+                    rpm = Double.valueOf(origTable.getValueAt(j, 0).toString());
+                    idx = Collections.binarySearch(rpmArray, rpm);
+                    if (idx == -1)
+                        continue;
+                    if (idx < 0)
+                        idx = -idx - 2;
+                    if (rpmArray.size() - 1 == idx)
+                        continue;
+                    x1 = rpmArray.get(idx);
+                    x2 = rpmArray.get(idx + 1);
+                    // vvt
+                    y1 = vvt1arr[idx];
+                    y2 = vvt1arr[idx + 1];
+                    vvt = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
+                    
+                    // ve
+                    y1 = vearr[idx];
+                    y2 = vearr[idx + 1];
+                    ve = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
 
-                            Utils.ensureRowCount(j + 1, corrTable);
-                            if (corrTable.getValueAt(j, 0).equals("")) {
-                                corrTable.setValueAt(vvt, j, 0);
-                                ve1Array[j] = ve;
-                            }
-                            else if (ve > ve1Array[j]) {
-                                corrTable.setValueAt(vvt, j, 0);
-                                ve1Array[j] = ve;
-                            }
-                        }
-                        if (veIdx == 3) {
-                            vvtIdx = 2;
-                            for (j = 0; j < newTable.getRowCount(); ++j) {
-                                if (newTable.getValueAt(j, 0).equals(""))
-                                    break;
-                                rpm = Double.valueOf(newTable.getValueAt(j, 0).toString());
-                                idx = Collections.binarySearch(rpmArray, rpm);
-                                if (idx == -1)
-                                    continue;
-                                if (idx < 0)
-                                    idx = -idx - 2;
-                                if (rpmArray.size() - 1 == idx)
-                                        continue;
-                                x1 = rpmArray.get(idx);
-                                x2 = rpmArray.get(idx + 1);
-                                // vvt
-                                y1 = Double.valueOf(table.getValueAt(idx, vvtIdx).toString());
-                                y2 = Double.valueOf(table.getValueAt(idx, vvtIdx).toString());
-                                vvt = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
-                                // ve
-                                y1 = Double.valueOf(table.getValueAt(idx, veIdx).toString());
-                                y2 = Double.valueOf(table.getValueAt(idx, veIdx).toString());
-                                ve = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
-
-                                Utils.ensureRowCount(j + 1, corrTable);
-                                if (corrCountTable.getValueAt(j, 0).equals("")) {
-                                    corrCountTable.setValueAt(vvt, j, 0);
-                                    ve2Array[j] = ve;
-                                }
-                                else if (ve > ve2Array[j]) {
-                                    corrCountTable.setValueAt(vvt, j, 0);
-                                    ve2Array[j] = ve;
-                                }
-                            }
-                        }
+                    if (corrTable.getValueAt(j, 0).equals("")) {
+                        corrTable.setValueAt(vvt, j, 0);
+                        ve1Array[j] = ve;
+                    }
+                    else if (ve > ve1Array[j]) {
+                        corrTable.setValueAt(vvt, j, 0);
+                        ve1Array[j] = ve;
                     }
                 }
-                catch (NumberFormatException e) {
-                    logger.error(e);
-                    JOptionPane.showMessageDialog(null, "Error parsing number from Pull " + (i + 1) + " table, row " + j + ": " + e, "Error", JOptionPane.ERROR_MESSAGE);
-                    return false;
+                if (vvt2arr != null) {
+                    for (int j = 0; j < newTable.getRowCount(); ++j) {
+                        if (newTable.getValueAt(j, 0).equals(""))
+                            break;
+                        rpm = Double.valueOf(newTable.getValueAt(j, 0).toString());
+                        idx = Collections.binarySearch(rpmArray, rpm);
+                        if (idx == -1)
+                            continue;
+                        if (idx < 0)
+                            idx = -idx - 2;
+                        if (rpmArray.size() - 1 == idx)
+                            continue;
+                        x1 = rpmArray.get(idx);
+                        x2 = rpmArray.get(idx + 1);
+                        // vvt
+                        y1 = vvt2arr[idx];
+                        y2 = vvt2arr[idx + 1];
+                        vvt = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
+                        // ve
+                        y1 = vearr[idx];
+                        y2 = vearr[idx + 1];
+                        ve = Utils.linearInterpolation(rpm, x1, x2, y1, y2);
+
+                        if (corrCountTable.getValueAt(j, 0).equals("")) {
+                            corrCountTable.setValueAt(vvt, j, 0);
+                            ve2Array[j] = ve;
+                        }
+                        else if (ve > ve2Array[j]) {
+                            corrCountTable.setValueAt(vvt, j, 0);
+                            ve2Array[j] = ve;
+                        }
+                    }
                 }
             }
             plotBestVVT(ve1Array, ve2Array);
@@ -1105,13 +1129,14 @@ public class VVTCalc extends ACompCalc {
         vvt2BestSeries.clear();
         ve1BestSeries.clear();
         ve2BestSeries.clear();
+        
         String val;
         double rpm;
         for (int i = 0; i < corrTable.getRowCount(); ++i) {
             val = corrTable.getValueAt(i, 0).toString();
             if (!val.equals("")) {
                 rpm = Double.parseDouble(origTable.getValueAt(i, 0).toString());
-                vvt1BestSeries.add(rpm, Double.parseDouble(val), false);
+                vvt1BestSeries.add(rpm, Double.parseDouble(val));
                 ve1BestSeries.add(rpm, ve1Array[i]);
             }
         }
@@ -1119,7 +1144,7 @@ public class VVTCalc extends ACompCalc {
             val = corrCountTable.getValueAt(i, 0).toString();
             if (!val.equals("")) {
                 rpm = Double.parseDouble(newTable.getValueAt(i, 0).toString());
-                vvt2BestSeries.add(rpm, Double.parseDouble(val), false);
+                vvt2BestSeries.add(rpm, Double.parseDouble(val));
                 ve2BestSeries.add(rpm, ve2Array[i]);
             }
         }
@@ -1157,11 +1182,16 @@ public class VVTCalc extends ACompCalc {
         DefaultMutableTreeNode root = (DefaultMutableTreeNode)pullTree.getModel().getRoot();
         root.removeAllChildren();
         ((DefaultTreeModel )pullTree.getModel()).reload(root);
-        runSeries = new XYSeries[3][RunCount];
+        for (HashMap<String, XYSeries> series : hiddenSeries)
+            series.clear();
+        vvt1RunSeries.clear();
+        vvt2RunSeries.clear();
+        veRunSeries.clear();
         vvt1BestSeries.clear();
         vvt2BestSeries.clear();
         ve1BestSeries.clear();
         ve2BestSeries.clear();
+        
         plot3d.removeAllPlots();
         pullsComboBox.removeAllItems();
         pullsComboBox.addItem("");
@@ -1217,5 +1247,7 @@ public class VVTCalc extends ACompCalc {
             view3dPlots();
         else if ("save".equals(e.getActionCommand()))
             saveConfig();
+        else if ("smooth".equals(e.getActionCommand()))
+            smoothFlag = ((JCheckBox)e.getSource()).isSelected();
     }
 }

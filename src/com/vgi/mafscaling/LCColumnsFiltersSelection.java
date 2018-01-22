@@ -54,13 +54,10 @@ public class LCColumnsFiltersSelection extends ColumnsFiltersSelection {
         maxAfrFilter.setText(String.valueOf(Config.getLCAfrMaximumValue()));
         addAFRMinimumFilter();
         minAfrFilter.setText(String.valueOf(Config.getLCAfrMinimumValue()));
-        
-
         addManifoldPressureMaximumFilter();
         maxMPFilter.setText(String.valueOf(Config.getLCMPMaximumValue()));
         addManifoldPressureMinimumFilter();
         minMPFilter.setText(String.valueOf(Config.getLCMPMinimumValue()));
-        
         addDvDtMaximumFilter();
         maxDvdtFilter.setText(String.valueOf(Config.getLCDvDtMaximumValue()));
         addCellHitCountMinimumFilter();

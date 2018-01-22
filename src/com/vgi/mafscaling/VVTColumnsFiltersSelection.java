@@ -37,6 +37,8 @@ public class VVTColumnsFiltersSelection extends ColumnsFiltersSelection {
         wotStationaryPointFilter.setValue(Config.getWOTStationaryPointValue());
         addOLCLTransitionSkipRowsFilter();
         olClTransitionSkipRowsField.setText(String.valueOf(Config.getOLCLTransitionSkipRows()));
+        addRPMMaximumFilter();
+        maxRPMFilter.setText(String.valueOf(Config.getVVTRPMMaximumValue()));
         addTemperatureScaleFilter();
         temperatureScaleField.setSelectedItem(Character.toString(Config.getTemperatureScale()));
         addManifoldAbsolutePressureUnitFilter();
@@ -122,6 +124,9 @@ public class VVTColumnsFiltersSelection extends ColumnsFiltersSelection {
         // OL/CL Transition Skip Rows
         Config.setOLCLTransitionSkipRows(Integer.valueOf(olClTransitionSkipRowsField.getText()));
         
+        // RPM filter
+        Config.setVVTRPMMaximumValue(Integer.valueOf(maxRPMFilter.getText()));
+        
         // Temperature Scale
         Config.setTemperatureScale(temperatureScaleField.getSelectedItem().toString().charAt(0));
         
@@ -136,6 +141,8 @@ public class VVTColumnsFiltersSelection extends ColumnsFiltersSelection {
             wotStationaryPointFilter.setValue(Integer.valueOf(Config.DefaultWOTStationaryPoint));
         else if ("olcltransit".equals(e.getActionCommand()))
             olClTransitionSkipRowsField.setText(Config.DefaultOLCLTransitionSkipRows);
+        else if ("maxrpm".equals(e.getActionCommand()))
+            maxRPMFilter.setText(Config.DefaultVVTRPMMaximum);
         else if ("tempscale".equals(e.getActionCommand()))
             temperatureScaleField.setSelectedItem(Config.DefaultTempScale);
         else if ("mapunit".equals(e.getActionCommand()))

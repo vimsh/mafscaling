@@ -28,14 +28,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-
 import org.apache.commons.math3.analysis.BivariateFunction;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.interpolation.AkimaSplineInterpolator;
@@ -974,6 +972,35 @@ public final class Utils {
         return Double.valueOf(s);
     }
     
+    /**
+     * Weighted Moving Average smoothing function
+     * @param input data sample
+     * @param windowSize
+     * @return smoothed data
+     */
+    public static double[] getWeightedMovingAverageSmoothing(double[] input, int windowSize) {
+        if (windowSize != 3 && windowSize != 5 && windowSize != 7)
+            throw new RuntimeException("Window Size must be one of: 3, 5, 7");
+        int movWind = windowSize / 2;
+        double[] result = new double[input.length];
+        double[] coeff = new double[]{ 0.25, 0.5, 0.25};
+        if (windowSize == 5)
+            coeff = new double[]{ 0.1, 0.2, 0.4, 0.2, 0.1 };
+        else if (windowSize == 7)
+            coeff = new double[]{ 0.05, 0.1, 0.15, 0.4, 0.15, 0.1, 0.05 };
+        for (int i = 0; i < movWind; ++i)
+            result[i] = input[i];
+        for (int i = input.length - movWind; i < input.length; ++i)
+            result[i] = input[i];
+        for (int i = movWind; i + movWind < input.length; ++i) {
+            double avg = 0;
+            for (int j = i - movWind, k = 0; j <= i + movWind; ++j, ++k)
+                avg += coeff[k] * input[j];
+            result[i] = avg;
+        }
+        return result;
+    }
+    
 }
 
 /**
@@ -1042,4 +1069,6 @@ class BilinearInterpolator implements BivariateGridInterpolator {
         return new BilinearInterpolatingFunction(xval, yval, fval);
     }
 }
+
+
 

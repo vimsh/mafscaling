@@ -173,6 +173,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     
     public ColumnsFiltersSelection() {
         doubleFmt.setMaximumFractionDigits(2);
+        doubleFmt.setGroupingUsed(false);
         intFmt.setMaximumFractionDigits(0);
         intFmt.setGroupingUsed(false);
         zeroInsets.put("Button.contentMargins", insets0);

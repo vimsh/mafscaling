@@ -179,7 +179,7 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
         
         NumberFormat doubleFmt = NumberFormat.getNumberInstance();
         doubleFmt.setGroupingUsed(false);
-        doubleFmt.setMaximumIntegerDigits(1);
+        doubleFmt.setMaximumIntegerDigits(5);
         doubleFmt.setMinimumIntegerDigits(1);
         doubleFmt.setMaximumFractionDigits(3);
         doubleFmt.setMinimumFractionDigits(1);
@@ -187,7 +187,7 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
         
         NumberFormat scaleDoubleFmt = NumberFormat.getNumberInstance();
         scaleDoubleFmt.setGroupingUsed(false);
-        scaleDoubleFmt.setMaximumIntegerDigits(1);
+        scaleDoubleFmt.setMaximumIntegerDigits(5);
         scaleDoubleFmt.setMinimumIntegerDigits(1);
         scaleDoubleFmt.setMaximumFractionDigits(8);
         scaleDoubleFmt.setMinimumFractionDigits(1);

@@ -505,6 +505,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JMultiSelectionBox plotsColumn = null;
     private JMultiSelectionBox wotPlotsColumn = null;
     private ButtonGroup wotRbGroup = null;
+    private JCheckBox sameScalecheckBox = null;
     private HashMap<String, ArrayList<HashMap<String, ArrayList<Double>>>> filesData = null;
     private int wotPoint = Config.getWOTStationaryPointValue();
     private int logThtlAngleColIdx = -1;
@@ -1032,9 +1033,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
         plotPanel.add(cntlPanel, gbc_ctrlPanel);
         
         GridBagLayout gbl_cntlPanel = new GridBagLayout();
-        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0};
+        gbl_cntlPanel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         gbl_cntlPanel.rowHeights = new int[]{0};
-        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+        gbl_cntlPanel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
         gbl_cntlPanel.rowWeights = new double[]{0};
         cntlPanel.setLayout(gbl_cntlPanel);
 
@@ -1058,6 +1059,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
         wotPlotsColumn = new JMultiSelectionBox();
         wotPlotsColumn.setPrototypeDisplayValue(prototypeDisplayValue);
         cntlPanel.add(wotPlotsColumn, gbc);
+
+        gbc.gridx += 1;
+        sameScalecheckBox = new JCheckBox("Same Y scale");
+        cntlPanel.add(sameScalecheckBox, gbc);
 
         gbc.gridx += 1;
         JRadioButton button = new JRadioButton("RPM");
@@ -2096,11 +2101,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
         int pullIdx;
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
+            XYSeriesCollection dataset = null;
             for (int i = 0; i < dataColNames.size(); ++i) {
                 String yAxisColName = dataColNames.get(i);
-                XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
-                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
-                XYSeriesCollection dataset = new XYSeriesCollection();
+                if (!sameScalecheckBox.isSelected() || i == 0)
+                    dataset = new XYSeriesCollection();
                 DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
                 for (int idx = 0; idx < root.getChildCount(); ++idx) {
                     fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
@@ -2129,16 +2134,20 @@ public class LogView extends FCTabbedPane implements ActionListener {
                         }
                     }
                 }
-                NumberAxis yAxis = new NumberAxis(yAxisColName);
-                yAxis.setAutoRangeIncludesZero(false);
-                yAxis.setTickLabelPaint(Color.WHITE);
-                yAxis.setLabelPaint(Color.LIGHT_GRAY);
-                wotPlot.setRenderer(i, lineRenderer);
-                wotPlot.setRangeAxis(i, yAxis, false);
-                wotPlot.setDataset(i, dataset);
-                wotPlot.mapDatasetToRangeAxis(i, i);
-                wotPlot.mapDatasetToDomainAxis(i, 0);
-                wotPlot.setRangeAxisLocation(i, (i % 2 == 0 ? AxisLocation.BOTTOM_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT));
+                if (!sameScalecheckBox.isSelected() || i == 0) {
+                    NumberAxis yAxis = new NumberAxis(yAxisColName);
+                    yAxis.setAutoRangeIncludesZero(false);
+                    yAxis.setTickLabelPaint(Color.WHITE);
+                    yAxis.setLabelPaint(Color.LIGHT_GRAY);
+                    XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+                    lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+                    wotPlot.setRenderer(i, lineRenderer);
+                    wotPlot.setRangeAxis(i, yAxis, false);
+                    wotPlot.setDataset(i, dataset);
+                    wotPlot.mapDatasetToRangeAxis(i, i);
+                    wotPlot.mapDatasetToDomainAxis(i, 0);
+                    wotPlot.setRangeAxisLocation(i, (i % 2 == 0 ? AxisLocation.BOTTOM_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT));
+                }
             }
         }
         finally {

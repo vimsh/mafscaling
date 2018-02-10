@@ -430,6 +430,7 @@ public class ExcelAdapter implements ActionListener {
             }
         }
         catch(Exception e) {
+            JOptionPane.showMessageDialog(null, e.getMessage(), "Error: ", JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
             logger.error(e);
         }

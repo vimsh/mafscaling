@@ -452,16 +452,18 @@ public class MafIatComp extends ACompCalc {
                 xStr = logDataTable.getValueAt(i, 2).toString();
                 yStr = logDataTable.getValueAt(i, 1).toString();
                 valStr = logDataTable.getValueAt(i, 3).toString();
+                if (xStr.isEmpty() && yStr.isEmpty() && valStr.isEmpty())
+                	continue;
                 if (!Pattern.matches(Utils.fpRegex, xStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for IAT, row " + i + 1, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for IAT, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, yStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for MAF, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for MAF, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, valStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for AFR Corr, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for AFR Corr, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 x = xAxisArray.get(Utils.closestValueIndex(Double.valueOf(xStr), xAxisArray));

@@ -830,7 +830,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                         boolean passFilters = true;
                         for (int k = 0; k < filterButtonList.size() && useFilterArr[k]; ++k) {
                             if (!Pattern.matches(Utils.fpRegex, elements[fltrColIdxArr[k]])) {
-                                JOptionPane.showMessageDialog(null, "Invalid value for Filter " + k + ", file " + logFile.getName() + ", column " + (fltrColIdxArr[k] + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(null, "Invalid value for Filter " + (k + 1) + ", file " + logFile.getName() + ", column " + (fltrColIdxArr[k] + 1) + ", row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
                             fltrVal = Utils.parseValue(elements[fltrColIdxArr[k]]);
@@ -842,11 +842,11 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                         // Value should be processed
                         if (passFilters) {
                             if (!Pattern.matches(Utils.fpRegex, elements[xColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[xColIdx])) {
-                                JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, file " + logFile.getName() + ", column " + (xColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(null, "Invalid value for X-Axis, file " + logFile.getName() + ", column " + (xColIdx + 1) + ", row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
                             if (!Pattern.matches(Utils.fpRegex, elements[yColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[yColIdx])) {
-                                JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, file " + logFile.getName() + ", column " + (yColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                JOptionPane.showMessageDialog(null, "Invalid value for Y-Axis, file " + logFile.getName() + ", column " + (yColIdx + 1) + ", row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
                             skip = false;
@@ -907,7 +907,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                             val = 0;
                             for (Integer vColIdx : vColIdxArray) {
                                 if (!Pattern.matches(Utils.fpRegex, elements[vColIdx]) && !Pattern.matches(Utils.onOffRegex, elements[vColIdx])) {
-                                    JOptionPane.showMessageDialog(null, "Invalid value for Data, file " + logFile.getName() + ", column " + (vColIdx + 1) + ", row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                                    JOptionPane.showMessageDialog(null, "Invalid value for Data, file " + logFile.getName() + ", column " + (vColIdx + 1) + ", row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                                     return;
                                 }
                                 val += Utils.parseValue(elements[vColIdx]);

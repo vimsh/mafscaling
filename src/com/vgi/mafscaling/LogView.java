@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -472,6 +473,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private ChartPanel chartPanel = null;
     private ChartPanel wotChartPanel = null;
     private JTree wotTree = null;
+    private JPopupMenu wotTreeMenu = null;
+    private DefaultMutableTreeNode wotSelectedNode = null;
     private XYPlot plot = null;
     private XYPlot wotPlot = null;
     private XYSeriesCollection rpmDataset = null;
@@ -505,8 +508,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private JMultiSelectionBox plotsColumn = null;
     private JMultiSelectionBox wotPlotsColumn = null;
     private ButtonGroup wotRbGroup = null;
-    private JCheckBox sameScalecheckBox = null;
+    private JButton linkYAxis = null;
     private HashMap<String, ArrayList<HashMap<String, ArrayList<Double>>>> filesData = null;
+    private ArrayList<TreeSet<String>> wotYAxisGroups = null;
     private int wotPoint = Config.getWOTStationaryPointValue();
     private int logThtlAngleColIdx = -1;
     private String logRpmColName = null;
@@ -1061,8 +1065,11 @@ public class LogView extends FCTabbedPane implements ActionListener {
         cntlPanel.add(wotPlotsColumn, gbc);
 
         gbc.gridx += 1;
-        sameScalecheckBox = new JCheckBox("Same Y scale");
-        cntlPanel.add(sameScalecheckBox, gbc);
+        linkYAxis = new JButton("Link Y-Axis");
+        linkYAxis.setActionCommand("linkyaxis");
+        linkYAxis.addActionListener(this);
+        linkYAxis.setEnabled(false);
+        cntlPanel.add(linkYAxis, gbc);
 
         gbc.gridx += 1;
         JRadioButton button = new JRadioButton("RPM");
@@ -1101,6 +1108,25 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     protected void createWotTreePanel() {
+        wotTreeMenu = new JPopupMenu();
+        JMenuItem item = new JMenuItem("Select All");
+        item.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (wotSelectedNode != null)
+                    setWotNodesChecked(true);
+            }
+        });
+        wotTreeMenu.add(item);
+        item = new JMenuItem("Clear All");
+        item.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                if (wotSelectedNode != null)
+                    setWotNodesChecked(false);
+            }
+        });
+        wotTreeMenu.add(item);
         DefaultMutableTreeNode wotTreeRoot = new DefaultMutableTreeNode("Root");
         DefaultTreeModel treeModel = new DefaultTreeModel(wotTreeRoot);
         wotTree = new JTree(treeModel);
@@ -1110,6 +1136,22 @@ public class LogView extends FCTabbedPane implements ActionListener {
         wotTree.setRootVisible(false);
         wotTree.setOpaque(false);
         wotTree.setBackground(null);
+        wotTree.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent event) {
+                if (event.getButton() == MouseEvent.BUTTON3) {
+                    TreePath pathForLocation = wotTree.getPathForLocation(event.getPoint().x, event.getPoint().y);
+                    if (pathForLocation != null) {
+                        wotTree.setComponentPopupMenu(wotTreeMenu);
+                        wotSelectedNode = (DefaultMutableTreeNode) pathForLocation.getLastPathComponent();
+                    }
+                    else {
+                        wotTree.setComponentPopupMenu(null);
+                        wotSelectedNode = null;
+                    }
+                }
+                super.mousePressed(event);
+            }
+        });
         wotTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
     }
@@ -1585,6 +1627,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                     }
                     catch (Exception e) {
                         JOptionPane.showMessageDialog(null, "Invalid numeric value in column " + colName + ", row " + (j + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
+                        if (br != null) br.close();
                         return;
                     }
                 }
@@ -1819,11 +1862,60 @@ public class LogView extends FCTabbedPane implements ActionListener {
         loadWotLogFiles();
     }
 
+    private void setWotNodesChecked(boolean checked) {
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
+        if (root.getChildCount() > 0) {
+            DefaultMutableTreeNode fileNode = (DefaultMutableTreeNode) root.getChildAt(0);
+            for (int i = 0; i < fileNode.getChildCount(); ++i) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) fileNode.getChildAt(i);
+                CheckBoxNodeData checkbox = (CheckBoxNodeData) node.getUserObject();
+                checkbox.setChecked(checked);
+            }
+        }
+        wotTree.repaint();
+    }
+
+    private void getWotYAxisGroups() {
+        // check if there are any selected columns
+        List<String> dataColNames = wotPlotsColumn.getSelectedItems();
+        if (dataColNames == null || dataColNames.size() == 0)
+            return;
+        // remove columns (and empty) groups for any unselected columns
+        TreeSet<String> colNames = new TreeSet<String>();
+        for (int i = 0; i < dataColNames.size(); ++i)
+            colNames.add(dataColNames.get(i));
+        for (Iterator<TreeSet<String>> it = wotYAxisGroups.iterator(); it.hasNext();) {
+            TreeSet<String> group = it.next();
+            for (Iterator<String> iter = group.iterator(); iter.hasNext();) {
+                String colName = iter.next();
+                if (!colNames.contains(colName))
+                    iter.remove();
+            }
+            if (group.size() == 0)
+                it.remove();
+        }
+        // add newly selected columns (and groups)
+        for (String colName : colNames) {
+            boolean grouped = false;
+            for (int i = 0; !grouped && i < wotYAxisGroups.size(); ++i) {
+                TreeSet<String> group = wotYAxisGroups.get(i);
+                if (group.contains(colName))
+                    grouped = true;
+            }
+            if (!grouped) {
+                TreeSet<String> group = new TreeSet<String>();
+                group.add(colName);
+                wotYAxisGroups.add(group);
+            }
+        }
+    }
+
     private void loadWotLogFiles() {
         File[] files = fileChooser.getSelectedFiles();
         if (files.length < 1)
             return;
         filesData = new HashMap<String, ArrayList<HashMap<String, ArrayList<Double>>>>();
+        wotYAxisGroups = new ArrayList<TreeSet<String>>();
         TreeSet<String> columns = new TreeSet<String>();
         ArrayList<String> colNames = null;
         DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
@@ -1941,6 +2033,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
             ((DefaultTreeModel )wotTree.getModel()).reload(root);
             for (row = 0; row < wotTree.getRowCount(); ++row)
                 wotTree.expandRow(row);
+            linkYAxis.setEnabled(true);
         }
         else {
             JOptionPane.showMessageDialog(null, "No WOT pulls were found in the log file(s)", "Oops", JOptionPane.INFORMATION_MESSAGE);
@@ -1961,8 +2054,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     private void viewWotPlotsByTime() {
-        List<String> dataColNames = wotPlotsColumn.getSelectedItems();
-        if (dataColNames == null || dataColNames.size() == 0) {
+        getWotYAxisGroups();
+        if (wotYAxisGroups.size() == 0) {
             JOptionPane.showMessageDialog(null, "Please select columns to plot", "Invalid parameters", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -2047,28 +2140,32 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 allpulls.addAll(pulls);
             }
             // Plot data
-            for (int i = 0; i < dataColNames.size(); ++i) {
-                String yAxisColName = dataColNames.get(i);
-                XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
-                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+            for (int i = 0; i < wotYAxisGroups.size(); ++i) {
+                TreeSet<String> group = wotYAxisGroups.get(i);
                 XYSeriesCollection dataset = new XYSeriesCollection();
-                for (idx = 0; idx < allpulls.size(); ++idx) {
-                    Map.Entry<String, HashMap<String, ArrayList<Double>>> keyval = allpulls.get(idx).entrySet().iterator().next();
-                    pullName = yAxisColName + keyval.getKey();
-                    pullData = keyval.getValue();
-                    timeData = pullData.get("xaxis");
-                    colData = pullData.get(yAxisColName);
-                    if (colData != null) {
-                        XYSeries series = new XYSeries(pullName);
-                        for (int k = 0; k < timeData.size(); ++k)
-                            series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
-                        dataset.addSeries(series);
+                String yAxisName = "";
+                for (String yAxisColName : group) {
+                    yAxisName += (yAxisName.isEmpty() ? yAxisColName : ", " + yAxisColName);
+                    for (idx = 0; idx < allpulls.size(); ++idx) {
+                        Map.Entry<String, HashMap<String, ArrayList<Double>>> keyval = allpulls.get(idx).entrySet().iterator().next();
+                        pullName = yAxisColName + keyval.getKey();
+                        pullData = keyval.getValue();
+                        timeData = pullData.get("xaxis");
+                        colData = pullData.get(yAxisColName);
+                        if (colData != null) {
+                            XYSeries series = new XYSeries(pullName);
+                            for (int k = 0; k < timeData.size(); ++k)
+                                series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
+                            dataset.addSeries(series);
+                        }
                     }
                 }
-                NumberAxis yAxis = new NumberAxis(yAxisColName);
+                NumberAxis yAxis = new NumberAxis(yAxisName);
                 yAxis.setAutoRangeIncludesZero(false);
                 yAxis.setTickLabelPaint(Color.WHITE);
                 yAxis.setLabelPaint(Color.LIGHT_GRAY);
+                XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
                 wotPlot.setRenderer(i, lineRenderer);
                 wotPlot.setRangeAxis(i, yAxis, false);
                 wotPlot.setDataset(i, dataset);
@@ -2083,8 +2180,8 @@ public class LogView extends FCTabbedPane implements ActionListener {
     }
     
     private void viewWotPlotsByRpm(boolean skipDrops) {
-        List<String> dataColNames = wotPlotsColumn.getSelectedItems();
-        if (dataColNames == null || dataColNames.size() == 0) {
+        getWotYAxisGroups();
+        if (wotYAxisGroups.size() == 0) {
             JOptionPane.showMessageDialog(null, "Please select columns to plot", "Invalid parameters", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -2101,53 +2198,53 @@ public class LogView extends FCTabbedPane implements ActionListener {
         int pullIdx;
         setCursor(new Cursor(Cursor.WAIT_CURSOR));
         try {
-            XYSeriesCollection dataset = null;
-            for (int i = 0; i < dataColNames.size(); ++i) {
-                String yAxisColName = dataColNames.get(i);
-                if (!sameScalecheckBox.isSelected() || i == 0)
-                    dataset = new XYSeriesCollection();
-                DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
-                for (int idx = 0; idx < root.getChildCount(); ++idx) {
-                    fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
-                    fileName = fileNode.getUserObject().toString().replaceAll(fileNameReplaceString, "");
-                    for (int j = 0; j < fileNode.getChildCount(); ++j) {
-                        pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(j)).getUserObject();
-                        if (!pullNode.isChecked())
-                            continue;
-                        pullName = pullNode.getText();
-                        filePulls = filesData.get(fileName);
-                        pullIdx = Integer.parseInt(pullName.replaceAll(pullIndexReplaceString, "")) - 1;
-                        pullData = filePulls.get(pullIdx);
-                        rpmData = pullData.get(logRpmColName);
-                        colData = pullData.get(yAxisColName);
-                        if (colData != null) {
-                            XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
-                            for (int k = 0; k < rpmData.size(); ++k) {
-                                if (skipDrops) {
-                                    if (k > 0 && rpmData.get(k) > rpmData.get(k - 1))
+            for (int i = 0; i < wotYAxisGroups.size(); ++i) {
+                TreeSet<String> group = wotYAxisGroups.get(i);
+                XYSeriesCollection dataset = new XYSeriesCollection();
+                String yAxisName = "";
+                for (String yAxisColName : group) {
+                    yAxisName += (yAxisName.isEmpty() ? yAxisColName : ", " + yAxisColName);
+                    DefaultMutableTreeNode root = (DefaultMutableTreeNode)wotTree.getModel().getRoot();
+                    for (int idx = 0; idx < root.getChildCount(); ++idx) {
+                        fileNode = (DefaultMutableTreeNode)root.getChildAt(idx);
+                        fileName = fileNode.getUserObject().toString().replaceAll(fileNameReplaceString, "");
+                        for (int j = 0; j < fileNode.getChildCount(); ++j) {
+                            pullNode = (CheckBoxNodeData)((DefaultMutableTreeNode)fileNode.getChildAt(j)).getUserObject();
+                            if (!pullNode.isChecked())
+                                continue;
+                            pullName = pullNode.getText();
+                            filePulls = filesData.get(fileName);
+                            pullIdx = Integer.parseInt(pullName.replaceAll(pullIndexReplaceString, "")) - 1;
+                            pullData = filePulls.get(pullIdx);
+                            rpmData = pullData.get(logRpmColName);
+                            colData = pullData.get(yAxisColName);
+                            if (colData != null) {
+                                XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
+                                for (int k = 0; k < rpmData.size(); ++k) {
+                                    if (skipDrops) {
+                                        if (k > 0 && rpmData.get(k) > rpmData.get(k - 1))
+                                            series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+                                    }
+                                    else
                                         series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
                                 }
-                                else
-                                    series.add(Double.valueOf(rpmData.get(k)), Double.valueOf(colData.get(k)));
+                                dataset.addSeries(series);
                             }
-                            dataset.addSeries(series);
                         }
                     }
                 }
-                if (!sameScalecheckBox.isSelected() || i == 0) {
-                    NumberAxis yAxis = new NumberAxis(yAxisColName);
-                    yAxis.setAutoRangeIncludesZero(false);
-                    yAxis.setTickLabelPaint(Color.WHITE);
-                    yAxis.setLabelPaint(Color.LIGHT_GRAY);
-                    XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
-                    lineRenderer.setBaseShapesVisible(showWotCurvePoints);
-                    wotPlot.setRenderer(i, lineRenderer);
-                    wotPlot.setRangeAxis(i, yAxis, false);
-                    wotPlot.setDataset(i, dataset);
-                    wotPlot.mapDatasetToRangeAxis(i, i);
-                    wotPlot.mapDatasetToDomainAxis(i, 0);
-                    wotPlot.setRangeAxisLocation(i, (i % 2 == 0 ? AxisLocation.BOTTOM_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT));
-                }
+                NumberAxis yAxis = new NumberAxis(yAxisName);
+                yAxis.setAutoRangeIncludesZero(false);
+                yAxis.setTickLabelPaint(Color.WHITE);
+                yAxis.setLabelPaint(Color.LIGHT_GRAY);
+                XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
+                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+                wotPlot.setRenderer(i, lineRenderer);
+                wotPlot.setRangeAxis(i, yAxis, false);
+                wotPlot.setDataset(i, dataset);
+                wotPlot.mapDatasetToRangeAxis(i, i);
+                wotPlot.mapDatasetToDomainAxis(i, 0);
+                wotPlot.setRangeAxisLocation(i, (i % 2 == 0 ? AxisLocation.BOTTOM_OR_LEFT : AxisLocation.BOTTOM_OR_RIGHT));
             }
         }
         finally {
@@ -2373,6 +2470,10 @@ public class LogView extends FCTabbedPane implements ActionListener {
                     continue;
                 lineRenderer.setBaseShapesVisible(showWotCurvePoints);
             }
+        }
+        else if ("linkyaxis".equals(e.getActionCommand())) {
+        	WotPullsGroups grpSel = new WotPullsGroups();
+        	grpSel.getGroups(wotPlotsColumn, wotYAxisGroups);
         }
         else if ("export".equals(e.getActionCommand()))
             exportSelectedWotPulls();

@@ -457,11 +457,11 @@ public final class Utils {
         if (table.getColumnCount() > 1) {
             for (int i = (table.getColumnCount() == 2 ? 0 : 1); i < table.getRowCount(); ++i) {
                 if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, 0).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (i > 1 && Double.valueOf(table.getValueAt(i, 0).toString()) <= Double.valueOf(table.getValueAt(i - 1, 0).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + i + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value in Y-Axis header, row " + (i + 1) + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
             }
@@ -470,11 +470,11 @@ public final class Utils {
         if (table.getRowCount() > 1) {
             for (int i = (table.getRowCount() == 2 ? 0 : 1); i < table.getColumnCount(); ++i) {
                 if (!Pattern.matches(Utils.fpRegex, table.getValueAt(0, i).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (i > 1 && Double.valueOf(table.getValueAt(0, i).toString()) <= Double.valueOf(table.getValueAt(0, i - 1).toString())) {
-                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + i + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value in X-Axis header, column " + (i + 1) + ": subsequent value must be greater than previous", "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
             }

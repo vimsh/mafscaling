@@ -610,7 +610,7 @@ public class VVTCalc extends ACompCalc {
                 }
                 catch (NumberFormatException e) {
                     logger.error(e);
-                    JOptionPane.showMessageDialog(null, "Error parsing number from Pull " + i + " table, row " + j + ": " + e, "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Error parsing number from Pull " + (i + 1) + " table, row " + (j + 1) + ": " + e, "Error", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
             }
@@ -989,7 +989,7 @@ public class VVTCalc extends ACompCalc {
                 Utils.colorTable(table);
                 for (int i = 0; i < table.getRowCount(); ++i) {
                     if (!Pattern.matches(Utils.fpRegex, table.getValueAt(i, 0).toString())) {
-                        JOptionPane.showMessageDialog(null, "Invalid value at row " + i, "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(null, "Invalid value at row " + (i + 1), "Error", JOptionPane.ERROR_MESSAGE);
                         return false;
                     }
                 }

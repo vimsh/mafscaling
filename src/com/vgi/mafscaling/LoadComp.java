@@ -411,16 +411,18 @@ public class LoadComp extends ACompCalc {
                 xStr = logDataTable.getValueAt(i, 5).toString();
                 yStr = logDataTable.getValueAt(i, 1).toString();
                 valStr = logDataTable.getValueAt(i, 7).toString();
+                if (xStr.isEmpty() && yStr.isEmpty() && valStr.isEmpty())
+                	continue;
                 if (!Pattern.matches(Utils.fpRegex, xStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for MP, row " + i + 1, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for MP, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, yStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for RPM, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for RPM, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 if (!Pattern.matches(Utils.fpRegex, valStr)) {
-                    JOptionPane.showMessageDialog(null, "Invalid value for Trims, row " + i, "Invalid value", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "Invalid value for Trims, row " + (i + 1), "Invalid value", JOptionPane.ERROR_MESSAGE);
                     return false;
                 }
                 x = xAxisArray.get(Utils.closestValueIndex(Double.valueOf(xStr), xAxisArray));

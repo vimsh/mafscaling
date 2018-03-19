@@ -10,6 +10,7 @@ import java.awt.Stroke;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jfree.chart.annotations.AbstractAnnotation;
@@ -68,13 +69,17 @@ public class XYDomainMutilineAnnotation extends AbstractAnnotation implements XY
         }
     }
     
-    private HashMap<Paint, String> labels = new HashMap<Paint, String>();
+    private HashMap<Paint, String[]> labels = new HashMap<Paint, String[]>();
     private Stroke stroke = new BasicStroke(1.0f);
     private Paint paint = Color.WHITE;
-    private Font labelFont = new Font("Verdana", Font.BOLD, 11);
+    private Font labelFont = new Font("Verdana", Font.PLAIN, 11);
     private RectangleAnchor labelAnchor = RectangleAnchor.TOP;
     private TextAnchor labelTextAnchor;
     private double value;
+
+    public void setDefaultPaint(Paint paint) {
+        this.paint = paint;
+    }
 
     public double getValue() {
         return this.value;
@@ -92,9 +97,15 @@ public class XYDomainMutilineAnnotation extends AbstractAnnotation implements XY
     public void setLabelTextAnchor(TextAnchor labelTextAnchor) {
         this.labelTextAnchor = labelTextAnchor;
     }
-    
+    /*
     public void addLabel(String label, Paint color, boolean notify) {
-        labels.put(color, label);
+        labels.put(color, new String[] { label, "" });
+        if (notify)
+            fireAnnotationChanged();
+    }*/
+    
+    public void addLabel(String label, Paint color, String label2, boolean notify) {
+        labels.put(color, new String[] { label, label2 });
         if (notify)
             fireAnnotationChanged();
     }
@@ -150,7 +161,7 @@ public class XYDomainMutilineAnnotation extends AbstractAnnotation implements XY
         g2.setFont(labelFont);
         int offset = 0;
         Point2D coordinates;
-        for (Map.Entry<Paint, String> entry : labels.entrySet()) {
+        for (Map.Entry<Paint, String[]> entry : labels.entrySet()) {
             RectangleInsets labelOffset = new RectangleInsets(2 + offset, 5, 2, 5);
             offset += 20;
             if (RectangleEdge.isLeftOrRight(axisEdge))
@@ -158,7 +169,18 @@ public class XYDomainMutilineAnnotation extends AbstractAnnotation implements XY
             else
                 coordinates = RectangleAnchor.coordinates(labelOffset.createAdjustedRectangle(markerArea, LengthAdjustmentType.EXPAND, LengthAdjustmentType.CONTRACT), labelAnchor);
             g2.setPaint(entry.getKey());
-            TextUtilities.drawRotatedString(entry.getValue(), g2, (float) coordinates.getX(), (float) coordinates.getY(), labelTextAnchor, 0, TextAnchor.TOP_CENTER);
+            String label = entry.getValue()[0];
+            if (entry.getValue()[1].length() > 0) {
+                char[] array = new char[(int)(entry.getValue()[1].length() * 1.8)];
+                Arrays.fill(array, ' ');
+                label += new String(array);
+            }
+            TextUtilities.drawRotatedString(label, g2, (float) coordinates.getX(), (float) coordinates.getY(), labelTextAnchor, 0, TextAnchor.TOP_CENTER);
+            if (entry.getValue()[1].length() > 0) {
+                g2.setPaint(paint);
+                Shape shape = TextUtilities.calculateRotatedStringBounds(entry.getValue()[0], g2, (float) coordinates.getX(), (float) coordinates.getY(), labelTextAnchor, 0, TextAnchor.TOP_CENTER);
+                TextUtilities.drawRotatedString(entry.getValue()[1], g2, (float) shape.getBounds().getMaxX(), (float) coordinates.getY(), labelTextAnchor, 0, TextAnchor.TOP_CENTER);
+            }
         }
     }
 }

@@ -49,7 +49,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -120,7 +119,6 @@ import org.jfree.chart.axis.StandardTickUnitSource;
 import org.jfree.chart.axis.ValueAxis;
 import org.jfree.chart.entity.ChartEntity;
 import org.jfree.chart.entity.LegendItemEntity;
-import org.jfree.chart.plot.Marker;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
@@ -524,7 +522,6 @@ public class LogView extends FCTabbedPane implements ActionListener {
     private Insets insets0 = new Insets(0, 0, 0, 0);
     private Insets insets3 = new Insets(3, 3, 3, 3);
     private Insets insets10 = new Insets(10, 10, 10, 10);
-    private DecimalFormat df = new DecimalFormat("#.####");
     private boolean showWotCurvePoints = false;
 
     public LogView(int tabPlacement) {
@@ -792,6 +789,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         chart.addLegend(legend);
         
         xMarker = new XYDomainMutilineAnnotation();
+        xMarker.setDefaultPaint(Color.WHITE);
         plot.addAnnotation(xMarker);
         
         chartMouseListener = new ChartMouseListener() {
@@ -1158,6 +1156,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
     
     protected void createWotChart() {
         wotMarker = new XYDomainMutilineAnnotation();
+        wotMarker.setDefaultPaint(Color.WHITE);
         JFreeChart chart = ChartFactory.createXYLineChart(null, null, null, null, PlotOrientation.VERTICAL, false, true, false);
         wotChartPanel = new ChartPanel(chart, true, true, true, true, true);
         wotChartPanel.setFocusable(true);
@@ -1198,35 +1197,43 @@ public class LogView extends FCTabbedPane implements ActionListener {
                     wotMarker.clearLabels(false);
                     Rectangle2D dataArea = wotChartPanel.getChartRenderingInfo().getPlotInfo().getDataArea();
                     Point2D p = wotChartPanel.translateScreenToJava2D(event.getTrigger().getPoint());
-                    double y = 0;
-                    double x = wotPlot.getDomainAxis(0).java2DToValue(p.getX(), dataArea, wotPlot.getDomainAxisEdge());
-                    boolean isLeft = (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) ? true : false;
-                    if (isLeft) {
-                        wotMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
-                        wotMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
-                    }
-                    else {
-                        wotMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
-                        wotMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
-                    }
+                    double x = wotPlot.getDomainAxis().java2DToValue(p.getX(), dataArea, wotPlot.getDomainAxisEdge());
                     XYSeriesCollection dataset;
-                    NumberAxis rangeAxis;
-                    boolean show = false;
+                    XYSeries series;
                     for (int i = 0; i < wotPlot.getDatasetCount(); ++i) {
                         dataset = (XYSeriesCollection)wotPlot.getDataset(i);
                         if (dataset != null && dataset.getSeriesCount() > 0) {
-                            show = true;
-                            rangeAxis = (NumberAxis)wotPlot.getRangeAxis(i);
-                            y = rangeAxis.java2DToValue(p.getY(), dataArea, wotPlot.getRangeAxisEdge());
-                            wotMarker.addLabel(rangeAxis.getLabel() + ": " + df.format(y), new Color(255 - i, 255, 255), false);
+                            for (int j = 0; j < dataset.getSeriesCount(); ++j) {
+                                series = dataset.getSeries(j);
+                                int idx = 0;
+                                double closest;
+                                double pclosest = Math.abs(series.getX(0).doubleValue() - x);
+                                for (int k = 1; k < series.getItemCount(); ++k) {
+                                    closest = Math.abs(series.getX(k).doubleValue() - x);
+                                    if (closest < pclosest){
+                                        idx = k;
+                                        pclosest = closest;
+                                    }
+                                }
+                                double x0 = series.getX(0).doubleValue();
+                                double x1 = series.getX(series.getItemCount() - 1).doubleValue();
+                                double xerr = x0 * 0.01;
+                                if (x >= (x0 - xerr) && x <= (x1 + xerr))
+                                	wotMarker.addLabel(series.getDescription() + ": ", wotPlot.getRenderer(i).getSeriesPaint(j), series.getY(idx).toString(), false);
+                            }
                         }
                     }
-                    if (show) {
+                    if (wotMarker.count() > 0) {
+                        boolean isLeft = (p.getX() < (dataArea.getMaxX() - dataArea.getMinX()) / 2) ? true : false;
+                        if (isLeft) {
+                            wotMarker.setLabelAnchor(RectangleAnchor.TOP_RIGHT);
+                            wotMarker.setLabelTextAnchor(TextAnchor.TOP_LEFT);
+                        }
+                        else {
+                            wotMarker.setLabelAnchor(RectangleAnchor.TOP_LEFT);
+                            wotMarker.setLabelTextAnchor(TextAnchor.TOP_RIGHT);
+                        }
                         wotMarker.setValue(x);
-                        y = wotPlot.getRangeAxis().java2DToValue(p.getY(), dataArea, wotPlot.getRangeAxisEdge());
-                        Marker yMarker = new ValueMarker(y);
-                        yMarker.setPaint(Color.WHITE);
-                        wotPlot.addRangeMarker(yMarker);
                     }
                     wotChartPanel.repaint();
                 }
@@ -1436,7 +1443,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 displCount += 1;
             }
             if (xMarker.count() > 0)
-                xMarker.addLabel(series.getDescription() + ": " + series.getY((int) xMarker.getValue()), color, true);
+                xMarker.addLabel(series.getDescription() + ": ", color, series.getY((int) xMarker.getValue()).toString(), true);
         }
         finally {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
@@ -2154,6 +2161,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                         colData = pullData.get(yAxisColName);
                         if (colData != null) {
                             XYSeries series = new XYSeries(pullName);
+                            series.setDescription(pullName);
                             for (int k = 0; k < timeData.size(); ++k)
                                 series.add(Double.valueOf(timeData.get(k)), Double.valueOf(colData.get(k)));
                             dataset.addSeries(series);
@@ -2219,7 +2227,9 @@ public class LogView extends FCTabbedPane implements ActionListener {
                             rpmData = pullData.get(logRpmColName);
                             colData = pullData.get(yAxisColName);
                             if (colData != null) {
-                                XYSeries series = new XYSeries(yAxisColName + " [" + pullName + ": " + fileName + "]");
+                                pullName = yAxisColName + " [" + pullName + ": " + fileName + "]";
+                                XYSeries series = new XYSeries(pullName);
+                                series.setDescription(pullName);
                                 for (int k = 0; k < rpmData.size(); ++k) {
                                     if (skipDrops) {
                                         if (k > 0 && rpmData.get(k) > rpmData.get(k - 1))
@@ -2267,12 +2277,12 @@ public class LogView extends FCTabbedPane implements ActionListener {
         }
         if (rpmDataset.getSeriesCount() > 0 && rpmPlotRenderer.isSeriesVisible(0)) {
             series = rpmDataset.getSeries(0);
-            xMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), rpmPlotRenderer.getSeriesPaint(0), false);
+            xMarker.addLabel(series.getDescription() + ": ", rpmPlotRenderer.getSeriesPaint(0), series.getY((int)x).toString(), false);
         }
         for (int i = 0; i < dataset.getSeriesCount(); ++i) {
             if (plotRenderer.isSeriesVisible(i)) {
                 series = dataset.getSeries(i);
-                xMarker.addLabel(series.getDescription() + ": " + series.getY((int)x), plotRenderer.getSeriesPaint(i), false);
+                xMarker.addLabel(series.getDescription() + ": ", plotRenderer.getSeriesPaint(i), series.getY((int)x).toString(), false);
             }
         }
         xMarker.setValue(x);

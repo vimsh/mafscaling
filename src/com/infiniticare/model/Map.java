@@ -1,7 +1,8 @@
-package com.infiniticare.model.ecutek;
+package com.infiniticare.model;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -9,16 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.infiniticare.model.Cell;
-
-/**
- * An instance of this class represents an EcutekTable as known in the Ecutek ProECU software. Choosing the
- * option "copy entire map into clipboard" and saving the data to a file on the file system, this class is
- * able to instantly load all data into a useable format.
- * @author Eugene Turkov
- *
- */
-public class EcutekTable {
-	private HashMap<Double, HashMap<Double, Cell>> table;
+public class Map {
+	private HashMap<Double, HashMap<Double, Cell>> table = new HashMap<Double, HashMap<Double, Cell>>();
 	private ArrayList<Double> rowNames = new ArrayList<Double>();
 	private double[] columnNames;
 	private File file;
@@ -27,23 +20,18 @@ public class EcutekTable {
 		table = new HashMap<Double, HashMap<Double, Cell>>();
 	}
 	
-	/**
-	 * Instantiates this table from file. The file must be clipboard data saved from Ecutek.
-	 * @param file
-	 * @throws IOException
-	 */
-	public EcutekTable(File file) throws IOException {	
-		table = new HashMap<Double, HashMap<Double, Cell>>();
-	
-		// if no file is specified, the table will be empty.
-		if(file != null) {
-			this.file = file;
-			FileReader fileReader;
+	public Map(File file) {
+		if(file == null) {
+			return;
+		}
+		this.file = file;
+		FileReader fileReader;
+		try {
 			fileReader = new FileReader(file);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			String line = bufferedReader.readLine();
 			int rowIndex = -1;
-	
+			
 			while(line != null) {
 				String[] columnValues = line.split("\t");
 				if(rowIndex == -1) {
@@ -55,7 +43,7 @@ public class EcutekTable {
 				} else {
 					// the first element is the row name
 					rowNames.add(rowIndex, Double.valueOf(columnValues[0]));
-	
+					
 					for (int i = 1; i < columnValues.length; i++) {
 						int columnId = i - 1;
 						double rowName = rowNames.get(rowIndex);
@@ -71,30 +59,32 @@ public class EcutekTable {
 				line = bufferedReader.readLine();
 				rowIndex++;
 			}		
-	
+			
 			bufferedReader.close();
 			fileReader.close();
-		}		
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 	
-	/**
-	 * Default constructor creates an empty table.
-	 * @throws IOException
-	 */
-	public EcutekTable() throws IOException {
-		this(null);
+	public Map() {
+		
 	}
 	
 	public File getFile() {
 		return file;
 	}
 
-	/**
-	 * Adds a value to the population of this cell.
-	 * @param rowIndex
-	 * @param columnIndex
-	 * @param value
-	 */
+	@Override
+	public String toString() {
+		return super.toString();
+	}
+
 	private void add(Double rowIndex, Double columnIndex, double value) {
 		Cell tableCell = getCell(rowIndex, columnIndex);
 		tableCell.getPopulation().add(value);
@@ -123,29 +113,25 @@ public class EcutekTable {
 		return tableCellData;
 	}
 
-	/**
-	 * Given the supplied column name (column index), return closest matching column name.
-	 * 
-	 *  For example if the columns are named as 0 0.5 1 1.5 2 2.5 and the columnIndex of 1.1 would return the value 1.
-	 * @param columnIndex
-	 * @return the closest match.
+	/*
+	 *  maybe the difference should be very small in order to return something useful. Not useful if it's right on the edge.
 	 */
-	private double getClosestColumn(Double columnIndex) {
+	private double getClosestColumn(Double manifoldAbsolutePressure) {
 		double shortestDistanceSoFar = Double.MAX_VALUE;
 		double bestChoiceSoFar = -1;
 		for(int i = 0; i < columnNames.length; i++) {
 			double columnName = columnNames[i];
-			double difference = Math.abs(columnName - columnIndex);
+			double difference = Math.abs(columnName - manifoldAbsolutePressure);
 			if(difference < shortestDistanceSoFar) {
 				if(i == 0) {
-					if(columnIndex >= columnName) {
+					if(manifoldAbsolutePressure >= columnName) {
 						shortestDistanceSoFar = difference;
 						bestChoiceSoFar = columnNames[i];
 					} else {
 						return -1;
 					}
 				} else if(i + 1 == columnNames.length) {
-					if(columnIndex <= columnName) {
+					if(manifoldAbsolutePressure <= columnName) {
 						shortestDistanceSoFar = difference;
 						bestChoiceSoFar = columnNames[i];
 					} else {
@@ -168,29 +154,25 @@ public class EcutekTable {
 		this.columnNames = columnNames;
 	}
 
-	/**
-	 * Given the supplied row name (row index), return closest matching row name.
-	 * 
-	 *  For example if the rows are named as 0 0.5 1 1.5 2 2.5 and the rowIndex of 1.1 would return the value 1.
-	 * @param rowIndex
-	 * @return the closest match.
+	/*
+	 *  maybe the difference should be very small in order to return something useful. Not useful if it's right on the edge.
 	 */
-	private double getClosestRow(Double rowIndex) {
+	private double getClosestRow(Double engineSpeed) {
 		double shortestDistanceSoFar = Double.MAX_VALUE;
 		double bestChoiceSoFar = -1;
 		for(int i = 0; i < rowNames.size(); i++) {
 			double rowName = rowNames.get(i);
-			double difference = Math.abs(rowName - rowIndex);
+			double difference = Math.abs(rowName - engineSpeed);
 			if(difference < shortestDistanceSoFar) {
 				if(i == 0) {
-					if(rowIndex >= rowName) {
+					if(engineSpeed >= rowName) {
 						shortestDistanceSoFar = difference;
 						bestChoiceSoFar = rowNames.get(i);
 					} else {
 						return -1;
 					}
 				} else if(i + 1 == rowNames.size()) {
-					if(rowIndex <= rowName) {
+					if(engineSpeed <= rowName) {
 						shortestDistanceSoFar = difference;
 						bestChoiceSoFar = rowNames.get(i);
 					} else {
@@ -206,16 +188,11 @@ public class EcutekTable {
 		return bestChoiceSoFar;		
 	}
 
-	/**
-	 * Saves this table to a file on the disk.
-	 * @param destinationFileName
-	 * @throws IOException
-	 */
-	public void save(File file) throws IOException {
+	public void save(String revisedVEMapFileLocationString, int minimumCount, boolean forTiming) throws IOException {
 		System.out.println("saving...");
+		File file = new File(revisedVEMapFileLocationString);
 		if(file.exists()) {
-			String destinationFileName = file.getName();
-			file = new File(destinationFileName.substring(0,destinationFileName.lastIndexOf('.')) + "." + System.currentTimeMillis() + ".map");
+			file = new File(revisedVEMapFileLocationString.substring(0,revisedVEMapFileLocationString.lastIndexOf('.')) + "." + System.currentTimeMillis() + ".map");
 		}
 		
 		// load the pre-existing file
@@ -240,12 +217,58 @@ public class EcutekTable {
 				if(columns != null) {
 					Cell tableCellData = columns.get(columnName);
 					if(tableCellData != null) {
-						double representativeValue = tableCellData.getRepresentativeValue();
+						double representativeValue = tableCellData.getRepresentativeValue(minimumCount); // used to be get representative value
+						//Double average = tableCellData.getMean();
 						System.out.println("processing " + i + "," + j);
-						stringBuffer.append(representativeValue);
-					} 
+
+						Double originalValue = tableCellData.getPopulation().get(0);
+						if(originalValue != representativeValue) {
+							System.out.println("here");
+						}
+						if(forTiming) {
+							if(tableCellData.getPopulation().size() == 1) {
+								stringBuffer.append(originalValue);
+							} else {
+								//representativeValue = getPopularElement(tableCellData.getPopulation());
+								representativeValue = tableCellData.getSmallestElement() + 1;
+								/*
+								double mean = tableCellData.getMean();
+								double roundedMean = Math.round(mean);
+								if(roundedMean < representativeValue) {
+									representativeValue = roundedMean;
+								}*/
+
+								if(representativeValue > originalValue) {
+									representativeValue = originalValue;
+								}
+								stringBuffer.append(Math.floor(representativeValue));
+							}
+						} else {			
+							
+							if(representativeValue > originalValue) {
+								double d = representativeValue / originalValue;
+								double differecence = d - 1.0;
+								double halfDifference = differecence / 2;
+								double halfDifferenceWithOne = halfDifference + 1;
+								double newAverage = originalValue * halfDifferenceWithOne; 
+								stringBuffer.append(newAverage);
+							} else if(representativeValue < originalValue) { 
+								double d = representativeValue / originalValue;
+								double differecence = 1.0 - d;
+								double halfDifference = differecence / 2;
+								double halfDifferenceWithOne = halfDifference + 1;
+								double newAverage = representativeValue * halfDifferenceWithOne;
+								stringBuffer.append(newAverage);
+							} else {
+								stringBuffer.append(originalValue);
+							}
+							//stringBuffer.append(representativeValue);
+
+						}
+
+					}
 				} else {
-					stringBuffer.append("100.0");
+					stringBuffer.append("0.0");
 				}
 			}
 		}
@@ -254,5 +277,28 @@ public class EcutekTable {
 		fileWriter.flush();
 		fileWriter.close();
 		System.out.println("done writing to file: " + file.getAbsolutePath());
+	}
+
+	public Double getPopularElement(ArrayList<Double> a)
+	{
+	  int count = 1, tempCount;
+	  double popular = a.get(0);
+	  double temp = 0;
+	  for (int i = 0; i < (a.size() - 1); i++)
+	  {
+	    temp = a.get(i);
+	    tempCount = 0;
+	    for (int j = 1; j < a.size(); j++)
+	    {
+	      if (temp == a.get(j))
+	        tempCount++;
+	    }
+	    if (tempCount > count)
+	    {
+	      popular = temp;
+	      count = tempCount;
+	    }
+	  }
+	  return popular;
 	}
 }

@@ -14,8 +14,8 @@ import java.util.Set;
  */
 public class Log {
 	private File logFile;
-	private static HashMap<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
-	private static HashMap<Integer,ArrayList<Double>> columnIdToValuesMap = new HashMap<Integer,ArrayList<Double>>();
+	private HashMap<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
+	private HashMap<Integer,ArrayList<Double>> columnIdToValuesMap = new HashMap<Integer,ArrayList<Double>>();
 	
 	/**
 	 * Load a log file given a string representing a file location.
@@ -27,6 +27,22 @@ public class Log {
 		loadFile(logFile);
 	}
 	
+	public HashMap<String, Integer> getColumnNameToIndexMap() {
+		return columnNameToIndexMap;
+	}
+
+	public void setColumnNameToIndexMap(HashMap<String, Integer> columnNameToIndexMap) {
+		this.columnNameToIndexMap = columnNameToIndexMap;
+	}
+
+	public HashMap<Integer, ArrayList<Double>> getColumnIdToValuesMap() {
+		return columnIdToValuesMap;
+	}
+
+	public void setColumnIdToValuesMap(HashMap<Integer, ArrayList<Double>> columnIdToValuesMap) {
+		this.columnIdToValuesMap = columnIdToValuesMap;
+	}
+
 	/**
 	 * Load a log file given a file object.
 	 * @param file
@@ -120,4 +136,23 @@ public class Log {
 			}
 		}
 	}
+
+	/**
+	 * Determine if the two logs have the same attributes.
+	 * @param foreignLog
+	 * @return true if attributes match, false otherwise.
+	 */
+	public boolean attributesMatch(Log foreignLog) {
+		if(columnNameToIndexMap.equals(foreignLog.getColumnNameToIndexMap())
+				&& columnIdToValuesMap.equals(foreignLog.getColumnIdToValuesMap())) {
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public String toString() {
+		return logFile.getName();
+	}
+	
 }

@@ -1,6 +1,7 @@
 package com.infiniticare.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * A cell may contain one or more numbers inside of it.
@@ -181,7 +182,8 @@ public class Cell {
 	 */
 	public double getRepresentativeValue(int minimumNumber) {
 		if(this.getPopulation().size() > minimumNumber) {
-			return getRepresentativeValue(0.1);
+			double representativeValue = getRepresentativeValue(0.1);
+			return representativeValue;
 		} else {
 			return population.get(0);
 		}
@@ -193,5 +195,10 @@ public class Cell {
 
 	public void setPopulation(ArrayList<Double> population) {
 		this.population = population;
+	}
+
+	public Double getSmallestElement() {
+		Collections.sort(getPopulation());
+		return population.get(0);
 	}
 }

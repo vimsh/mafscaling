@@ -257,19 +257,26 @@ public class EcutekMap {
 							}
 						} else {	
 							double d = representativeValue / originalValue;
-							double difference = d - 1.0;
-							if(representativeValue < originalValue) {
-								difference = 1.0 - d;
+							// d is the multiplier for the original value.
+							// now we want to scale it by the correction factor
+							// if d is > 1, then d - 1 and divide by 2. Then add 1 back.
+							if(d > 1) {
+								d = d - 1; // gives us something like 0.2
+								d = d * correctionFactor; // now we have something like 0.1 if the correction factor was 0.5
+								d = d + 1; // now we have our final correction of 1.1 rather than the original 1.2
+							} else if (d < 1) {
+								d = 1 - d; // gives us something like 0.15 when d is 0.85
+								d = d * correctionFactor; // now we have something ike 0.075 if correction factor is 0.5
+								d = 1 - d; // now we have 0.925
 							}
-							double modifiedDifference = difference * correctionFactor;
-							double modifiedDifferenceWithOne = modifiedDifference + 1;
-							double newAverage = originalValue * modifiedDifferenceWithOne; 
+							
+							representativeValue = originalValue * d;
 							
 							if(representativeValue != originalValue) {
 								if(fromCustomMap) {
-									newAverage = newAverage / 100.0;
+									representativeValue = representativeValue / 100.0;
 								}
-								stringBuffer.append(newAverage);
+								stringBuffer.append(representativeValue);
 							} else {
 								if(fromCustomMap) {
 									originalValue = originalValue / 100.0;

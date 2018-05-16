@@ -1,5 +1,8 @@
 package com.infiniticare.model;
 
+/**
+ * An object to represent knock data at any given time T. Used for knock signal processing.
+ */
 public class KnockMember {
 	private double loudestKnockValue;
 	private double thresholdForLoudestCylinder;

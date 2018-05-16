@@ -71,6 +71,9 @@ public abstract class AirflowTuner extends Tuner {
 					double airflowIndexColumn = airflowIndexYs.get(i);
 					double stftAvg = ((stftB1s.get(i) + stftB2s.get(i)) / 2.0) / 100.0;
 					double olft = olfts.get(i);
+					if(olft == 0) {
+						throw new UnsupportedOperationException("It is not valid to use 0 as an input for open loop fuel correction.");
+					}
 					double correctionNeeded = (ltftAvg + stftAvg + olft) - 2;
 					double airflowIndexRow = airflowIndexXs.get(i);
 

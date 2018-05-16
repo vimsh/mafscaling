@@ -3,6 +3,7 @@ package com.infiniticare.calibration;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -49,11 +50,30 @@ public class TuningInput {
 	public final static String SPEED_DENSITY_STATE = "SPEED_DENSITY_STATE";
 	public final static String ENGINE_LOAD_PERCENT = "ENGINE_LOAD_PERCENT";
 	public final static String AFR_AVG = "AFR_AVG";
+	public final static String AFR_BANK1 = "AFR_BANK1";
+	public final static String AFR_BANK2 = "AFR_BANK2";
 	public final static String AFR_TARGET = "AFR_TARGET";
 	public final static String IGNITION_CORRECTION = "IGNITION_CORRECTION";	
 	public final static String HOT_COLD_TRANSITION_TEMP = "HOT_COLD_TRANSITION_TEMP";
 	public final static String MANIFOLD_PRESSURE = "MANIFOLD_PRESSURE";
 	public final static String MINIMUM_HIT_COUNT_REQUIRED_TO_SUGGEST_CHANGES = "MINIMUM_HIT_COUNT_REQUIRED_TO_SUGGEST_CHANGES";
+	
+	public final static String KNOCK_SENSOR_CYLINDER_1 = "KNOCK_SENSOR_CYLINDER_1";
+	public final static String KNOCK_SENSOR_CYLINDER_2 = "KNOCK_SENSOR_CYLINDER_2";
+	public final static String KNOCK_SENSOR_CYLINDER_3 = "KNOCK_SENSOR_CYLINDER_3";
+	public final static String KNOCK_SENSOR_CYLINDER_4 = "KNOCK_SENSOR_CYLINDER_4";
+	public final static String KNOCK_SENSOR_CYLINDER_5 = "KNOCK_SENSOR_CYLINDER_5";
+	public final static String KNOCK_SENSOR_CYLINDER_6 = "KNOCK_SENSOR_CYLINDER_6";
+	
+	public final static String KNOCK_THRESHOLD_CYLINDER_1 = "KNOCK_THRESHOLD_CYLINDER_1";
+	public final static String KNOCK_THRESHOLD_CYLINDER_2 = "KNOCK_THRESHOLD_CYLINDER_2";
+	public final static String KNOCK_THRESHOLD_CYLINDER_3 = "KNOCK_THRESHOLD_CYLINDER_3";
+	public final static String KNOCK_THRESHOLD_CYLINDER_4 = "KNOCK_THRESHOLD_CYLINDER_4";
+	public final static String KNOCK_THRESHOLD_CYLINDER_5 = "KNOCK_THRESHOLD_CYLINDER_5";
+	public final static String KNOCK_THRESHOLD_CYLINDER_6 = "KNOCK_THRESHOLD_CYLINDER_6";
+	
+	public final static String ENGINE_CYLINDER_COUNT = "ENGINE_CYLINDER_COUNT";
+	public final static String MAX_ALLOWED_KNOCK_THRESHOLD_DISTANCE = "MAX_ALLOWED_KNOCK_THRESHOLD_DISTANCE";
 	
 	private File logFilesLocation;
 	private Properties properties;
@@ -64,7 +84,6 @@ public class TuningInput {
 	private VVELMap vvelMapCold;
 	private MAPVVELMap mapVVELMapHot;
 	private MAPVVELMap mapVVELMapCold;
-	private TimingMap timingMap;
 	
 	private Double vvelCompensationCorrectionFactorCold;
 	private Double vvelCompensationCorrectionFactorHot;
@@ -77,6 +96,12 @@ public class TuningInput {
 	private Double hotColdTransitionTemp;
 	private HashMap<String,String> attributeMap;
 	private Integer minimumHitCountRequiredToSuggestChanges;
+	
+	private ArrayList<TimingMap> timingMaps;
+	private ArrayList<TimingMap> timingMasks;
+	
+	private Double engineCylinderCount;
+	private Double maxAllowedKnockThresholdDistance;
 	
 	public TuningInput() {
 	}	
@@ -96,7 +121,7 @@ public class TuningInput {
 		File[] logFiles = logFilesLocation.listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File file) {
-				if(file.isFile() && file.getName().toLowerCase().endsWith("csv")) {
+				if(file.isFile() && file.getName().toLowerCase().endsWith(".csv")) {
 					return true;
 				}
 				return false;
@@ -151,7 +176,7 @@ public class TuningInput {
 		if(veCompensationCorrectionFactorCold == null) {
 			veCompensationCorrectionFactorCold = Double.valueOf(attributeMap.get(VE_COMPENSATION_CORRECTION_FACTOR_COLD));
 		}
-		return vvelCompensationCorrectionFactorCold;
+		return veCompensationCorrectionFactorCold;
 	}
 
 	public void setVeCompensationCorrectionFactorCold(Double veCompensationCorrectionFactorCold) {
@@ -162,7 +187,7 @@ public class TuningInput {
 		if(veCompensationCorrectionFactorHot == null) {
 			veCompensationCorrectionFactorHot = Double.valueOf(attributeMap.get(VE_COMPENSATION_CORRECTION_FACTOR_HOT));
 		}
-		return vvelCompensationCorrectionFactorHot;
+		return veCompensationCorrectionFactorHot;
 	}
 
 	public void setVeCompensationCorrectionFactorHot(Double veCompensationCorrectionFactorHot) {
@@ -278,14 +303,6 @@ public class TuningInput {
 		this.mapVVELMapCold = mapVVELMapCold;
 	}
 
-	public TimingMap getTimingMap() {
-		return timingMap;
-	}
-
-	public void setTimingMap(TimingMap timingMap) {
-		this.timingMap = timingMap;
-	}
-
 	public Double getTimingCorrectionThreshold() {
 		return timingCorrectionThreshold;
 	}
@@ -330,5 +347,55 @@ public class TuningInput {
 		}
 		
 		return mapVVELMapHotCompensationCorrectionFactor;
+	}
+
+	public ArrayList<TimingMap> getTimingMaps() {
+		if(timingMaps == null) {
+			timingMaps = new ArrayList<TimingMap>();
+			File[] timingMapFiles = logFilesLocation.listFiles(new FilenameFilter(){
+				@Override
+				public boolean accept(File file, String arg1) {
+					if(file.getName().toLowerCase().endsWith(".timing")) {
+						return true;
+					}
+					return false;
+				}
+				
+			});
+			for (File file : timingMapFiles) {
+				TimingMap timingMap = new TimingMap(file);
+				timingMaps.add(timingMap);
+			}
+		}
+		return timingMaps;
+	}
+	
+	public ArrayList<TimingMap> getTimingMasks() {
+		if(timingMasks == null) {
+			timingMasks = new ArrayList<TimingMap>();
+			ArrayList<TimingMap> timingMaps = getTimingMaps();
+			for (int i = 0; i < timingMaps.size(); i++) {
+				TimingMap timingMap = timingMaps.get(i);
+				File timingMapFile = timingMap.getFile();
+				File timingMaskFile = new File(timingMapFile.getAbsolutePath() + ".mask");
+				TimingMap timingMask = new TimingMap(timingMaskFile);
+				timingMasks.add(timingMask);
+			}
+		}
+		return timingMasks;
+	}
+
+	public double getEngineCylinderCount() {
+		if(engineCylinderCount == null) {
+			engineCylinderCount = Double.parseDouble(attributeMap.get(ENGINE_CYLINDER_COUNT));
+		}
+		return engineCylinderCount;
+	}
+
+	public double getMaxAllowedKnockThresholdDistance() {
+		if(maxAllowedKnockThresholdDistance == null) {
+			maxAllowedKnockThresholdDistance = Double.parseDouble(attributeMap.get(MAX_ALLOWED_KNOCK_THRESHOLD_DISTANCE));
+		}
+		return maxAllowedKnockThresholdDistance;
 	}
 }

@@ -1,5 +1,6 @@
 package com.infiniticare.calibration;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -34,4 +35,14 @@ public class MAPVVELTuner extends AirflowTuner {
 		String attributeLabel = attributeMap.get(TuningInput.MANIFOLD_PRESSURE);
 		return log.getLoggedAttribute(attributeLabel);
 	}
+
+	@Override
+	public void saveTuningResults() throws IOException {
+		ecutekMapCold.save(ecutekMapCold.getFile().getAbsolutePath() + ".new"
+				, tuningInput.getMinimumHitCountRequiredToSuggestChanges(), false, ecutekMapColdCorrectionFactor, true);
+		ecutekMapHot.save(ecutekMapHot.getFile().getAbsolutePath() + ".new"
+				, tuningInput.getMinimumHitCountRequiredToSuggestChanges(), false, ecutekMapHotCorrectionFactor, true);
+	}
+	
+	
 }

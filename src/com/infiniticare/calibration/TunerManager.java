@@ -21,7 +21,7 @@ public class TunerManager {
 		//tuners.add(new TimingTuner());
 		tuners.add(new VVELTuner());
 		tuners.add(new VETuner());
-		//tuners.add(new MAPVVELTuner());
+		tuners.add(new MAPVVELTuner());
 	}
 
 	public void saveTuningResults() throws IOException {

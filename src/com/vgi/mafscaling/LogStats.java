@@ -207,7 +207,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             gbl_cntlPanel.rowWeights = new double[]{0.0, 0.0, 0.0};
             cntlPanel.setLayout(gbl_cntlPanel);
             
-            addLabel(2, 1, "Cell Hit Minimum Count");
+            addLabel(2, 1, "CellHit Min Cnt");
             hitCountTextBox = addTextField(2, 2, 3, NumberFormat.getIntegerInstance(), true);
             
             JButton selectLogButton = addButton(0, 0, 2, "<html><center>Select<br>Log</center></html>", "selectlog");
@@ -643,7 +643,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             return Statistics.RANGE;
         if ("Variance".equals(name))
             return Statistics.VARIANCE;
-        if ("Std Devn".equals(name))
+        if ("Standard Deviation".equals(name))
             return Statistics.STDDEV;
         return Statistics.MEAN;
     }

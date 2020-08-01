@@ -256,14 +256,14 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             addButton(0, 11, 2, "GO", "go");
 
             labelFileName = new JLabel("");
-            labelFileName.setHorizontalAlignment(SwingConstants.CENTER);
+            labelFileName.setHorizontalAlignment(SwingConstants.LEFT);
             GridBagConstraints gbc_label = new GridBagConstraints();
             gbc_label.anchor = GridBagConstraints.WEST;
             gbc_label.fill = GridBagConstraints.HORIZONTAL;
             gbc_label.insets = insets3;
-            gbc_label.gridx = 0;
+            gbc_label.gridx = 3;
             gbc_label.gridy = 2;
-            gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length;
+            gbc_label.gridwidth = gbl_cntlPanel.columnWidths.length - gbc_label.gridx;
             cntlPanel.add(labelFileName, gbc_label);
         }
         catch (Exception e) {

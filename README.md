@@ -4,21 +4,25 @@ Sorry for the confusing name, it started as mafscaler but then evolved into a bi
 
 Currently these tools are implemented:
 
-MAF CL/OL Scaling
+MAF Open Loop Scaling
+
+MAF Closed Loop Scaling
 
 MAF Rescaling
 
 Table Rescaling
 
+Throttle Maps
+
 Load Compensation / Injector Pulse Width Compensation
 
 IAT Compensation
 
-SD Calculations
+MAF VE Calculation
 
 WOT best VVT
 
-Log statistics (learning)
+Log Statistics (learning)
 
 Log view, WOT comparison, and map tracing (replay)
 

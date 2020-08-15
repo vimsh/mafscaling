@@ -36,11 +36,12 @@ import org.apache.log4j.Logger;
 
 public class MafScaling {
     private static final Logger logger = Logger.getLogger(MafScaling.class);
-    private static final String Title = "MAF Scaling - v2.5.3";
+    private static final String Title = "MAF Scaling - v2.6.0";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
     private static final String MRTabName = "<html>MAF Rescale</html>";
     private static final String TRTabName = "<html>Table Rescale</html>";
+    private static final String TMTabName = "<html>Throttle Maps</html>";
     private static final String LCTabName = "<html>Load Comp</html>";
     private static final String MITabName = "<html>MAF IAT Comp</html>";
     private static final String VETabName = "<html>MAF VE Calc</html>";
@@ -133,6 +134,10 @@ public class MafScaling {
         JTabbedPane tr = new TableRescale(JTabbedPane.LEFT);
         tr.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(tr, TRTabName);
+
+        JTabbedPane tm = new ThrottleMaps(JTabbedPane.LEFT);
+        tm.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(tm, TMTabName);
 
         JTabbedPane lc = new LoadComp(JTabbedPane.LEFT);
         lc.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);

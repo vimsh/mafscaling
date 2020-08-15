@@ -202,35 +202,35 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
     }
     
     protected void createLogDataTable(JPanel panel, String[] columns) {
-            logDataTable = new JTable();
-            logDataTable.getTableHeader().setReorderingAllowed(false);
-            logDataTable.setModel(new DefaultTableModel(LogDataRowCount, columns.length));
-            logDataTable.setColumnSelectionAllowed(true);
-            logDataTable.setCellSelectionEnabled(true);
-            logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
-            logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
-            logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-            logDataTable.putClientProperty("terminateEditOnFocusLost", true);
-            
-            for (int i = 0; i < columns.length; ++i)
-                logDataTable.getColumnModel().getColumn(i).setHeaderValue(columns[i]);
-            Utils.initializeTable(logDataTable, ColumnWidth);
+        logDataTable = new JTable();
+        logDataTable.getTableHeader().setReorderingAllowed(false);
+        logDataTable.setModel(new DefaultTableModel(LogDataRowCount, columns.length));
+        logDataTable.setColumnSelectionAllowed(true);
+        logDataTable.setCellSelectionEnabled(true);
+        logDataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
+        logDataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); 
+        logDataTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        logDataTable.putClientProperty("terminateEditOnFocusLost", true);
+        
+        for (int i = 0; i < columns.length; ++i)
+            logDataTable.getColumnModel().getColumn(i).setHeaderValue(columns[i]);
+        Utils.initializeTable(logDataTable, ColumnWidth);
 
-            
-            GridBagConstraints gbc = new GridBagConstraints();
-            gbc.insets = insets0;
-            gbc.gridx = 0;
-            gbc.gridy = 0;
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = insets0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
 
-            JTableHeader header = logDataTable.getTableHeader();
-            panel.add(header, gbc);
-            
-            gbc.gridy = 1;
-            panel.add(logDataTable, gbc);
+        JTableHeader header = logDataTable.getTableHeader();
+        panel.add(header, gbc);
+        
+        gbc.gridy = 1;
+        panel.add(logDataTable, gbc);
 
-            ExcelAdapter excelAdapter = new ExcelAdapter();
-            excelAdapter.addTable(logDataTable, true, false);
-            excelAdapterList.add(excelAdapter);
+        ExcelAdapter excelAdapter = new ExcelAdapter();
+        excelAdapter.addTable(logDataTable, true, false);
+        excelAdapterList.add(excelAdapter);
     }
     
     protected void create3dGraphTab() {
@@ -288,7 +288,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
         return createDataTable(panel, tableName, colCount, TableRowCount, gridx, 0, isOriginalTable, true, false);
     }
     
-    private JTable createDataTable(JPanel panel, String tableName, int colCount, int rowCount, int gridx, int gridy, boolean isOriginalTable, boolean extendRows, boolean extendCols) {
+    protected JTable createDataTable(JPanel panel, String tableName, int colCount, int rowCount, int gridx, int gridy, boolean isOriginalTable, boolean extendRows, boolean extendCols) {
         final JTable table;
         ExcelAdapter excelAdapter;
         if (isOriginalTable) {

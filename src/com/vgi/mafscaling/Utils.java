@@ -196,6 +196,40 @@ public final class Utils {
         ((DefaultTableModel)table.getModel()).fireTableDataChanged();
     }
     
+
+    public static void setTableHeaderHighlightColor(JTable table, int[] selColumns, int[] selRows) {
+        BgColorFormatRenderer renderer = (BgColorFormatRenderer)table.getDefaultRenderer(Object.class);
+        if (renderer != null) {
+            Color[][] colorMatrix = renderer.getColors();
+            if (colorMatrix != null) {
+                int row = 1;
+                int column = 1;
+                if (table.getColumnCount() == 2 && table.getRowCount() >= 2 && !table.getValueAt(0, 0).toString().equals(""))
+                    row = 0;
+                else if (table.getColumnCount() >= 2 && table.getRowCount() == 2 && !table.getValueAt(0, 0).toString().equals(""))
+                    column = 0;
+                if (column == 1) {
+                    for (int i = 0; i < colorMatrix.length; ++i)
+                        colorMatrix[i][0] = Color.LIGHT_GRAY;
+                }
+                if (row == 1) {
+                    for (int i = 0; i < colorMatrix[0].length; ++i)
+                        colorMatrix[0][i] = Color.LIGHT_GRAY;
+                }
+                for (int i = 0; i < selRows.length; ++i) {
+                    if (selRows[i] > 0 && column > 0 || row == 0)
+                        colorMatrix[selRows[i]][0] = Color.GRAY;
+                }
+                for (int i = 0; i < selColumns.length; ++i) {
+                    if (selColumns[i] > 0 && row > 0 || column == 0)
+                        colorMatrix[0][selColumns[i]] = Color.GRAY;
+                }
+                ((DefaultTableModel)table.getModel()).fireTableDataChanged();
+            }
+        }
+    }
+    
+    
     /**
      * Method clears the table cells color
      * @param table

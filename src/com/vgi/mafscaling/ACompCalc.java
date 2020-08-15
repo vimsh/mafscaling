@@ -361,8 +361,9 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                 int rowIdx = eventTable.getSelectedRow();
                 JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
                 for (JTable t : tables) {
-                    if (t == null || t == eventTable)
+                    if (t == null)
                         continue;
+                    Utils.setTableHeaderHighlightColor(t, new int[]{ colIdx }, new int[]{ rowIdx });
                     if (t.getColumnCount() - 1 >= colIdx && t.getRowCount() - 1 >= rowIdx) {
                         t.setColumnSelectionInterval(colIdx, colIdx);
                         t.setRowSelectionInterval(rowIdx, rowIdx);
@@ -377,8 +378,9 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                 int lastRowIdx = rows.length - 1;
                 JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
                 for (JTable t : tables) {
-                    if (t == null || t == eventTable)
+                    if (t == null)
                         continue;
+                    Utils.setTableHeaderHighlightColor(t, cols, rows);
                     if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
                         t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
                         t.setRowSelectionInterval(rows[0], rows[lastRowIdx]);

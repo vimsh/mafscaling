@@ -25,6 +25,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
@@ -206,6 +208,29 @@ public class ThrottleMaps extends ACompCalc {
                 tableColumn.setWidth(table.getWidth());
             }
         });
+
+        table.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent event) {
+                if (Utils.isTableEmpty(origTable) || Utils.isTableEmpty(newTable) || Utils.isTableEmpty(corrTable)) {
+                    return;
+                }
+                JTable eventTable =(JTable)event.getSource();
+                int colIdx = eventTable.getSelectedColumn();
+                int rowIdx = eventTable.getSelectedRow();
+                ArrayList<Double> t3xAxisArray = new ArrayList<Double>();
+                for (int i = 1; i < corrTable.getColumnCount(); ++i)
+                    t3xAxisArray.add(Double.valueOf(corrTable.getValueAt(0, i).toString()));
+
+                ArrayList<Double> t1yAxisArray = new ArrayList<Double>();
+                for (int i = 0; i < origTable.getRowCount(); ++i)
+                    t1yAxisArray.add(Double.valueOf(origTable.getValueAt(i, 0).toString()));
+
+                ArrayList<Double> t3yAxisArray = new ArrayList<Double>();
+                for (int i = 1; i < corrTable.getRowCount(); ++i)
+                    t3yAxisArray.add(Double.valueOf(corrTable.getValueAt(i, 0).toString()));
+                calculate(t3xAxisArray, t1yAxisArray, t3yAxisArray, rowIdx, colIdx, true);
+            }
+        });
         
         Utils.addTableHeaderHighlight(table);
         table.setName(tableName);
@@ -304,88 +329,13 @@ public class ThrottleMaps extends ACompCalc {
             for (int i = 1; i < corrTable.getRowCount(); ++i)
                 t3yAxisArray.add(Double.valueOf(corrTable.getValueAt(i, 0).toString()));
             
-            Double x, x1, x2, y, y1, y2, x1y1, x1y2, x2y1, x2y2, tmp, val1, val2, val3;
-            int idx, idxX1, idxX2, idxY1, idxY2;
             for (int i = 0; i < newTable.getRowCount(); ++i) {
                 for (int j = 0; j < newTable.getColumnCount(); ++j) {
                     if (0 == i || j == 0) {
                         logDataTable.setValueAt(newTable.getValueAt(i, j), i, j);
                     }
                     else {
-                        // get value from table 1
-                        x = Double.valueOf(newTable.getValueAt(i, 0).toString());
-                        idx = Utils.closestValueIndex(x, t1yAxisArray);
-                        tmp = Double.valueOf(origTable.getValueAt(idx, 0).toString());
-                        if (tmp > x && idx > 0) {
-                            x1 = Double.valueOf(origTable.getValueAt(idx - 1, 0).toString());
-                            x2 = tmp;
-                            y1 = Double.valueOf(origTable.getValueAt(idx - 1, 1).toString());
-                            y2 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
-                            val1 = Utils.linearInterpolation(x, x1, x2, y1, y2);
-                        }
-                        else if (tmp < x && idx < t1yAxisArray.size() - 1) {
-                            x1 = tmp;
-                            x2 = Double.valueOf(origTable.getValueAt(idx + 1, 0).toString());
-                            y1 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
-                            y2 = Double.valueOf(origTable.getValueAt(idx + 1, 1).toString());
-                            val1 = Utils.linearInterpolation(x, x1, x2, y1, y2);
-                        }
-                        else {
-                            val1 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
-                        }
-                        
-                        // get value from table 2
-                        val2 = Double.valueOf(newTable.getValueAt(i, j).toString());
-                        
-                        // get value from table 3
-                        x = val2 / val1;
-                        idx = Utils.closestValueIndex(x, t3xAxisArray) + 1;
-                        tmp = Double.valueOf(corrTable.getValueAt(0, idx).toString());
-                        if (tmp > x && idx > 1) {
-                            idxX1 = idx - 1;
-                            idxX2 = idx;
-                            x1 = Double.valueOf(corrTable.getValueAt(0, idx - 1).toString());
-                            x2 = tmp;
-                        }
-                        else if (tmp < x && idx < t3xAxisArray.size()) {
-                            idxX1 = idx;
-                            idxX2 = idx  + 1;
-                            x1 = tmp;
-                            x2 = Double.valueOf(corrTable.getValueAt(0, idx + 1).toString());
-                        }
-                        else {
-                            idxX1 = idxX2 = idx;
-                            x1 = x2 = tmp;
-                        }
-
-                        y = Double.valueOf(newTable.getValueAt(i, 0).toString());
-                        idx = Utils.closestValueIndex(x, t3yAxisArray) + 1;
-                        tmp = Double.valueOf(corrTable.getValueAt(idx, 0).toString());
-                        if (tmp > x && idx > 1) {
-                            idxY1 = idx - 1;
-                            idxY2 = idx;
-                            y1 = Double.valueOf(corrTable.getValueAt(idx - 1, 0).toString());
-                            y2 = tmp;
-                        }
-                        else if (tmp < x && idx < t3yAxisArray.size()) {
-                            idxY1 = idx;
-                            idxY2 = idx  + 1;
-                            y1 = tmp;
-                            y2 = Double.valueOf(corrTable.getValueAt(idx + 1, 0).toString());
-                        }
-                        else {
-                            idxY1 = idxY2 = idx;
-                            y1 = y2 = tmp;
-                        }
-                        
-                        x1y1 = Double.valueOf(corrTable.getValueAt(idxY1, idxX1).toString());
-                        x1y2 = Double.valueOf(corrTable.getValueAt(idxY2, idxX1).toString());
-                        x2y1 = Double.valueOf(corrTable.getValueAt(idxY1, idxX2).toString());
-                        x2y2 = Double.valueOf(corrTable.getValueAt(idxY2, idxX2).toString());
-                        
-                        val3 = Utils.bilinearInterpolation(x, y, x1, x2, y1, y2, x1y1, x1y2, x2y1, x2y2);
-                        
-                        logDataTable.setValueAt(val3, i, j);
+                        logDataTable.setValueAt(calculate(t3xAxisArray, t1yAxisArray, t3yAxisArray, i, j, false), i, j);
                     }
                 }
             }
@@ -398,6 +348,106 @@ public class ThrottleMaps extends ACompCalc {
             JOptionPane.showMessageDialog(null, "Error calculating values: " + e, "Error", JOptionPane.ERROR_MESSAGE);
         }
         return false;
+    }
+    
+    private Double calculate(ArrayList<Double> t3xAxisArray, ArrayList<Double> t1yAxisArray, ArrayList<Double> t3yAxisArray, int row, int column, boolean highlight)
+    {
+        Double x, x1, x2, y, y1, y2, x1y1, x1y2, x2y1, x2y2, tmp, val1, val2;
+        int idx, idxX1, idxX2, idxY1, idxY2;
+        
+        // get value from table 1
+        x = Double.valueOf(newTable.getValueAt(row, 0).toString());
+        idx = Utils.closestValueIndex(x, t1yAxisArray);
+        tmp = Double.valueOf(origTable.getValueAt(idx, 0).toString());
+        if (tmp > x && idx > 0) {
+            x1 = Double.valueOf(origTable.getValueAt(idx - 1, 0).toString());
+            x2 = tmp;
+            y1 = Double.valueOf(origTable.getValueAt(idx - 1, 1).toString());
+            y2 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
+            val1 = Utils.linearInterpolation(x, x1, x2, y1, y2);
+            if (highlight) {
+                origTable.setColumnSelectionInterval(0, 1);
+                origTable.setRowSelectionInterval(idx - 1, idx);
+            }
+        }
+        else if (tmp < x && idx < t1yAxisArray.size() - 1) {
+            x1 = tmp;
+            x2 = Double.valueOf(origTable.getValueAt(idx + 1, 0).toString());
+            y1 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
+            y2 = Double.valueOf(origTable.getValueAt(idx + 1, 1).toString());
+            val1 = Utils.linearInterpolation(x, x1, x2, y1, y2);
+            if (highlight) {
+                origTable.setColumnSelectionInterval(1, 1);
+                origTable.setRowSelectionInterval(idx, idx + 1);
+            }
+        }
+        else {
+            val1 = Double.valueOf(origTable.getValueAt(idx, 1).toString());
+            if (highlight) {
+                origTable.setColumnSelectionInterval(1, 1);
+                origTable.setRowSelectionInterval(idx, idx);
+            }
+        }
+        
+        // get value from table 2
+        val2 = Double.valueOf(newTable.getValueAt(row, column).toString());
+        
+        // get value from table 3
+        x = val2 / val1;
+        idx = Utils.closestValueIndex(x, t3xAxisArray) + 1;
+        tmp = Double.valueOf(corrTable.getValueAt(0, idx).toString());
+        if (tmp > x && idx > 1) {
+            idxX1 = idx - 1;
+            idxX2 = idx;
+            x1 = Double.valueOf(corrTable.getValueAt(0, idx - 1).toString());
+            x2 = tmp;
+        }
+        else if (tmp < x && idx < t3xAxisArray.size()) {
+            idxX1 = idx;
+            idxX2 = idx  + 1;
+            x1 = tmp;
+            x2 = Double.valueOf(corrTable.getValueAt(0, idx + 1).toString());
+        }
+        else {
+            idxX1 = idxX2 = idx;
+            x1 = x2 = tmp;
+        }
+
+        y = Double.valueOf(newTable.getValueAt(row, 0).toString());
+        idx = Utils.closestValueIndex(y, t3yAxisArray) + 1;
+        tmp = Double.valueOf(corrTable.getValueAt(idx, 0).toString());
+        if (tmp > y && idx > 1) {
+            idxY1 = idx - 1;
+            idxY2 = idx;
+            y1 = Double.valueOf(corrTable.getValueAt(idx - 1, 0).toString());
+            y2 = tmp;
+        }
+        else if (tmp < y && idx < t3yAxisArray.size()) {
+            idxY1 = idx;
+            idxY2 = idx  + 1;
+            y1 = tmp;
+            y2 = Double.valueOf(corrTable.getValueAt(idx + 1, 0).toString());
+        }
+        else {
+            idxY1 = idxY2 = idx;
+            y1 = y2 = tmp;
+        }
+        
+        x1y1 = Double.valueOf(corrTable.getValueAt(idxY1, idxX1).toString());
+        x1y2 = Double.valueOf(corrTable.getValueAt(idxY2, idxX1).toString());
+        x2y1 = Double.valueOf(corrTable.getValueAt(idxY1, idxX2).toString());
+        x2y2 = Double.valueOf(corrTable.getValueAt(idxY2, idxX2).toString());
+        
+        if (highlight) {
+            corrTable.setColumnSelectionInterval(idxX1, idxX2);
+            corrTable.setRowSelectionInterval(idxY1, idxY2);
+            if (!Utils.isTableEmpty(logDataTable)) {
+                logDataTable.setColumnSelectionInterval(column, column);
+                logDataTable.setRowSelectionInterval(row, row);
+            }
+        }
+        
+        return Utils.bilinearInterpolation(x, y, x1, x2, y1, y2, x1y1, x1y2, x2y1, x2y2);
     }
 
     private void add3DPlot(JTable table) {

@@ -20,6 +20,8 @@ package com.vgi.mafscaling;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +32,9 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -208,23 +213,27 @@ public final class Utils {
                     row = 0;
                 else if (table.getColumnCount() >= 2 && table.getRowCount() == 2 && !table.getValueAt(0, 0).toString().equals(""))
                     column = 0;
-                if (column == 1) {
-                    for (int i = 0; i < colorMatrix.length; ++i)
-                        colorMatrix[i][0] = Color.LIGHT_GRAY;
+                if (selRows != null) {
+                    if (column == 1) {
+                        for (int i = 0; i < colorMatrix.length; ++i)
+                            colorMatrix[i][0] = Color.LIGHT_GRAY;
+                    }
+                    for (int i = 0; i < selRows.length; ++i) {
+                        if (selRows[i] > 0 && column > 0 || row == 0)
+                            colorMatrix[selRows[i]][0] = Color.GRAY;
+                    }
                 }
-                if (row == 1) {
-                    for (int i = 0; i < colorMatrix[0].length; ++i)
-                        colorMatrix[0][i] = Color.LIGHT_GRAY;
+                if (selColumns != null) {
+                    if (row == 1) {
+                        for (int i = 0; i < colorMatrix[0].length; ++i)
+                            colorMatrix[0][i] = Color.LIGHT_GRAY;
+                    }
+                    for (int i = 0; i < selColumns.length; ++i) {
+                        if (selColumns[i] > 0 && row > 0 || column == 0)
+                            colorMatrix[0][selColumns[i]] = Color.GRAY;
+                    }
                 }
-                for (int i = 0; i < selRows.length; ++i) {
-                    if (selRows[i] > 0 && column > 0 || row == 0)
-                        colorMatrix[selRows[i]][0] = Color.GRAY;
-                }
-                for (int i = 0; i < selColumns.length; ++i) {
-                    if (selColumns[i] > 0 && row > 0 || column == 0)
-                        colorMatrix[0][selColumns[i]] = Color.GRAY;
-                }
-                ((DefaultTableModel)table.getModel()).fireTableDataChanged();
+                table.repaint();
             }
         }
     }
@@ -302,6 +311,7 @@ public final class Utils {
     /**
      * Method initializes the table cells with default value - an empty string, and sets cell width to specified width
      * @param table
+     * @param columnWidth
      */
     public static void initializeTable(JTable table, int columnWidth) {
         table.setDefaultRenderer(Object.class, new NumberFormatRenderer());
@@ -311,6 +321,47 @@ public final class Utils {
             for (int j = 0; j < table.getRowCount(); ++j)
                 table.setValueAt("", j, i);
         }
+    }
+
+    /**
+     * Method adds selected cell(s) column and row highlighting to the table
+     * @param table
+     */
+    public static void addTableHeaderHighlight(final JTable table) {
+        table.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent event) {
+                JTable eventTable =(JTable)event.getSource();
+                int colIdx = eventTable.getSelectedColumn();
+                int rowIdx = eventTable.getSelectedRow();
+                Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
+                if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
+                    eventTable.setColumnSelectionInterval(colIdx, colIdx);
+                    eventTable.setRowSelectionInterval(rowIdx, rowIdx);
+                }
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting())
+                    return;
+                ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+                if (!lsm.isSelectionEmpty()) {
+                    Utils.setTableHeaderHighlightColor(table, null, table.getSelectedRows());
+                }
+            }
+        });
+        
+        table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting())
+                    return;
+                ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+                if (!lsm.isSelectionEmpty()) {
+                    Utils.setTableHeaderHighlightColor(table, table.getSelectedColumns(), null);
+                }
+            }
+        });
     }
     
     /**

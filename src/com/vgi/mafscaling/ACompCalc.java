@@ -39,6 +39,8 @@ import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
@@ -354,6 +356,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                 tableColumn.setWidth(table.getWidth());
             }
         });
+
         table.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent event) {
                 JTable eventTable =(JTable)event.getSource();
@@ -370,25 +373,44 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
                     }
                 }
             }
-            public void mouseReleased(MouseEvent event) {
-                JTable eventTable =(JTable)event.getSource();
-                int[] cols = eventTable.getSelectedColumns();
-                int[] rows = eventTable.getSelectedRows();
-                int lastColIdx = cols.length - 1;
-                int lastRowIdx = rows.length - 1;
-                JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
-                for (JTable t : tables) {
-                    if (t == null)
-                        continue;
-                    Utils.setTableHeaderHighlightColor(t, cols, rows);
-                    if (t.getColumnCount() - 1 >= cols[lastColIdx] && t.getRowCount() - 1 >= rows[lastRowIdx]) {
-                        t.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
-                        t.setRowSelectionInterval(rows[0], rows[lastRowIdx]);
+        });
+
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting())
+                    return;
+                ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+                if (!lsm.isSelectionEmpty()) {
+                    Utils.setTableHeaderHighlightColor(table, null, table.getSelectedRows());
+                    JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+                    for (JTable t : tables) {
+                        if (t != null && t != table && (lsm.getMinSelectionIndex() != t.getSelectionModel().getMinSelectionIndex() || lsm.getMaxSelectionIndex() != t.getSelectionModel().getMaxSelectionIndex())) {
+                            Utils.setTableHeaderHighlightColor(t, null, table.getSelectedRows());
+                            t.getSelectionModel().setSelectionInterval(lsm.getMinSelectionIndex(), lsm.getMaxSelectionIndex());
+                        }
                     }
                 }
             }
         });
         
+        table.getColumnModel().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (e.getValueIsAdjusting())
+                    return;
+                ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+                if (!lsm.isSelectionEmpty()) {
+                    Utils.setTableHeaderHighlightColor(table, table.getSelectedColumns(), null);
+                    JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+                    for (JTable t : tables) {
+                        if (t != null && t != table && (lsm.getMinSelectionIndex() != t.getColumnModel().getSelectionModel().getMinSelectionIndex() || lsm.getMaxSelectionIndex() != t.getColumnModel().getSelectionModel().getMaxSelectionIndex())) {
+                            Utils.setTableHeaderHighlightColor(t, table.getSelectedColumns(), null);
+                            t.getColumnModel().getSelectionModel().setSelectionInterval(lsm.getMinSelectionIndex(), lsm.getMaxSelectionIndex());
+                        }
+                    }
+                }
+            }
+        });
+
         table.setName(tableName);
         table.getTableHeader().setReorderingAllowed(false);
         table.setColumnSelectionAllowed(true);

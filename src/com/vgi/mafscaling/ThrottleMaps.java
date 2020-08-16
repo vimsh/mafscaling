@@ -25,8 +25,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.util.ArrayList;
@@ -208,31 +206,8 @@ public class ThrottleMaps extends ACompCalc {
                 tableColumn.setWidth(table.getWidth());
             }
         });
-        table.addMouseListener(new MouseAdapter() {
-            public void mousePressed(MouseEvent event) {
-                JTable eventTable =(JTable)event.getSource();
-                int colIdx = eventTable.getSelectedColumn();
-                int rowIdx = eventTable.getSelectedRow();
-                Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
-                if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
-                    eventTable.setColumnSelectionInterval(colIdx, colIdx);
-                    eventTable.setRowSelectionInterval(rowIdx, rowIdx);
-                }
-            }
-            public void mouseReleased(MouseEvent event) {
-                JTable eventTable =(JTable)event.getSource();
-                int[] cols = eventTable.getSelectedColumns();
-                int[] rows = eventTable.getSelectedRows();
-                int lastColIdx = cols.length - 1;
-                int lastRowIdx = rows.length - 1;
-                Utils.setTableHeaderHighlightColor(eventTable, cols, rows);
-                if (eventTable.getColumnCount() - 1 >= cols[lastColIdx] && eventTable.getRowCount() - 1 >= rows[lastRowIdx]) {
-                    eventTable.setColumnSelectionInterval(cols[0], cols[lastColIdx]);
-                    eventTable.setRowSelectionInterval(rows[0], rows[lastRowIdx]);
-                }
-            }
-        });
         
+        Utils.addTableHeaderHighlight(table);
         table.setName(tableName);
         table.getTableHeader().setReorderingAllowed(false);
         table.setColumnSelectionAllowed(true);

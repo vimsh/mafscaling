@@ -1,4 +1,4 @@
-A small utility for processing ECU log files to help tuning for Subaru owners (some tools will work fo rother cars)
+A small utility for processing ECU log files to help tuning for Subaru owners (some tools will work for rother cars)
 
 Sorry for the confusing name, it started as mafscaler but then evolved into a bit more than that.
 

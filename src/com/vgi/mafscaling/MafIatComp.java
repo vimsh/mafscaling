@@ -316,6 +316,7 @@ public class MafIatComp extends ACompCalc {
                 boolean removed = false;
                 int i = 2;
                 int row = getLogTableEmptyRow();
+                int clol = -1;
                 long time = 0;
                 long prevTime = 0;
                 double thrtlMaxChange2 = thrtlMaxChange * 2.0;
@@ -371,7 +372,13 @@ public class MafIatComp extends ACompCalc {
                             else if (row <= 2 || Math.abs(ppThrottle - throttle) <= thrtlMaxChange2) {
                                 // Filters
                                 trims = Double.valueOf(flds[logAfLearningColIdx]) + Double.valueOf(flds[logAfCorrectionColIdx]);
-                                if (clValue == (int)Utils.parseValue(flds[logClOlStatusColIdx])) {
+                                if (flds[logClOlStatusColIdx] == "on")
+                                    clol = 0;
+                                else if (flds[logClOlStatusColIdx] == "off")
+                                    clol = 1;
+                                else
+                                    clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
+                                if (clValue == clol) {
                                     afr = Double.valueOf(flds[logAfrColIdx]);
                                     corr = (100.0 + trims) / 100.0;
                                 }

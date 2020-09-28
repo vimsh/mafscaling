@@ -81,7 +81,7 @@ public class MafIatColumnsFiltersSelection extends ColumnsFiltersSelection {
             if (c instanceof JEditorPane) {
                 JEditorPane label = (JEditorPane)c;
                 if (label.getText().startsWith("Filter out data using logged OL/CL status"))
-                    label.setText("Set Closed Loop status (EcuTek CL: 2, RR CL: 8)");
+                    label.setText("Set Closed Loop status (EcuTek CL: 2, OP2/RR CL: 8, Cobb CL: 0 (on))");
             }
         }
     }

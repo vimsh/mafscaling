@@ -431,7 +431,14 @@ public class VECalc extends ACompCalc {
                                 ffb = Double.valueOf(flds[logFfbColIdx]);
                                 iat = Double.valueOf(flds[logIatColIdx]);
                                 if (clValue != -1)
-                                    clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
+                                {
+                                    if (flds[logClOlStatusColIdx] == "on")
+                                        clol = 0;
+                                    else if (flds[logClOlStatusColIdx] == "off")
+                                        clol = 1;
+                                    else
+                                        clol = (int)Utils.parseValue(flds[logClOlStatusColIdx]);
+                                }
                                 boolean flag = isOl ? ((afr <= afrMax || throttle >= thrtlMin) && afr <= afrMax) : (afrMin <= afr);
                                 if (flag && clol == clValue && rpmMin <= rpm && ffbMin <= ffb && ffb <= ffbMax && iat <= iatMax) {
                                     removed = false;

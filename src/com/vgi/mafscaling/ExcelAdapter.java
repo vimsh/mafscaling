@@ -444,6 +444,8 @@ public class ExcelAdapter implements ActionListener {
         int startCol = (table.getSelectedColumns())[0];
         try {
             String trstring = (String)(system.getContents(this).getTransferData(DataFlavor.stringFlavor));
+            trstring = trstring.replaceFirst("\\[Table2D\\]\r?\n", "");
+            trstring = trstring.replaceFirst("\\[Table3D\\]\r?[\n\t]", "\t");
             String[] lines = trstring.split("\\r?\\n");
             ArrayList<ArrayList<String>> data = new ArrayList<ArrayList<String>>();
             for (String colsArr : lines) {

@@ -219,8 +219,12 @@ public final class Utils {
                             colorMatrix[i][0] = Color.LIGHT_GRAY;
                     }
                     for (int i = 0; i < selRows.length; ++i) {
-                        if (selRows[i] > 0 && column > 0 || row == 0)
-                            colorMatrix[selRows[i]][0] = Color.GRAY;
+                        if (selRows[i] > 0 && column > 0 || row == 0) {
+                            try {
+                                colorMatrix[selRows[i]][0] = Color.GRAY;
+                            }
+                            catch (Exception e) { }
+                        }
                     }
                 }
                 if (selColumns != null) {
@@ -333,10 +337,12 @@ public final class Utils {
                 JTable eventTable =(JTable)event.getSource();
                 int colIdx = eventTable.getSelectedColumn();
                 int rowIdx = eventTable.getSelectedRow();
-                Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
-                if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
-                    eventTable.setColumnSelectionInterval(colIdx, colIdx);
-                    eventTable.setRowSelectionInterval(rowIdx, rowIdx);
+                if (colIdx != -1 && rowIdx != -1) {
+                    Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
+                    if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
+                        eventTable.setColumnSelectionInterval(colIdx, colIdx);
+                        eventTable.setRowSelectionInterval(rowIdx, rowIdx);
+                    }
                 }
             }
         });

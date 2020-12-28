@@ -302,6 +302,8 @@ public class VVTCalc extends ACompCalc {
     }
     
     protected void clearRunTable(JTable table) {
+        if (table == origTable || table == newTable)
+            table.setModel(new DefaultTableModel(TableRowCount, table.getColumnCount()));
         if (table == corrTable)
             table.setModel(new DefaultTableModel(origTable.getRowCount(), origTable.getColumnCount()));
         else if (table == corrCountTable)

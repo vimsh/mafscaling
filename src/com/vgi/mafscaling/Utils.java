@@ -334,14 +334,16 @@ public final class Utils {
     public static void addTableHeaderHighlight(final JTable table) {
         table.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent event) {
-                JTable eventTable =(JTable)event.getSource();
-                int colIdx = eventTable.getSelectedColumn();
-                int rowIdx = eventTable.getSelectedRow();
-                if (colIdx != -1 && rowIdx != -1) {
-                    Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
-                    if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
-                        eventTable.setColumnSelectionInterval(colIdx, colIdx);
-                        eventTable.setRowSelectionInterval(rowIdx, rowIdx);
+                if (event.getButton() == MouseEvent.BUTTON1) {
+                    JTable eventTable =(JTable)event.getSource();
+                    int colIdx = eventTable.getSelectedColumn();
+                    int rowIdx = eventTable.getSelectedRow();
+                    if (colIdx != -1 && rowIdx != -1) {
+                        Utils.setTableHeaderHighlightColor(eventTable, new int[]{ colIdx }, new int[]{ rowIdx });
+                        if (eventTable.getColumnCount() - 1 >= colIdx && eventTable.getRowCount() - 1 >= rowIdx) {
+                            eventTable.setColumnSelectionInterval(colIdx, colIdx);
+                            eventTable.setRowSelectionInterval(rowIdx, rowIdx);
+                        }
                     }
                 }
             }

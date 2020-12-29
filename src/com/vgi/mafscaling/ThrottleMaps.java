@@ -163,9 +163,7 @@ public class ThrottleMaps extends ACompCalc {
     }
     
     protected JTable createDataTable(JPanel panel, String tableName, int colCount, int rowCount, int gridx, int gridy, boolean isOriginalTable, boolean extendRows, boolean extendCols) {
-        final JTable table = new JTable() {
-            private static final long serialVersionUID = 3218402382894083287L;
-        };
+        final JTable table = new JTable();
         ExcelAdapter excelAdapter = new ExcelAdapter() {
             protected void onPaste(JTable table, boolean extendRows, boolean extendCols) {
                 if (table.getSelectedRows() == null || table.getSelectedRows().length == 0 ||
@@ -226,28 +224,30 @@ public class ThrottleMaps extends ACompCalc {
         if (tableName == newTableName) {
             table.addMouseListener(new MouseAdapter() {
                 public void mousePressed(MouseEvent event) {
-                    if (Utils.isTableEmpty(origTable) || Utils.isTableEmpty(newTable) || Utils.isTableEmpty(corrTable)) {
-                        return;
-                    }
-                    JTable eventTable =(JTable)event.getSource();
-                    int colIdx = eventTable.getSelectedColumn();
-                    int rowIdx = eventTable.getSelectedRow();
-                    ArrayList<Double> t3xAxisArray = new ArrayList<Double>();
-                    for (int i = 1; i < corrTable.getColumnCount(); ++i)
-                        t3xAxisArray.add(Double.valueOf(corrTable.getValueAt(0, i).toString()));
-    
-                    ArrayList<Double> t1yAxisArray = new ArrayList<Double>();
-                    for (int i = 0; i < origTable.getRowCount(); ++i)
-                        t1yAxisArray.add(Double.valueOf(origTable.getValueAt(i, 0).toString()));
-    
-                    ArrayList<Double> t3yAxisArray = new ArrayList<Double>();
-                    for (int i = 1; i < corrTable.getRowCount(); ++i)
-                        t3yAxisArray.add(Double.valueOf(corrTable.getValueAt(i, 0).toString()));
-                    if (colIdx > 0 && rowIdx >= 0) {
-                        try {
-                            calculate(t3xAxisArray, t1yAxisArray, t3yAxisArray, rowIdx, colIdx, true);
+                    if (event.getButton() == MouseEvent.BUTTON1) {
+                        if (Utils.isTableEmpty(origTable) || Utils.isTableEmpty(newTable) || Utils.isTableEmpty(corrTable)) {
+                            return;
                         }
-                        catch (Exception e) { }
+                        JTable eventTable =(JTable)event.getSource();
+                        int colIdx = eventTable.getSelectedColumn();
+                        int rowIdx = eventTable.getSelectedRow();
+                        ArrayList<Double> t3xAxisArray = new ArrayList<Double>();
+                        for (int i = 1; i < corrTable.getColumnCount(); ++i)
+                            t3xAxisArray.add(Double.valueOf(corrTable.getValueAt(0, i).toString()));
+        
+                        ArrayList<Double> t1yAxisArray = new ArrayList<Double>();
+                        for (int i = 0; i < origTable.getRowCount(); ++i)
+                            t1yAxisArray.add(Double.valueOf(origTable.getValueAt(i, 0).toString()));
+        
+                        ArrayList<Double> t3yAxisArray = new ArrayList<Double>();
+                        for (int i = 1; i < corrTable.getRowCount(); ++i)
+                            t3yAxisArray.add(Double.valueOf(corrTable.getValueAt(i, 0).toString()));
+                        if (colIdx > 0 && rowIdx >= 0) {
+                            try {
+                                calculate(t3xAxisArray, t1yAxisArray, t3yAxisArray, rowIdx, colIdx, true);
+                            }
+                            catch (Exception e) { }
+                        }
                     }
                 }
             });

@@ -359,17 +359,19 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 
         table.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent event) {
-                JTable eventTable =(JTable)event.getSource();
-                int colIdx = eventTable.getSelectedColumn();
-                int rowIdx = eventTable.getSelectedRow();
-                JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
-                for (JTable t : tables) {
-                    if (t == null)
-                        continue;
-                    Utils.setTableHeaderHighlightColor(t, new int[]{ colIdx }, new int[]{ rowIdx });
-                    if (t.getColumnCount() - 1 >= colIdx && t.getRowCount() - 1 >= rowIdx) {
-                        t.setColumnSelectionInterval(colIdx, colIdx);
-                        t.setRowSelectionInterval(rowIdx, rowIdx);
+                if (event.getButton() == MouseEvent.BUTTON1) {
+                    JTable eventTable =(JTable)event.getSource();
+                    int colIdx = eventTable.getSelectedColumn();
+                    int rowIdx = eventTable.getSelectedRow();
+                    JTable[] tables = new JTable[] {origTable, newTable, corrTable, corrCountTable};
+                    for (JTable t : tables) {
+                        if (t == null)
+                            continue;
+                        Utils.setTableHeaderHighlightColor(t, new int[]{ colIdx }, new int[]{ rowIdx });
+                        if (t.getColumnCount() - 1 >= colIdx && t.getRowCount() - 1 >= rowIdx) {
+                            t.setColumnSelectionInterval(colIdx, colIdx);
+                            t.setRowSelectionInterval(rowIdx, rowIdx);
+                        }
                     }
                 }
             }

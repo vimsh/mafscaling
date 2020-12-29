@@ -280,7 +280,6 @@ public class LogStats extends FCTabbedPane implements ActionListener {
             private static final long serialVersionUID = 6526901361175099297L;
             public boolean isCellEditable(int row, int column) { return false; };
         };
-        dataTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         dataTable.setColumnSelectionAllowed(true);
         dataTable.setCellSelectionEnabled(true);
         dataTable.setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -307,7 +306,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
 
         JScrollPane scrollPane = new JScrollPane(dataTable);
         dataPanel.add(scrollPane, gbc_dataTable);
-        excelAdapter.addTable(dataTable, false, true, true, true, true, true, true, true, true);
+        excelAdapter.addTable(dataTable, false, false, true, false, true, true, true, true, true);
     }
     
     private JButton addButton(int row, int column, int rowspan, String name, String action) {

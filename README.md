@@ -8,6 +8,8 @@ MAF Open Loop Scaling
 
 MAF Closed Loop Scaling
 
+MAF Closed Loop and Open Loop Scalings merging and fitting
+
 MAF Rescaling
 
 Table Rescaling

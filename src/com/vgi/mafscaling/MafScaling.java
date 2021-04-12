@@ -36,9 +36,10 @@ import org.apache.log4j.Logger;
 
 public class MafScaling {
     private static final Logger logger = Logger.getLogger(MafScaling.class);
-    private static final String Title = "MAF Scaling - v2.6.2";
+    private static final String Title = "MAF Scaling - v2.7.0";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
+    private static final String MMTabName = "<html>MafOLCLMerge</html>";
     private static final String MRTabName = "<html>MAF Rescale</html>";
     private static final String TRTabName = "<html>Table Rescale</html>";
     private static final String TMTabName = "<html>Throttle Maps</html>";
@@ -59,7 +60,8 @@ public class MafScaling {
      */
     public static void main(String[] args) throws Exception {
         //UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+        //UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        //UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         
         if (UIManager.getLookAndFeel().getName().equals("Nimbus")) {
             UIManager.put("Table.gridColor", new Color(214, 217, 223));
@@ -126,6 +128,10 @@ public class MafScaling {
         JTabbedPane cl = new ClosedLoop(JTabbedPane.LEFT, pofFuelingTable, mafCompare);
         cl.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.add(cl, CLTabName);
+
+        JTabbedPane mm = new MafOLCLMerge(JTabbedPane.LEFT);
+        mm.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.add(mm, MMTabName);
 
         JTabbedPane mr = new MafRescale(JTabbedPane.LEFT);
         mr.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);

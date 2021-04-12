@@ -223,7 +223,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
         public TableSkin() {
             put(Skin.HEADER_FONT,headerFont);
             put(Skin.TABLE_FONT,font);
-            put(Skin.ROW_HEIGTH, new Integer(16));
+            put(Skin.ROW_HEIGTH, Integer.valueOf(16));
             put(Skin.FOCUS_CELL_HIGHLIGHT_BORDER,new javax.swing.border.MatteBorder(2, 2, 2, 2, Color.BLACK));
           }
     }

@@ -159,7 +159,7 @@ public class OpenLoop extends AMafScaling {
         JButton jb = new JButton("remove");
         jb.setActionCommand("trem");
         jb.addActionListener(this);
-        jb.setPreferredSize(new Dimension(150,20));
+        jb.setPreferredSize(new Dimension(150,30));
         removeButtons.add(jb);
         dataRunPanel.add(jb, gbc_run);
         gbc_run.gridy = 1;

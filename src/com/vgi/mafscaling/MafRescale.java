@@ -20,13 +20,13 @@ package com.vgi.mafscaling;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.math.RoundingMode;
@@ -66,7 +66,7 @@ import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
-public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionListener {
+public class MafRescale extends JTabbedPane implements IMafChartHolder {
     private static final long serialVersionUID = -3803091816206090707L;
     private static final Logger logger = Logger.getLogger(MafRescale.class);
     private static final int ColumnWidth = 50;
@@ -264,11 +264,43 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
         GridBagLayout gbl_mafPanelLayout = new GridBagLayout();
         gbl_mafPanelLayout.columnWidths = new int[]{0};
         gbl_mafPanelLayout.rowHeights = new int[]{0, 0};
-        gbl_mafPanelLayout.columnWeights = new double[]{0.0, 1.0};
-        gbl_mafPanelLayout.rowWeights = new double[]{0.0, 1.0};
+        gbl_mafPanelLayout.columnWeights = new double[]{1.0};
+        gbl_mafPanelLayout.rowWeights = new double[]{0.0, 0.0};
         mafPanel.setLayout(gbl_mafPanelLayout);
         
+        GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
+        gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
+        gbc_mafScrollPane.weightx = 1.0;
+        gbc_mafScrollPane.insets = insets0;
+        gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
+        gbc_mafScrollPane.gridx = 0;
+        gbc_mafScrollPane.gridy = 0;
+        
+        MafTablePane origMafScrollPane = new MafTablePane(ColumnWidth, OrigMafTableName, false, false);
+        origMafScrollPane.setMaximumSize(new Dimension(10000, 65));
+        origMafScrollPane.setMinimumSize(new Dimension(10000, 65));
+        origMafScrollPane.setPreferredSize(new Dimension(10000, 65));
+        origMafScrollPane.setBorder(null);
+        origMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        origMafTable = origMafScrollPane.getJTable();
+        excelAdapter.addTable(origMafTable, false, false, false, false, false, false, false, false, true);
+        mafPanel.add(origMafScrollPane, gbc_mafScrollPane);
+        
+        MafTablePane newMafScrollPane = new MafTablePane(ColumnWidth, NewMafTableName, false, true);
+        newMafScrollPane.setMaximumSize(new Dimension(10000, 65));
+        newMafScrollPane.setMinimumSize(new Dimension(10000, 65));
+        newMafScrollPane.setPreferredSize(new Dimension(10000, 65));
+        newMafScrollPane.setBorder(null);
+        newMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        newMafTable = newMafScrollPane.getJTable();
+        newMafExcelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
+        gbc_mafScrollPane.gridy++;
+        mafPanel.add(newMafScrollPane, gbc_mafScrollPane);
+        
         JScrollPane mafScrollPane = new JScrollPane(mafPanel);
+        mafScrollPane.setMaximumSize(new Dimension(10000, 150));
+        mafScrollPane.setMinimumSize(new Dimension(10000, 150));
+        mafScrollPane.setPreferredSize(new Dimension(10000, 150));
         mafScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         mafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
         GridBagConstraints gbl_mafScrollPane = new GridBagConstraints();
@@ -278,32 +310,7 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
         gbl_mafScrollPane.weightx = 1.0;
         gbl_mafScrollPane.gridx = 0;
         gbl_mafScrollPane.gridy = 1;
-        gbl_mafScrollPane.ipady = 120;
         dataPanel.add(mafScrollPane, gbl_mafScrollPane);
-        
-        GridBagConstraints gbc_mafScrollPane = new GridBagConstraints();
-        gbc_mafScrollPane.anchor = GridBagConstraints.PAGE_START;
-        gbc_mafScrollPane.weightx = 1.0;
-        gbc_mafScrollPane.weighty = 1.0;
-        gbc_mafScrollPane.insets = insets0;
-        gbc_mafScrollPane.fill = GridBagConstraints.HORIZONTAL;
-        gbc_mafScrollPane.gridx = 0;
-        gbc_mafScrollPane.gridy = 0;
-        
-        MafTablePane origMafScrollPane = new MafTablePane(ColumnWidth, OrigMafTableName, false, false);
-        origMafScrollPane.setBorder(null);
-        origMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        origMafTable = origMafScrollPane.getJTable();
-        excelAdapter.addTable(origMafTable, false, false, false, false, false, false, false, false, true);
-        mafPanel.add(origMafScrollPane, gbc_mafScrollPane);
-        
-        MafTablePane newMafScrollPane = new MafTablePane(ColumnWidth, NewMafTableName, false, true);
-        newMafScrollPane.setBorder(null);
-        newMafScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        newMafTable = newMafScrollPane.getJTable();
-        newMafExcelAdapter.addTable(newMafTable, false, false, false, false, false, false, false, false, true);
-        gbc_mafScrollPane.gridy++;
-        mafPanel.add(newMafScrollPane, gbc_mafScrollPane);
         
         Action action = new AbstractAction() {
             private static final long serialVersionUID = 1L;
@@ -479,7 +486,7 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
     
     private void recalculateNewGs() {
         try {
-            if (origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
+            if (origVoltArray == null || origGsArray == null || origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
                 return;
             ArrayList<Double> newVoltArray = new ArrayList<Double>();
             ArrayList<Double> newGsArray = new ArrayList<Double>();
@@ -516,7 +523,7 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
                 origMafTable.getValueAt(0, 0).toString().isEmpty())
                 return;
             
-            if (origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
+            if (origVoltArray == null || origVoltArray.size() == 0 || origVoltArray.size() != origGsArray.size())
                 return;
             
             if (origVoltArray.size() < 10) {
@@ -655,9 +662,4 @@ public class MafRescale extends JTabbedPane implements IMafChartHolder, ActionLi
         newMafTable.setValueAt(valueX, 0, itemIndex);
         newMafTable.setValueAt(valueY, 1, itemIndex);
     }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-    }
-
 }

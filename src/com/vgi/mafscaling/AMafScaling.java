@@ -368,7 +368,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
         mafSmoothingPanel.add(lblMafIncDec, gbc_ctrl);
        
         mafIncDecTextField = new JFormattedTextField(doubleFmt);
-        mafIncDecTextField.setValue(new Double(0.1));
+        mafIncDecTextField.setValue(Double.valueOf(0.1));
         mafIncDecTextField.setColumns(5);
         mafIncDecTextField.setMinimumSize(minDimension);
         gbc_ctrl.fill = GridBagConstraints.HORIZONTAL;

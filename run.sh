@@ -1,10 +1,17 @@
 #!/bin/sh
 # *** GTK ***
 #java -Dswing.defaultlaf=com.sun.java.swing.plaf.gtk.GTKLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &
+
+
+# *** Java Default ***
+# start javaw -Dswing.defaultlaf=javax.swing.plaf.metal.MetalLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar
+
 # *** New Java Swing ***
-java -Dswing.defaultlaf=com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &
+java -Dswing.defaultlaf=javax.swing.plaf.nimbus.NimbusLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &
+
 # *** Linux Motif ***
 #java -Dswing.defaultlaf=com.sun.java.swing.plaf.motif.MotifLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &
+
 # *** Variations of skinned default Java Swing look and feel ***
 #java -Dswing.defaultlaf=com.jtattoo.plaf.aero.AeroLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &
 #java -Dswing.defaultlaf=com.jtattoo.plaf.smart.SmartLookAndFeel -Xms64M -Xmx512M -jar MafScaling.jar &

@@ -39,7 +39,7 @@ public class MafScaling {
     private static final String Title = "MAF Scaling - v2.7.0";
     private static final String OLTabName = "<html>Open Loop</html>";
     private static final String CLTabName = "<html>Closed Loop</html>";
-    private static final String MMTabName = "<html>MafOLCLMerge</html>";
+    private static final String MMTabName = "<html>MAF OL/CL Merge</html>";
     private static final String MRTabName = "<html>MAF Rescale</html>";
     private static final String TRTabName = "<html>Table Rescale</html>";
     private static final String TMTabName = "<html>Throttle Maps</html>";

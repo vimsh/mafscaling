@@ -60,13 +60,13 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.function.Function2D;
 import org.jfree.data.function.LineFunction2D;
 import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 import org.math.plot.Plot3DPanel;
 
@@ -446,7 +446,13 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
         chartPanel.setAutoscrolls(true);
-        chartPanel.setMouseZoomable(false);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.restoreAutoBounds();
+        chartPanel.setZoomInFactor(0.8);
+        chartPanel.setZoomOutFactor(1.2);
+        chartPanel.setZoomAroundAnchor(true);
+        chartPanel.setDomainZoomable(true);
+        chartPanel.setRangeZoomable(true);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
@@ -465,7 +471,7 @@ public abstract class ACompCalc extends FCTabbedPane implements ActionListener, 
 
         XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
         lineRenderer.setUseFillPaint(true);
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+        lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
                 new DecimalFormat("0.00"), new DecimalFormat("0.00")));
         

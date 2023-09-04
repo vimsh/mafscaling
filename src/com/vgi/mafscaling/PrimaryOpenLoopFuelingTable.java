@@ -435,7 +435,7 @@ public class PrimaryOpenLoopFuelingTable implements ActionListener {
                     isPolfMap = true;
                 }
                 else
-                    fuelingTable = setValueAtRow(fuelingTable, i++, line.split(Utils.fileFieldSplitter, -1));
+                    fuelingTable = setValueAtRow(fuelingTable, i++, line.trim().split(Utils.fileFieldSplitter, -1));
                 line = br.readLine();
             }
             if (i > 0 && validateFuelingData(fuelingTable))

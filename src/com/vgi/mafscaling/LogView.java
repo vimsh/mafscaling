@@ -124,11 +124,11 @@ import org.jfree.chart.plot.ValueMarker;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.RectangleAnchor;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.ui.TextAnchor;
 import org.math.plot.Plot3DPanel;
 import org.scijava.swing.checkboxtree.CheckBoxNodeData;
@@ -741,7 +741,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
         chartPanel.setFocusable(true);
         chartPanel.setAutoscrolls(true);
-        chartPanel.setPopupMenu(null);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.restoreAutoBounds();
+        chartPanel.setZoomInFactor(0.8);
+        chartPanel.setZoomOutFactor(1.2);
+        chartPanel.setZoomAroundAnchor(true);
+        chartPanel.setDomainZoomable(true);
+        chartPanel.setRangeZoomable(true);
         chart.setBackgroundPaint(chartColor);
 
         rpmDataset = new XYSeriesCollection();
@@ -1161,6 +1167,13 @@ public class LogView extends FCTabbedPane implements ActionListener {
         wotChartPanel = new ChartPanel(chart, true, true, true, true, true);
         wotChartPanel.setFocusable(true);
         wotChartPanel.setAutoscrolls(true);
+        wotChartPanel.setMouseWheelEnabled(true);
+        wotChartPanel.restoreAutoBounds();
+        wotChartPanel.setZoomInFactor(0.8);
+        wotChartPanel.setZoomOutFactor(1.2);
+        wotChartPanel.setZoomAroundAnchor(true);
+        wotChartPanel.setDomainZoomable(true);
+        wotChartPanel.setRangeZoomable(true);
         chart.setBackgroundPaint(chartColor);
         
         wotPlot = chart.getXYPlot();
@@ -1940,7 +1953,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 if (line.charAt(line.length() - 1) == ',')
                     Arrays.copyOf(elements, elements.length - 1);
@@ -1958,7 +1971,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 while ((line = br.readLine()) != null) {
                     if (line.length() > 0 && line.charAt(line.length() - 1) == ',')
                         line = line.substring(0, line.length() - 1);
-                    flds = line.split(Utils.fileFieldSplitter, -1);
+                    flds = line.trim().split(Utils.fileFieldSplitter, -1);
                     val = Double.valueOf(flds[logThtlAngleColIdx]);
                     if (row == 0 && val < 99)
                         wotFlag = false;
@@ -2173,7 +2186,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 yAxis.setTickLabelPaint(Color.WHITE);
                 yAxis.setLabelPaint(Color.LIGHT_GRAY);
                 XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
-                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+                lineRenderer.setDefaultShapesVisible(showWotCurvePoints);
                 wotPlot.setRenderer(i, lineRenderer);
                 wotPlot.setRangeAxis(i, yAxis, false);
                 wotPlot.setDataset(i, dataset);
@@ -2248,7 +2261,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 yAxis.setTickLabelPaint(Color.WHITE);
                 yAxis.setLabelPaint(Color.LIGHT_GRAY);
                 XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
-                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+                lineRenderer.setDefaultShapesVisible(showWotCurvePoints);
                 wotPlot.setRenderer(i, lineRenderer);
                 wotPlot.setRangeAxis(i, yAxis, false);
                 wotPlot.setDataset(i, dataset);
@@ -2376,13 +2389,19 @@ public class LogView extends FCTabbedPane implements ActionListener {
             setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
         }
     }
-    
+
     public void disposeLogView() {
+        if (startMarker != null) {
+        	plot.removeDomainMarker(startMarker);
+        	startMarker = null;
+        }
+        if (endMarker != null) {
+	        plot.removeDomainMarker(endMarker);
+	        endMarker = null;
+        }
         logPlayButton.setEnabled(true);
         logPlayWindow.dispose();
         logPlayWindow = null;
-        startMarker = null;
-        endMarker = null;
         disableMouseListener();
         enableMouseListener();
         chartPanel.repaint();
@@ -2478,7 +2497,7 @@ public class LogView extends FCTabbedPane implements ActionListener {
                 XYSeriesCollection dataset = (XYSeriesCollection)wotPlot.getDataset(i);
                 if (lineRenderer == null || dataset == null)
                     continue;
-                lineRenderer.setBaseShapesVisible(showWotCurvePoints);
+                lineRenderer.setDefaultShapesVisible(showWotCurvePoints);
             }
         }
         else if ("linkyaxis".equals(e.getActionCommand())) {

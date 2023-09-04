@@ -23,6 +23,8 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.NumberFormat;
@@ -33,6 +35,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
@@ -46,6 +49,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.TransferHandler;
 import javax.swing.UIDefaults;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
@@ -171,6 +175,37 @@ abstract class ColumnsFiltersSelection implements ActionListener {
     protected int colrow;
     protected int filtrow;
     
+    protected TransferHandler textTransferHandler = new TextTransferHandler();
+    
+    private class TextTransferHandler extends TransferHandler {
+		private static final long serialVersionUID = 1L;
+		public boolean importData(TransferHandler.TransferSupport support) {
+            if (!canImport(support))
+                return false;
+            String data;
+            try {
+                data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+            }
+            catch (UnsupportedFlavorException e) {
+                return false;
+            }
+            catch (java.io.IOException e) {
+                return false;
+            }
+            JTextField tc = (JTextField) support.getComponent();
+            tc.setText(data);
+            return true;
+        }
+        public int getSourceActions(JComponent c) {
+            return COPY;
+        }
+        public boolean canImport(TransferHandler.TransferSupport support) {
+            if (!support.isDataFlavorSupported(DataFlavor.stringFlavor))
+                return false;
+            return true;
+        }
+    }
+    
     public ColumnsFiltersSelection() {
         doubleFmt.setMaximumFractionDigits(2);
         doubleFmt.setGroupingUsed(false);
@@ -227,7 +262,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Optional Note
         addNote(columnsPanel, colrow, 4, "NOTE: Fields marked with asterisk (*) are optional");
         // columns note
-        addCommentLabel(columnsPanel, ++colrow, 4, "<html><b>Columns Selection - use blank row to clear optional columns.</b></html>");
+        addCommentLabel(columnsPanel, ++colrow, 4, "<html><b>Columns Selection - Use drag-n-drop. Use blank row to clear optional columns.</b></html>");
         // custom columns note
         addColumnsNote();
         int colRowStart = colrow + 1;
@@ -246,6 +281,7 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         columnsTable.setTableHeader(null);
         columnsTable.setModel(new DefaultTableModel(columns.length + 1, 1));
         columnsTable.setValueAt("", 0, 0);
+        columnsTable.setDragEnabled(true);
         Arrays.sort(columns);
         for (int i = 0; i < columns.length; ++i)
             columnsTable.setValueAt(columns[i], i + 1, 0);        
@@ -270,6 +306,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // RPM
         addLabel(columnsPanel, ++colrow, rpmLabelText);
         rpmName = addColumn(colrow, Config.getRpmColumnName());
+        rpmName.setDragEnabled(true);
+        rpmName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "rpm");
     }
     
@@ -277,6 +315,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Throttle Angle
         addLabel(columnsPanel, ++colrow, thrtlAngleLabelText);
         thrtlAngleName = addColumn(colrow, Config.getThrottleAngleColumnName());
+        thrtlAngleName.setDragEnabled(true);
+        thrtlAngleName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "thrtlAngle");
     }
     
@@ -284,6 +324,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Load
         addLabel(columnsPanel, ++colrow, loadLabelText);
         loadName = addColumn(colrow, Config.getLoadColumnName());
+        loadName.setDragEnabled(true);
+        loadName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "load");
     }
     
@@ -291,6 +333,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // LTFT
         addLabel(columnsPanel, ++colrow, afLearningLabelText);
         afLearningName = addColumn(colrow, Config.getAfLearningColumnName());
+        afLearningName.setDragEnabled(true);
+        afLearningName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "afrlearn");
     }
     
@@ -298,6 +342,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // STFT
         addLabel(columnsPanel, ++colrow, afCorrectionLabelText);
         afCorrectionName = addColumn(colrow, Config.getAfCorrectionColumnName());
+        afCorrectionName.setDragEnabled(true);
+        afCorrectionName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "afrcorr");
     }
     
@@ -305,6 +351,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // MAF Voltage
         addLabel(columnsPanel, ++colrow, mafVLabelText);
         mafVName = addColumn(colrow, Config.getMafVoltageColumnName());
+        mafVName.setDragEnabled(true);
+        mafVName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "mafv");
     }
     
@@ -312,6 +360,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // MAF
         addLabel(columnsPanel, ++colrow, mafLabelText);
         mafName = addColumn(colrow, Config.getMassAirflowColumnName());
+        mafName.setDragEnabled(true);
+        mafName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "maf");
     }
     
@@ -319,6 +369,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Wideband AFR
         addLabel(columnsPanel, ++colrow, wbAfrLabelText);
         wbAfrName = addColumn(colrow, Config.getWidebandAfrColumnName());
+        wbAfrName.setDragEnabled(true);
+        wbAfrName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "wbafr");
     }
     
@@ -326,6 +378,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Commanded AFR
         addLabel(columnsPanel, ++colrow, commAfrLabelText + (isOptional ? " *" : ""));
         commAfrName = addColumn(colrow, Config.getCommandedAfrColumnName());
+        commAfrName.setDragEnabled(true);
+        commAfrName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "cmdafr");
     }
     
@@ -333,6 +387,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Stock AFR
         addLabel(columnsPanel, ++colrow, stockAfrLabelText);
         stockAfrName = addColumn(colrow, Config.getAfrColumnName());
+        stockAfrName.setDragEnabled(true);
+        stockAfrName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "afr");
     }
     
@@ -340,6 +396,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Closed/Open Loop Status
         addLabel(columnsPanel, ++colrow, clolStatusLabelText);
         clolStatusName = addColumn(colrow, Config.getClOlStatusColumnName());
+        clolStatusName.setDragEnabled(true);
+        clolStatusName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "clolstat");
     }
     
@@ -347,6 +405,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Cruise/Non-cruise Status
         addLabel(columnsPanel, ++colrow, cruiseStatusLabelText);
         cruiseStatusName = addColumn(colrow, Config.getCruiseStatusColumnName());
+        cruiseStatusName.setDragEnabled(true);
+        cruiseStatusName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "cruisestat");
     }
     
@@ -354,6 +414,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Manifold Pressure
         addLabel(columnsPanel, ++colrow, mpLabelText);
         mpName = addColumn(colrow, Config.getMpColumnName());
+        mpName.setDragEnabled(true);
+        mpName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "mp");
     }
     
@@ -361,6 +423,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Manifold Absolute Pressure
         addLabel(columnsPanel, ++colrow, mapLabelText);
         mapName = addColumn(colrow, Config.getMapColumnName());
+        mapName.setDragEnabled(true);
+        mapName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "map");
     }
     
@@ -368,6 +432,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Manifold Absolute Pressure
         addLabel(columnsPanel, ++colrow, vvt1LabelText);
         vvt1Name = addColumn(colrow, Config.getVvt1ColumnName());
+        vvt1Name.setDragEnabled(true);
+        vvt1Name.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "vvt1");
     }
     
@@ -375,6 +441,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Manifold Absolute Pressure
         addLabel(columnsPanel, ++colrow, vvt2LabelText);
         vvt2Name = addColumn(colrow, Config.getVvt2ColumnName());
+        vvt2Name.setDragEnabled(true);
+        vvt2Name.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "vvt2");
     }
     
@@ -382,6 +450,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // Time
         addLabel(columnsPanel, ++colrow, timeLabelText);
         timeName = addColumn(colrow, Config.getTimeColumnName());
+        timeName.setDragEnabled(true);
+        timeName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "time");
     }
     
@@ -389,6 +459,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // IAT
         addLabel(columnsPanel, ++colrow, iatLabelText);
         iatName = addColumn(colrow, Config.getIatColumnName());
+        iatName.setDragEnabled(true);
+        iatName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "iat");
     }
     
@@ -396,6 +468,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // FFB
         addLabel(columnsPanel, ++colrow, ffbLabelText);
         ffbName = addColumn(colrow, Config.getFinalFuelingBaseColumnName());
+        ffbName.setDragEnabled(true);
+        ffbName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "ffb");
     }
     
@@ -403,6 +477,8 @@ abstract class ColumnsFiltersSelection implements ActionListener {
         // VE Flow
         addLabel(columnsPanel, ++colrow, veFlowLabelText);
         veFlowName = addColumn(colrow, Config.getVEFlowColumnName());
+        veFlowName.setDragEnabled(true);
+        veFlowName.setTransferHandler(textTransferHandler);
         addCopyButton(colrow, "veflow");
     }
 

@@ -46,10 +46,10 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYDotRenderer;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
 public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolder, ActionListener {
@@ -96,7 +96,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
     protected Insets insets1 = new Insets(1, 1, 1, 1);
     protected Insets insets2 = new Insets(2, 2, 2, 2);
     protected Insets insets3 = new Insets(3, 3, 3, 3);
-    protected String[] optionButtons = { "Yes", "No", "No to all" };
+    protected String[] optionButtons = { "Yes", "No" };
 
     public AMafScaling(int tabPlacement, PrimaryOpenLoopFuelingTable table, MafCompare comparer) {
         super(tabPlacement);
@@ -259,7 +259,7 @@ public abstract class AMafScaling extends FCTabbedPane implements IMafChartHolde
 
         XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
         lineRenderer.setUseFillPaint(true);
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+        lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
                 new DecimalFormat("0.00"), new DecimalFormat("0.00")));
         

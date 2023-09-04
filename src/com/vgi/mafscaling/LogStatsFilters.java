@@ -18,12 +18,23 @@
 
 package com.vgi.mafscaling;
 
+import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -31,6 +42,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -38,7 +50,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.UIDefaults;
 
-public class LogStatsFilters implements ActionListener {
+import org.apache.log4j.Logger;
+
+public class LogStatsFilters extends Component implements ActionListener {
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger = Logger.getLogger(LogStatsFilters.class);
+    private static final String SaveDataFileHeader = "[filters data]";
     private String[] colNames = null;
     private ArrayList<JButton> filterButtonList = null;
     private ArrayList<JComboBox<String>> filterComboBoxList = null;
@@ -112,9 +129,9 @@ public class LogStatsFilters implements ActionListener {
     private void createControlPanel() {
         JPanel panel = new JPanel();
         GridBagLayout gbl_panel = new GridBagLayout();
-        gbl_panel.columnWidths = new int[]{0, 0};
+        gbl_panel.columnWidths = new int[]{0, 0, 0, 0};
         gbl_panel.rowHeights = new int[] {0};
-        gbl_panel.columnWeights = new double[]{0.0, 1.0};
+        gbl_panel.columnWeights = new double[]{0.0, 0.0, 1.0, 0.0};
         gbl_panel.rowWeights = new double[]{0.0};
         panel.setLayout(gbl_panel);
 
@@ -131,12 +148,32 @@ public class LogStatsFilters implements ActionListener {
         JButton remButton = new JButton("Remove Selected");
         GridBagConstraints gbc_remButton = new GridBagConstraints();
         gbc_remButton.anchor = GridBagConstraints.EAST;
-        gbc_remButton.insets = new Insets(3, 3, 3, 0);
+        gbc_remButton.insets = new Insets(3, 0, 3, 3);
         gbc_remButton.gridx = 1;
         gbc_remButton.gridy = 0;
         remButton.setActionCommand("remove");
         remButton.addActionListener(this);
         panel.add(remButton, gbc_remButton);
+
+        JButton saveButton = new JButton("Save");
+        GridBagConstraints gbc_saveButton = new GridBagConstraints();
+        gbc_saveButton.anchor = GridBagConstraints.EAST;
+        gbc_saveButton.insets = new Insets(3, 3, 3, 0);
+        gbc_saveButton.gridx = 2;
+        gbc_saveButton.gridy = 0;
+        saveButton.setActionCommand("save");
+        saveButton.addActionListener(this);
+        panel.add(saveButton, gbc_saveButton);
+
+        JButton loadButton = new JButton("Load");
+        GridBagConstraints gbc_loadButton = new GridBagConstraints();
+        gbc_loadButton.anchor = GridBagConstraints.EAST;
+        gbc_loadButton.insets = new Insets(3, 3, 3, 0);
+        gbc_loadButton.gridx = 3;
+        gbc_loadButton.gridy = 0;
+        loadButton.setActionCommand("load");
+        loadButton.addActionListener(this);
+        panel.add(loadButton, gbc_loadButton);
         
         GridBagConstraints gbc_fullWidth = new GridBagConstraints();
         gbc_fullWidth.anchor = GridBagConstraints.PAGE_START;
@@ -281,11 +318,106 @@ public class LogStatsFilters implements ActionListener {
             }
         }
         if (removed) {
-            tmpFilterButtonList.set(0, null);
+        	if (tmpFilterButtonList.size() > 0)
+        		tmpFilterButtonList.set(0, null);
             filtersPanel.removeAll();
             addExistingFilters();
             filtersPanel.revalidate();
             filtersPanel.repaint();
+        }
+    }
+    
+    
+    private void save() {
+    	if (tmpFilterButtonList.size() == 0 || !validateFilters())
+    		return;
+    	JFileChooser fileChooser = new JFileChooser();
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showSaveDialog(this))
+            return;
+        File file = fileChooser.getSelectedFile();
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        Writer out = null;
+        try {
+            out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), Config.getEncoding()));
+            out.write(SaveDataFileHeader + "\n");
+            for (int i = 0; i < tmpFilterButtonList.size() ; ++i) {
+            	String andOr = tmpFilterButtonList.get(i) == null ? "" : tmpFilterButtonList.get(i).getText();
+            	String column = (String) tmpFilterColumnList.get(i).getSelectedItem();
+            	String condition = (String) tmpFilterComboBoxList.get(i).getSelectedItem();
+            	String value = tmpFilterTextBoxList.get(i).getValue().toString();
+                out.write(andOr + "," + column + "," + condition + "," + value + "\n");
+            }
+        }
+        catch (Exception e) {
+            logger.error(e);
+            JOptionPane.showMessageDialog(null, "Failed to save filters to file", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            if (out != null) {
+                try {
+                    out.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
+            }
+        }
+    }
+    
+    
+    private void load() {
+    	JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setMultiSelectionEnabled(false);
+        if (JFileChooser.APPROVE_OPTION != fileChooser.showOpenDialog(this))
+            return;
+        File file = fileChooser.getSelectedFile();
+        setCursor(new Cursor(Cursor.WAIT_CURSOR));
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
+            String line = br.readLine();
+            if (line == null || !line.equals(SaveDataFileHeader)) {
+                JOptionPane.showMessageDialog(null, "Invalid saved data file!", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            line = br.readLine();
+            String[] elements;
+            tmpFilterButtonList.clear();
+            tmpFilterColumnList.clear();
+            tmpFilterComboBoxList.clear();
+            tmpFilterTextBoxList.clear();
+            filtersPanel.removeAll();
+            int i = 0;
+            while (line != null) {
+                elements = line.trim().split(Utils.fileFieldSplitter, -1);
+                addFilter();
+                if (tmpFilterButtonList.get(i) != null)
+                	tmpFilterButtonList.get(i).setText(elements[0]);
+                tmpFilterColumnList.get(i).setSelectedItem(elements[1]);
+                tmpFilterComboBoxList.get(i).setSelectedItem(elements[2]);
+                tmpFilterTextBoxList.get(i).setValue(Long.parseLong(elements[3]));
+                i += 1;
+                line = br.readLine();
+            }
+            filtersPanel.revalidate();
+            filtersPanel.repaint();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            logger.error(e);
+            JOptionPane.showMessageDialog(null, "Failed to load filters from file", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+        finally {
+            setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            if (br != null) {
+                try {
+                    br.close();
+                }
+                catch (IOException e) {
+                    logger.error(e);
+                }
+            }
         }
     }
     
@@ -310,6 +442,10 @@ public class LogStatsFilters implements ActionListener {
             add();
         else if ("remove".equals(e.getActionCommand()))
             remove();
+        else if ("save".equals(e.getActionCommand()))
+            save();
+        else if ("load".equals(e.getActionCommand()))
+            load();
         else {
             boolean handled = false;
             for (int k = 1; !handled && k < tmpFilterButtonList.size(); ++k) {

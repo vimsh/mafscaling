@@ -84,10 +84,6 @@ public class CurveFitter {
     "y = a+b*Math.erf((x-c)/d)"                                 //ERF; note that the c parameter is sqrt2 times the Gaussian sigma
     };
 
-    /** @deprecated now in the Minimizer class (since ImageJ 1.46f).
-     *  (probably of not much value for anyone anyhow?) */
-    public static final int IterFactor = 500;
-
     private static final int GAUSSIAN_INTERNAL = 101;   // Gaussian with separate offset & multiplier
     private static final int RODBARD_INTERNAL = 102;    // Rodbard with separate offset & multiplier
 

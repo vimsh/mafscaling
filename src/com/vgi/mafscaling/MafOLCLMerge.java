@@ -59,9 +59,9 @@ import org.jfree.chart.plot.SeriesRenderingOrder;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
 import ij.measure.CurveFitter;
@@ -347,7 +347,7 @@ public class MafOLCLMerge extends JTabbedPane implements IMafChartHolder {
 
         XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
         lineRenderer.setUseFillPaint(true);
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+        lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
                 new DecimalFormat("0.00"), new DecimalFormat("0.00")));
         
@@ -382,7 +382,6 @@ public class MafOLCLMerge extends JTabbedPane implements IMafChartHolder {
         plot.setRangeAxis(0, mafgsRange);
         plot.mapDatasetToDomainAxis(0, 0);
         plot.mapDatasetToRangeAxis(0, 0);
-
         
         LegendTitle legend = new LegendTitle(plot.getRenderer()); 
         legend.setItemFont(new Font("Arial", 0, 10));

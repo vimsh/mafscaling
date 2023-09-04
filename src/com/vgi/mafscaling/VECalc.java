@@ -55,10 +55,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
 public class VECalc extends ACompCalc {
@@ -218,7 +218,13 @@ public class VECalc extends ACompCalc {
 
         chartPanel = new ChartPanel(chart, true, true, true, true, true);
         chartPanel.setAutoscrolls(true);
-        chartPanel.setMouseZoomable(false);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.restoreAutoBounds();
+        chartPanel.setZoomInFactor(0.8);
+        chartPanel.setZoomOutFactor(1.2);
+        chartPanel.setZoomAroundAnchor(true);
+        chartPanel.setDomainZoomable(true);
+        chartPanel.setRangeZoomable(true);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
@@ -232,7 +238,7 @@ public class VECalc extends ACompCalc {
 
         XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
         lineRenderer.setUseFillPaint(true);
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+        lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator( 
                 StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
                 new DecimalFormat("0.00"), new DecimalFormat("0.00")));
         
@@ -360,7 +366,7 @@ public class VECalc extends ACompCalc {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -406,7 +412,7 @@ public class VECalc extends ACompCalc {
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                        buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
                 }
                 try {
                     while (line != null && buffer.size() > afrRowOffset) {
@@ -414,7 +420,7 @@ public class VECalc extends ACompCalc {
                         flds = buffer.removeLast();
                         line = br.readLine();
                         if (line != null)
-                            buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                            buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
                         ppThrottle = pThrottle;
                         pThrottle = throttle;
                         throttle = Double.valueOf(flds[logThrottleAngleColIdx]);

@@ -73,10 +73,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.math.plot.Plot3DPanel;
 import org.scijava.swing.checkboxtree.CheckBoxNodeData;
 import org.scijava.swing.checkboxtree.CheckBoxNodeEditor;
@@ -464,6 +464,13 @@ public class VVTCalc extends ACompCalc {
         chartPanels[index] = chartPanel;
         chartPanel.setFocusable(true);
         chartPanel.setAutoscrolls(true);
+        chartPanel.setMouseWheelEnabled(true);
+        chartPanel.restoreAutoBounds();
+        chartPanel.setZoomInFactor(0.8);
+        chartPanel.setZoomOutFactor(1.2);
+        chartPanel.setZoomAroundAnchor(true);
+        chartPanel.setDomainZoomable(true);
+        chartPanel.setRangeZoomable(true);
         
         GridBagConstraints gbl_chartPanel = new GridBagConstraints();
         gbl_chartPanel.anchor = GridBagConstraints.CENTER;
@@ -477,7 +484,7 @@ public class VVTCalc extends ACompCalc {
 
         XYLineAndShapeRenderer lineRenderer = new XYLineAndShapeRenderer();
         lineRenderer.setUseFillPaint(true);
-        lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator(
+        lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator(
             StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
             new DecimalFormat("0.00"), new DecimalFormat("0.00"))
         );
@@ -494,7 +501,7 @@ public class VVTCalc extends ACompCalc {
 
         XYLineAndShapeRenderer lineRendererBest = new XYLineAndShapeRenderer();
         lineRendererBest.setUseFillPaint(true);
-        lineRendererBest.setBaseToolTipGenerator(new StandardXYToolTipGenerator(
+        lineRendererBest.setDefaultToolTipGenerator(new StandardXYToolTipGenerator(
             StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, 
             new DecimalFormat("0.00"), new DecimalFormat("0.00"))
         );
@@ -816,7 +823,7 @@ public class VVTCalc extends ACompCalc {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -866,7 +873,7 @@ public class VVTCalc extends ACompCalc {
                 JTable table = runTables.get(i);
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
                 while ((line = br.readLine()) != null) {
-                    flds = line.split(Utils.fileFieldSplitter, -1);
+                    flds = line.trim().split(Utils.fileFieldSplitter, -1);
                     try {
                         throttle = Double.valueOf(flds[logThtlAngleColIdx]);
                         if (row == 0 && throttle < 99)
@@ -1221,7 +1228,7 @@ public class VVTCalc extends ACompCalc {
     }
     
     private void loadConfig() {
-        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().split(Utils.fileFieldSplitter, -1);
+        String[] vvt1RpmColumn = Config.getVVT1RPMColumn().trim().split(Utils.fileFieldSplitter, -1);
         if (vvt1RpmColumn != null) {
             for (int i = 0; i < vvt1RpmColumn.length; ++i) {
                 Utils.ensureRowCount(i + 1, origTable);
@@ -1230,7 +1237,7 @@ public class VVTCalc extends ACompCalc {
             }
             validateTable(origTable);
         }
-        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().split(Utils.fileFieldSplitter, -1);
+        String[] vvt2RpmColumn = Config.getVVT1RPMColumn().trim().split(Utils.fileFieldSplitter, -1);
         if (vvt2RpmColumn != null) {
             for (int i = 0; i < vvt2RpmColumn.length; ++i) {
                 Utils.ensureRowCount(i + 1, newTable);

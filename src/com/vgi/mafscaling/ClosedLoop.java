@@ -1026,6 +1026,7 @@ public class ClosedLoop extends AMafScaling {
     
     protected void loadLogFile() {
         boolean displayDialog = true;
+        boolean isPolfSet = polfTable.isSet();
         boolean isPolfTableMap = polfTable.isMap();
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
@@ -1034,26 +1035,23 @@ public class ClosedLoop extends AMafScaling {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements, isPolfTableMap);
-                boolean resetColumns = false;
-                if (logClOlStatusColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logAfrColIdx >= 0 ||
-                    logRpmColIdx >= 0 || logLoadColIdx >=0 || logTimeColIdx >=0 || logMafvColIdx >= 0 || logIatColIdx >= 0 || logMapColIdx >= 0) {
-                    if (displayDialog) {
-                        int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
-                        if (rc == 0)
-                            resetColumns = true;
-                        else if (rc == 2)
-                            displayDialog = false;
-                    }
+                boolean resetColumns = logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 || logRpmColIdx < 0 || 
+                                       logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || (isPolfSet && isPolfTableMap && logMapColIdx < 0);
+                if (false == resetColumns && true == displayDialog) {
+                    if (JOptionPane.NO_OPTION == JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", 
+                                                                              JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[1]))
+                        displayDialog = false;
+                    else
+                        resetColumns = true;
                 }
-
-                if (resetColumns || logClOlStatusColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logAfrColIdx < 0 ||
-                    logRpmColIdx < 0 || logLoadColIdx < 0 || logTimeColIdx < 0 || logMafvColIdx < 0 || logIatColIdx < 0 || (isPolfTableMap && logMapColIdx < 0)) {
+                if (true == resetColumns) {
                     ColumnsFiltersSelection selectionWindow = new CLColumnsFiltersSelection(isPolfTableMap);
                     if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolfTableMap))
                         return;
+                    displayDialog = false;
                 }
                 
                 String[] flds;
@@ -1072,7 +1070,7 @@ public class ClosedLoop extends AMafScaling {
                 setCursor(new Cursor(Cursor.WAIT_CURSOR));
 
                 while (line != null) {
-                    flds = line.split(Utils.fileFieldSplitter, -1);
+                    flds = line.trim().split(Utils.fileFieldSplitter, -1);
                     try {
                         // Calculate dV/dt
                         prevTime = time;

@@ -609,7 +609,7 @@ public class OpenLoop extends AMafScaling {
             JTable table = null;
             i = k = l = 0;
             while (line != null) {
-                elements = line.split(Utils.fileFieldSplitter, -1);
+                elements = line.trim().split(Utils.fileFieldSplitter, -1);
                 switch (i) {
                 case 0:
                     Utils.ensureColumnCount(elements.length - 1, mafTable);
@@ -709,6 +709,11 @@ public class OpenLoop extends AMafScaling {
         boolean displayDialog = true;
         boolean isPolfSet = polfTable.isSet();
         boolean isPolfMap = polfTable.isMap();
+        if (!isPolfSet && logCommandedAfrColIdx < 0) {
+            if (JOptionPane.NO_OPTION == JOptionPane.showOptionDialog(null, "Primary Open Loop Fueling is not set.\nUnless you have ECU Target AFR (Commanded AFR)) in log you must set POLF table first.\nWould you like to continue?", "POLF is not set", 
+                    JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[1]))
+                return;
+        }
         File[] files = fileChooser.getSelectedFiles();
         for (File file : files) {
             BufferedReader br = null;
@@ -717,27 +722,24 @@ public class OpenLoop extends AMafScaling {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements, isPolfSet, isPolfMap);
-                boolean resetColumns = false;
-                if (logThtlAngleColIdx >= 0 || logAfLearningColIdx >= 0 || logAfCorrectionColIdx >= 0 || logMafvColIdx >= 0 ||
-                    logAfrColIdx >= 0 || logRpmColIdx >= 0 || logLoadColIdx >= 0 || logCommandedAfrColIdx >= 0 || logMapColIdx >= 0) {
-                    if (displayDialog) {
-                        int rc = JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[0]);
-                        if (rc == 0)
-                            resetColumns = true;
-                        else if (rc == 2)
-                            displayDialog = false;
-                    }
+                boolean resetColumns = logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || logMafvColIdx < 0 || 
+                        logAfrColIdx < 0 || logRpmColIdx < 0 || (isPolfSet && !isPolfMap && logLoadColIdx < 0) || (isPolfSet && isPolfMap && logMapColIdx < 0) || 
+                        (!isPolfSet && logCommandedAfrColIdx < 0);
+                if (false == resetColumns && true == displayDialog) {
+                    if (JOptionPane.NO_OPTION == JOptionPane.showOptionDialog(null, "Would you like to reset column names or filter values?", "Columns/Filters Reset", 
+                                                                              JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, optionButtons, optionButtons[1]))
+                        displayDialog = false;
+                    else
+                        resetColumns = true;
                 }
-                
-                if (resetColumns || logThtlAngleColIdx < 0 || logAfLearningColIdx < 0 || logAfCorrectionColIdx < 0 || 
-                    logMafvColIdx < 0 || logAfrColIdx < 0 || logRpmColIdx < 0 || (logLoadColIdx < 0 && !isPolfMap && isPolfSet) ||
-                    (logMapColIdx < 0 && isPolfMap) || (logCommandedAfrColIdx < 0 && !isPolfSet)) {
+                if (true == resetColumns) {
                     ColumnsFiltersSelection selectionWindow = new OLColumnsFiltersSelection(isPolfSet, isPolfMap);
                     if (!selectionWindow.getUserSettings(elements) || !getColumnsFilters(elements, isPolfSet, isPolfMap))
                         return;
+                    displayDialog = false;
                 }
                 
                 String[] flds;
@@ -766,14 +768,14 @@ public class OpenLoop extends AMafScaling {
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                        buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
                 }
                 while (line != null && buffer.size() > afrRowOffset) {
                     afrflds = buffer.getFirst();
                     flds = buffer.removeLast();
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                        buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
 
                     try {
                         throttle = Double.valueOf(flds[logThtlAngleColIdx]);

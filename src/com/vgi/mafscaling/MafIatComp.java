@@ -284,7 +284,7 @@ public class MafIatComp extends ACompCalc {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements, isPolfSet, isPolfMap);
                 boolean resetColumns = false;
@@ -339,7 +339,7 @@ public class MafIatComp extends ACompCalc {
                 for (int k = 0; k <= afrRowOffset && line != null; ++k) {
                     line = br.readLine();
                     if (line != null)
-                        buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                        buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
                 }
                 try {
                     while (line != null && buffer.size() > afrRowOffset) {
@@ -347,7 +347,7 @@ public class MafIatComp extends ACompCalc {
                         flds = buffer.removeLast();
                         line = br.readLine();
                         if (line != null)
-                            buffer.addFirst(line.split(Utils.fileFieldSplitter, -1));
+                            buffer.addFirst(line.trim().split(Utils.fileFieldSplitter, -1));
                         
                         ppThrottle = pThrottle;
                         pThrottle = throttle;

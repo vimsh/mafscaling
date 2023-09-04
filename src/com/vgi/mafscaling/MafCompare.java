@@ -64,10 +64,10 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYSplineRenderer;
 import org.jfree.chart.title.LegendTitle;
+import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
-import org.jfree.ui.RectangleEdge;
 import org.jfree.util.ShapeUtilities;
 
 public class MafCompare extends JFrame {
@@ -422,7 +422,7 @@ public class MafCompare extends JFrame {
 
             XYSplineRenderer lineRenderer = new XYSplineRenderer(3);
             lineRenderer.setUseFillPaint(true);
-            lineRenderer.setBaseToolTipGenerator(new StandardXYToolTipGenerator( 
+            lineRenderer.setDefaultToolTipGenerator(new StandardXYToolTipGenerator( 
                     StandardXYToolTipGenerator.DEFAULT_TOOL_TIP_FORMAT, new DecimalFormat("0.00"), new DecimalFormat("0.00"))); 
 
             Stroke stroke = new BasicStroke(2.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1.0f, null, 0.0f);

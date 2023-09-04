@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -80,7 +81,6 @@ public class LogStats extends FCTabbedPane implements ActionListener {
     private static final int ColumnWidth = 50;
     private static final int DataTableRowCount = 50;
     private static final int DataTableColumnCount = 25;
-    private static final String timeMatchString = "^\\s*time\\s*(\\(.*\\))?$";
     private static final String SetFilters = "<html><center>Set<br>Filters</center></html>";
     private static final String ViewFilters = "<html><center>View<br>Filters</center></html>";
     
@@ -536,43 +536,35 @@ public class LogStats extends FCTabbedPane implements ActionListener {
         logFiles = fileChooser.getSelectedFiles();
         logFilesTodo = new ArrayList<File>();
         BufferedReader br = null;
-        HashSet<String> columns = new HashSet<String>();
-        String logTimeColName = Config.getLogTimeColumnName();
+        TreeSet<String> columns = new TreeSet<String>();
         
         for (File logFile : logFiles) {
             try {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(logFile.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 if (logFilesTodo.size() == 0) {
                     logFilesTodo.add(logFile);
-                    Arrays.sort(elements);
-                    for (String item : elements) {
-                        if (logFiles.length > 1 && (item.equals(logTimeColName) || item.toLowerCase().matches(timeMatchString)))
-                            continue;
-                        xAxisColumn.addItem(item);
-                        yAxisColumn.addItem(item);
-                        dataColumn.addItem(item);
-                        for (int k = 0; k < filterButtonList.size(); ++k)
-                            filterColumnList.get(k).addItem(item);
-                    }
-                }
-                else {
-                    columns.clear();
                     for (String item : elements)
                         columns.add(item);
-                    boolean skipFile = false;
-                    for (int i = 1; i < xAxisColumn.getItemCount(); ++i) {
-                        if (!columns.contains(xAxisColumn.getItemAt(i))) {
-                            skipFile = true;
-                            JOptionPane.showMessageDialog(null, "File " + logFile.getName() + " does not have column '" + xAxisColumn.getItemAt(i) + "'\nSkipping file...", "Missing column", JOptionPane.WARNING_MESSAGE);
-                            break;
+                }
+                else {
+                    HashSet<String> columnsCurrent = new HashSet<String>();
+                    for (String item : elements) {
+                        if (!columns.contains(item))
+                            JOptionPane.showMessageDialog(null, "File " + logFile.getName() + " has extra column '" + item + "'\nThis columns will be ignored", "Extra column", JOptionPane.WARNING_MESSAGE);
+                        else
+                            columnsCurrent.add(item);
+                    }
+                    for (Iterator<String> it = columns.iterator(); it.hasNext();) {
+                        String item = it.next();
+                        if (!columnsCurrent.contains(item)) {
+                            JOptionPane.showMessageDialog(null, "File " + logFile.getName() + " is missing column '" + item + "'\nThis columns will be ignored", "Missing column", JOptionPane.WARNING_MESSAGE);
+                            it.remove();
                         }
                     }
-                    if (skipFile)
-                        continue;
                     logFilesTodo.add(logFile);
                 }
             }
@@ -590,6 +582,13 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                     }
                 }
             }
+        }
+        for (String item : columns) {
+            xAxisColumn.addItem(item);
+            yAxisColumn.addItem(item);
+            dataColumn.addItem(item);
+            for (int k = 0; k < filterButtonList.size(); ++k)
+                filterColumnList.get(k).addItem(item);
         }
         if (xAxis != null)
             xAxisColumn.setSelectedItem(xAxis);
@@ -782,7 +781,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(logFile.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 ArrayList<String> columns = new ArrayList<String>(Arrays.asList(elements));
                 int xColIdx = columns.indexOf(xAxisColName);
@@ -807,7 +806,7 @@ public class LogStats extends FCTabbedPane implements ActionListener {
                 try {
                     line = br.readLine();
                     while (line != null) {
-                        elements = line.split(Utils.fileFieldSplitter, -1);
+                        elements = line.trim().split(Utils.fileFieldSplitter, -1);
                         if (i == 2) {
                             boolean found = false;
                             for (int k = 0; !found && k < filterButtonList.size(); ++k) {

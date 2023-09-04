@@ -259,7 +259,7 @@ public class LoadComp extends ACompCalc {
                 br = new BufferedReader(new InputStreamReader(new FileInputStream(file.getAbsoluteFile()), Config.getEncoding()));
                 String line = null;
                 String [] elements = null;
-                while ((line = br.readLine()) != null && (elements = line.split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
+                while ((line = br.readLine()) != null && (elements = line.trim().split(Utils.fileFieldSplitter, -1)) != null && elements.length < 2)
                     continue;
                 getColumnsFilters(elements);
                 boolean resetColumns = false;
@@ -309,7 +309,7 @@ public class LoadComp extends ACompCalc {
                     if (-1 == logCruiseStatusColIdx)
                         cruiseValue = -1;
                     while (line != null) {
-                        flds = line.split(Utils.fileFieldSplitter, -1);
+                        flds = line.trim().split(Utils.fileFieldSplitter, -1);
                         ppThrottle = pThrottle;
                         pThrottle = throttle;
                         try {

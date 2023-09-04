@@ -505,7 +505,7 @@ public class LogPlayTable extends JFrame implements ActionListener {
             int row = 0;
             String[] elements;
             while (line != null) {
-                elements = line.split(Utils.fileFieldSplitter, -1);
+                elements = line.trim().split(Utils.fileFieldSplitter, -1);
                 Utils.ensureRowCount(row + 1, playTable);
                 Utils.ensureColumnCount(elements.length - 1, playTable);
                 for (int i = 0; i < elements.length - 1; ++i)
